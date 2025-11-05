@@ -6,9 +6,10 @@
 ## Frontend
 - React.js 
 - TailwindCSS / Bootstrap (if applicable for styling)
+- TypeScript
 
 ## Backend
-- Spring Boot (REST API)
+- Spring Boot (REST API) - Java 21 SDK
 - Swagger (API documentation)
 - Postman (API testing)
 ## Database
