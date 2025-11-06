@@ -148,4 +148,13 @@ public class SubCategoryService {
                 .build();
     }
 
+    public List<SubCategoryResponse> searchSubCategories(String keyword) {
+        List<SubCategory> subCategories = subCategoryRepository.findByNameContainingIgnoreCase(keyword);
+        if (subCategories.isEmpty()) {
+            throw new AppException(ErrorCode.NO_SUBCATEGORIES_STORED);
+        }
+        return subCategories.stream()
+                .map(this::mapToSubCategoryResponse)
+                .toList();
+    }
 }

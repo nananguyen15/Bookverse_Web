@@ -13,4 +13,6 @@ public interface SubCategoryRepository extends JpaRepository<SubCategory, Long> 
     boolean existsByNameIgnoreCase(String name);
 
     List<SubCategory> findBySupCategory(SupCategory supCategory);
+
+    List<SubCategory> findByNameContainingIgnoreCase(String keyword);
 }

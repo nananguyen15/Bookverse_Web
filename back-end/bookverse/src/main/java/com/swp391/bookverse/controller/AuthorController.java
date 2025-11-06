@@ -4,6 +4,7 @@ import com.swp391.bookverse.dto.APIResponse;
 import com.swp391.bookverse.dto.request.AuthorCreationRequest;
 import com.swp391.bookverse.dto.request.AuthorUpdateRequest;
 import com.swp391.bookverse.dto.response.AuthorResponse;
+import com.swp391.bookverse.dto.response.BookResponse;
 import com.swp391.bookverse.entity.Author;
 import com.swp391.bookverse.service.AuthorService;
 import jakarta.validation.Valid;
@@ -35,6 +36,20 @@ public class AuthorController {
     public APIResponse<List<AuthorResponse>> getAuthors(){
         APIResponse<List<AuthorResponse>> response = new APIResponse<>();
         response.setResult(authorService.getAuthors());
+        return response;
+    }
+
+    @GetMapping("/search/{keyword}")
+    public APIResponse<List<AuthorResponse>> searchAuthors(@PathVariable("keyword") String keyword) {
+        APIResponse<List<AuthorResponse>> response = new APIResponse<>();
+        response.setResult(authorService.searchAuthors(keyword));
+        return response;
+    }
+
+    @GetMapping("/{authorId}/books")
+    public APIResponse<List<BookResponse>> getBooksByAuthorId(@PathVariable("authorId") String authorId) {
+        APIResponse<List<BookResponse>> response = new APIResponse<>();
+        response.setResult(authorService.getBooksByAuthorId(authorId));
         return response;
     }
 

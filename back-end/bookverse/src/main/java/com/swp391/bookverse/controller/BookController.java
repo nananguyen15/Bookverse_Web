@@ -123,7 +123,6 @@ public class BookController {
         return response;
     }
 
-
 //    @GetMapping("/active/top-selling")
 //    public APIResponse<List<BookResponse>> getTopSellingActiveBooks() {
 //        APIResponse<List<BookResponse>> response;

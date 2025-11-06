@@ -4,13 +4,16 @@ import com.swp391.bookverse.dto.request.AuthorCreationRequest;
 import com.swp391.bookverse.dto.request.AuthorUpdateRequest;
 import com.swp391.bookverse.dto.request.UserUpdateRequest;
 import com.swp391.bookverse.dto.response.AuthorResponse;
+import com.swp391.bookverse.dto.response.BookResponse;
 import com.swp391.bookverse.dto.response.UserResponse;
 import com.swp391.bookverse.entity.Author;
+import com.swp391.bookverse.entity.Book;
 import com.swp391.bookverse.entity.User;
 import com.swp391.bookverse.exception.AppException;
 import com.swp391.bookverse.exception.ErrorCode;
 import com.swp391.bookverse.mapper.AuthorMapper;
 import com.swp391.bookverse.repository.AuthorRepository;
+import com.swp391.bookverse.repository.BookRepository;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -28,6 +31,7 @@ import java.util.List;
 public class AuthorService {
     AuthorRepository authorRepository;
     AuthorMapper authorMapper;
+    BookRepository bookRepository;
 
     /**
      * Create a new author based on the provided request
@@ -110,4 +114,44 @@ public class AuthorService {
         return inactiveAuthorResponses;
     }
 
+    public List<AuthorResponse> searchAuthors(String keyword) {
+        List<Author> authors = authorRepository.findByNameContainingIgnoreCase(keyword);
+        List<AuthorResponse> authorResponses = new ArrayList<>(authors.size());
+        for (int i = 0; i < authors.size(); i++) {
+            authorResponses.add(authorMapper.toAuthorResponse(authors.get(i)));
+        }
+        return authorResponses;
+    }
+
+    public List<BookResponse> getBooksByAuthorId(String authorId) {
+        // ensure author exists
+        Author author = authorRepository.findById(Long.parseLong(authorId))
+                .orElseThrow(() -> new AppException(ErrorCode.AUTHOR_NOT_FOUND));
+
+        // fetch books by author id
+        List<Book> books = bookRepository.findByAuthorId(author.getId());
+
+        if (books == null || books.isEmpty()) {
+            throw new AppException(ErrorCode.NO_BOOKS_STORED);
+        }
+
+        List<BookResponse> bookResponses = new ArrayList<>(books.size());
+        for (Book book : books) {
+            BookResponse br = BookResponse.builder()
+                    .id(book.getId())
+                    .title(book.getTitle())
+                    .description(book.getDescription())
+                    .price(book.getPrice())
+                    .publishedDate(book.getPublishedDate())
+                    .active(book.getActive())
+                    .image(book.getImage())
+                    .stockQuantity(book.getStockQuantity())
+                    .authorId(book.getAuthor() != null ? book.getAuthor().getId() : null)
+                    .publisherId(book.getPublisher() != null ? book.getPublisher().getId() : null)
+                    .categoryId(book.getCategory() != null ? book.getCategory().getId() : null)
+                    .build();
+            bookResponses.add(br);
+        }
+        return bookResponses;
+    }
 }

@@ -42,6 +42,14 @@ public class SubCategoryController {
         return response;
     }
 
+    @GetMapping("/search/{keyword}")
+    public APIResponse<List<SubCategoryResponse>> searchSubCategories(@PathVariable("keyword")
+            String keyword) {
+        APIResponse<List<SubCategoryResponse>> response = new APIResponse<>();
+        response.setResult(subCategoryService.searchSubCategories(keyword));
+        return response;
+    }
+
     @GetMapping("/{subCategoryId}/active-books")
     public APIResponse<List<BookResponse>> getActiveBooksBySubCategoryId(@PathVariable("subCategoryId") Long subCategoryId) {
         APIResponse<List<BookResponse>> response = new APIResponse<>();
