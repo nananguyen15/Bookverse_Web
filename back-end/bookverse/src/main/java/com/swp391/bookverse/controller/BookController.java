@@ -80,6 +80,41 @@ public class BookController {
         return response;
     }
 
+    @GetMapping("/active/sort-by-newest")
+    public APIResponse<List<BookResponse>> getActiveBooksSortedByNewest() {
+        APIResponse<List<BookResponse>> response;
+        response = bookService.getActiveBooksSortedByNewest();
+        return response;
+    }
+
+    @GetMapping("/active/sort-by-oldest")
+    public APIResponse<List<BookResponse>> getActiveBooksSortedByOldest() {
+        APIResponse<List<BookResponse>> response;
+        response = bookService.getActiveBooksSortedByOldest();
+        return response;
+    }
+
+    @GetMapping("/active/sort-by-price-asc")
+    public APIResponse<List<BookResponse>> getActiveBooksSortedByPriceAsc() {
+        APIResponse<List<BookResponse>> response;
+        response = bookService.getActiveBooksSortedByPriceAsc();
+        return response;
+    }
+
+    @GetMapping("/active/sort-by-price-desc")
+    public APIResponse<List<BookResponse>> getActiveBooksSortedByPriceDesc() {
+        APIResponse<List<BookResponse>> response;
+        response = bookService.getActiveBooksSortedByPriceDesc();
+        return response;
+    }
+
+    @GetMapping("/active/sort-by-title")
+    public APIResponse<List<BookResponse>> getActiveBooksSortedByTitleAsc() {
+        APIResponse<List<BookResponse>> response;
+        response = bookService.getActiveBooksSortedByTitleAsc();
+        return response;
+    }
+
 //    @GetMapping("/active/search")
 //    public APIResponse<List<BookResponse>> searchActiveBooks(@RequestParam("keyword") String keyword) {
 //        APIResponse<List<BookResponse>> response;
