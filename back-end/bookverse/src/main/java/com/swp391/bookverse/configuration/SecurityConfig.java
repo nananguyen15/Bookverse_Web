@@ -9,10 +9,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.Customizer;
-<<<<<<< HEAD
-=======
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
->>>>>>> origin/backend/base
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -46,30 +43,14 @@ public class SecurityConfig {
 
     // Define endpoint access rules based on user roles and HTTP methods
 
-<<<<<<< HEAD
-    String[] PUBLIC_POST_ENDPOINTS = {"api/auth/token", "api/auth/introspect", "api/users/create", "/api/otp/**"};
-    String[] PUBLIC_GET_ENDPOINTS = {"api/authors/**", "api/books/**", "api/publishers/**", "api/sup-categories/**", "api/sub-categories/**"};
-=======
     String[] PUBLIC_POST_ENDPOINTS = {"api/auth/token", "api/auth/introspect", "api/users/create", "api/users/signup", "/api/otp/**"};
     String[] PUBLIC_GET_ENDPOINTS = {"api/users/myInfo","api/users/is-active/**","api/authors/**", "api/books/**", "api/publishers/**", "api/sup-categories/**", "api/sub-categories/**"};
-<<<<<<< HEAD
     String[] PUBLIC_PUT_ENDPOINTS = {"api/users/myInfo"};
-=======
->>>>>>> origin/backend/base
->>>>>>> origin/main
 
     String[] ADMIN_GET_ENDPOINTS = {"api/users/**"};
     String[] ADMIN_POST_ENDPOINTS = {"api/authors/**", "api/books/**", "api/publishers/**", "api/sup-categories/**", "/api/sub-categories/**"};
     String[] ADMIN_PUT_ENDPOINTS = {"api/authors/**" , "api/books/**", "api/publishers/**", "api/sup-categories/**", "/api/sub-categories/**","api/users/**"};
     String[] ADMIN_DELETE_ENDPOINTS = {""};
-<<<<<<< HEAD
-
-    String[] STAFF_GET_ENDPOINTS = {""};
-    String[] STAFF_POST_ENDPOINTS = {""};
-    String[] STAFF_PUT_ENDPOINTS = {""};
-    String[] STAFF_DELETE_ENDPOINTS = {""};
-=======
->>>>>>> origin/backend/base
 
     String[] STAFF_GET_ENDPOINTS = {""};
     String[] STAFF_POST_ENDPOINTS = {""};
@@ -98,17 +79,9 @@ public class SecurityConfig {
                         ).permitAll()
                         .requestMatchers(HttpMethod.GET, PUBLIC_GET_ENDPOINTS).permitAll()
                         .requestMatchers(HttpMethod.POST, PUBLIC_POST_ENDPOINTS).permitAll()
-<<<<<<< HEAD
-                        .requestMatchers(HttpMethod.PUT, PUBLIC_PUT_ENDPOINTS).permitAll()
-=======
-<<<<<<< HEAD
-                        .requestMatchers(HttpMethod.GET, ADMIN_GET_ENDPOINTS).hasAnyAuthority("SCOPE_ADMIN")
-=======
->>>>>>> origin/main
 //                        .requestMatchers(HttpMethod.GET, ADMIN_GET_ENDPOINTS).hasAnyAuthority("SCOPE_ADMIN")
->>>>>>> origin/backend/base
                         .requestMatchers(HttpMethod.POST, ADMIN_POST_ENDPOINTS).hasAnyAuthority("SCOPE_ADMIN")
-//                        .requestMatchers(HttpMethod.PUT, ADMIN_PUT_ENDPOINTS).hasAnyAuthority("SCOPE_ADMIN")
+                        .requestMatchers(HttpMethod.PUT, ADMIN_PUT_ENDPOINTS).hasAnyAuthority("SCOPE_ADMIN")
                         .anyRequest().authenticated());
 
         // Configure ability to use form login and basic authentication

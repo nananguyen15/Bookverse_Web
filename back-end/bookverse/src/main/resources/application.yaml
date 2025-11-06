@@ -45,6 +45,9 @@ cors:
     - "http://localhost:5173" # Vite React default port
     - "http://127.0.0.1:5173"
 
-
+logging:
+  level:
+    org.springframework.security: DEBUG
+    org.springframework.web: DEBUG
 
 
