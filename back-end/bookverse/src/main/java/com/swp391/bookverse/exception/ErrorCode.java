@@ -61,6 +61,12 @@ public enum ErrorCode {
     SUP_CATEGORY_NOT_FOUND(7002, "Sup-category not found"),
     NO_SUP_CATEGORIES_STORED(7003, "No sup-categories stored in database"),
 
+    // custom error codes for cart entity
+    CART_NOT_FOUND(8001, "Cart not found"),
+    CART_ITEM_NOT_FOUND(8002, "Cart item not found"),
+    NO_CARTS_STORED(8003, "No carts stored in database"),
+    EXCEED_STOCK(8004, "Requested quantity exceeds available stock"),
+    PRODUCT_OUT_OF_STOCK(8005, "Product is out of stock"),
 
     INVALID_KEY(99999, "Invalid message key provided")
     ;

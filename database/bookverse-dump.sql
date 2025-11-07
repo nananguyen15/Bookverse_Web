@@ -91,12 +91,11 @@ DROP TABLE IF EXISTS `cart`;
 CREATE TABLE `cart` (
   `id` bigint NOT NULL AUTO_INCREMENT,
   `user_id` varchar(36) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NOT NULL,
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  `active` tinyint(1) NOT NULL,
+  `active` bit(1) NOT NULL,
   PRIMARY KEY (`id`),
   KEY `carts_user_fk` (`user_id`),
   CONSTRAINT `carts_user_fk` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=14 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -105,6 +104,7 @@ CREATE TABLE `cart` (
 
 LOCK TABLES `cart` WRITE;
 /*!40000 ALTER TABLE `cart` DISABLE KEYS */;
+INSERT INTO `cart` VALUES (1,'0d026e17-a295-4ed3-ba8b-eafa385a5e49',_binary ''),(2,'30e8bca8-23a0-4c5e-bb60-d03b5e22c0f3',_binary ''),(3,'319ac3b6-69bf-43b8-8acf-7ac19c93eafe',_binary ''),(4,'337710c7-ff88-4d63-a3e5-64c1e40df725',_binary ''),(5,'424544a6-5fbf-4ec7-bb0e-ea3047982384',_binary ''),(6,'46532aef-6159-4800-ba74-308518741c4f',_binary ''),(7,'4c72ece6-bba7-41b5-b2bf-9c01340763de',_binary ''),(8,'79e6981d-369d-4ad1-bcdd-01ab085aa0da',_binary ''),(9,'7ecb6318-044e-4b69-8133-4b26b1d8a980',_binary ''),(10,'c3417234-e73d-412c-83f2-cdc2d75969db',_binary ''),(11,'e10e0048-4498-4f86-a478-0004a3ee31aa',_binary ''),(12,'f4a3d59d-1c18-4beb-9396-c55173bf2fc2',_binary ''),(13,'ff00dd10-6cd5-4482-a10b-505afeba427a',_binary '');
 /*!40000 ALTER TABLE `cart` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -120,14 +120,12 @@ CREATE TABLE `cart_item` (
   `cart_id` bigint NOT NULL,
   `book_id` bigint DEFAULT NULL,
   `quantity` int NOT NULL,
-  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
-  `deleted_at` timestamp NULL DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `cart_items_cart_fk` (`cart_id`),
   KEY `book_id` (`book_id`),
   CONSTRAINT `cart_item_ibfk_2` FOREIGN KEY (`book_id`) REFERENCES `book` (`id`),
   CONSTRAINT `cart_items_cart_fk` FOREIGN KEY (`cart_id`) REFERENCES `cart` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=28 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -136,6 +134,7 @@ CREATE TABLE `cart_item` (
 
 LOCK TABLES `cart_item` WRITE;
 /*!40000 ALTER TABLE `cart_item` DISABLE KEYS */;
+INSERT INTO `cart_item` VALUES (1,1,1,5),(2,2,1,5),(3,3,1,5),(4,4,1,5),(5,5,1,5),(6,6,1,5),(8,8,1,5),(9,9,1,5),(10,10,1,5),(11,11,1,5),(12,12,1,5),(13,13,1,5),(14,1,3,2),(15,2,3,2),(16,3,3,2),(17,4,3,2),(18,5,3,2),(19,6,3,2),(20,7,3,2),(21,8,3,2),(22,9,3,2),(23,10,3,2),(24,11,3,2),(25,12,3,2),(26,13,3,2),(27,7,1,5);
 /*!40000 ALTER TABLE `cart_item` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -508,7 +507,7 @@ CREATE TABLE `user` (
   `phone` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `address` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `image` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `active` bit(1) NOT NULL,
+  `active` tinyint(1) DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `username` (`username`),
   UNIQUE KEY `email` (`email`)
@@ -521,7 +520,7 @@ CREATE TABLE `user` (
 
 LOCK TABLES `user` WRITE;
 /*!40000 ALTER TABLE `user` DISABLE KEYS */;
-INSERT INTO `user` VALUES ('0d026e17-a295-4ed3-ba8b-eafa385a5e49','username2','$2a$10$VlhlUcFbcLwbNoW6DHAW1OtZav2C7dc5TjWAzFBn5Otuc5JizXLTO','username2@gmail.com','customer2',NULL,NULL,'/src/assets/img/avatar/sample-user-avatar.png',_binary ''),('30e8bca8-23a0-4c5e-bb60-d03b5e22c0f3','nhantce181298','$2a$10$Z9KhB1esZ.LAURnLdjqipuIITsXevaqimcbs27DP3ZnPngP0/sNOO','nhantce181298@fpt.edu.vn','Nha','','','/src/assets/img/avatar/sample-user-avatar.png',_binary ''),('337710c7-ff88-4d63-a3e5-64c1e40df725','admin','$2a$10$9sh9aq1DvE28Y1wno1bxp.ftwsp2URRtRcKVqoYQia7zRTi6nxHPi','admin@gmail.com','admin name','0123456789','admin address','/src/assets/img/avatar/admin-avatar.png',_binary ''),('424544a6-5fbf-4ec7-bb0e-ea3047982384','username1','$2a$10$9TpR3jt7WpLC69YXfbNn4.YaQvuv6hWJB8JMHt1tpgEhxL4hD9D5S','username1@gmail.com','customer1',NULL,NULL,'/src/assets/img/avatar/sample-user-avatar.png',_binary ''),('46532aef-6159-4800-ba74-308518741c4f','usernametaolao','$2a$10$V0UYLiJ2OUYrvsQm8Z7WLOxJGcNjjCrDhrt.E5khC7Q8GvZdT3HHi','mackereldaz@gmail.com',NULL,NULL,NULL,NULL,_binary ''),('4c72ece6-bba7-41b5-b2bf-9c01340763de','datnhce180797','$2a$10$IqKoS.RysSZPutaSIdXBvO.mtZejFSjznE24zRbDDEPLXGMp/cRj6','datnhce180797@fpt.edu.vn','Dat','0704716414','Can Tho','/src/assets/img/avatar/datnhce180797.png',_binary ''),('79e6981d-369d-4ad1-bcdd-01ab085aa0da','thinhhtce191706','$2a$10$C2lXQuIg8M19AqWrrEowRusyC5Tfi4fLmslzjn3rITGna1CQKc7mC','hotienthinh.ce191706@gmail.com','Thinh',NULL,NULL,'/src/assets/img/avatar/sample-user-avatar.png',_binary ''),('7ecb6318-044e-4b69-8133-4b26b1d8a980','username4','$2a$10$ZrQKDi09NgfHHHqZeULyRuH4SIL4PBoL1IAh2wkTOoE7fRMiDGVYK','username4@gmail.com','4',NULL,NULL,'/src/assets/img/avatar/sample-user-avatar.png',_binary ''),('c3417234-e73d-412c-83f2-cdc2d75969db','nhungpttce190544','$2a$10$K3sFC6wKIlv5Lf5R/VfzquXH81/i.siWPKtyEVDpO5REbPL/4.1tu','nhungptt.ce190544@gmail.com','Nhung',NULL,NULL,'/src/assets/img/avatar/sample-user-avatar.png',_binary ''),('f4a3d59d-1c18-4beb-9396-c55173bf2fc2','username3','$2a$10$3siUlCG6ftXKjld3HW8mgOJpyaccB6cwmVhy/JpoeuTX.eT416GR6','username3@gmail.com','customer3',NULL,NULL,'/src/assets/img/avatar/sample-user-avatar.png',_binary '\0'),('ff00dd10-6cd5-4482-a10b-505afeba427a','tuyenntnce190631','$2a$10$gLso5BVkRv7WRFtaz1eyfeLEWFGM2e0WreUwtqhTEFwLtD7TJpA1G','tuyenntn.ce190631@gmail.com','Tuyen',NULL,NULL,'/src/assets/img/avatar/sample-user-avatar.png',_binary '\0');
+INSERT INTO `user` VALUES ('0d026e17-a295-4ed3-ba8b-eafa385a5e49','username2','$2a$10$VlhlUcFbcLwbNoW6DHAW1OtZav2C7dc5TjWAzFBn5Otuc5JizXLTO','username2@gmail.com','customer2',NULL,NULL,'/src/assets/img/avatar/sample-user-avatar.png',1),('30e8bca8-23a0-4c5e-bb60-d03b5e22c0f3','nhantce181298','$2a$10$Z9KhB1esZ.LAURnLdjqipuIITsXevaqimcbs27DP3ZnPngP0/sNOO','nhantce181298@fpt.edu.vn','Nha','','','/src/assets/img/avatar/sample-user-avatar.png',1),('319ac3b6-69bf-43b8-8acf-7ac19c93eafe','deptrai1000','$2a$10$Vw1eCrixjsFhXZ/iQ/v00.wxParE2KE5Vah0WLZgOlOY.uEjDJeye','deptrai1000@gmail.com',NULL,NULL,NULL,NULL,0),('337710c7-ff88-4d63-a3e5-64c1e40df725','admin','$2a$10$9sh9aq1DvE28Y1wno1bxp.ftwsp2URRtRcKVqoYQia7zRTi6nxHPi','admin@gmail.com','admin name','0123456789','admin address','/src/assets/img/avatar/admin-avatar.png',1),('424544a6-5fbf-4ec7-bb0e-ea3047982384','username1','$2a$10$9TpR3jt7WpLC69YXfbNn4.YaQvuv6hWJB8JMHt1tpgEhxL4hD9D5S','username1@gmail.com','customer1',NULL,NULL,'/src/assets/img/avatar/sample-user-avatar.png',1),('46532aef-6159-4800-ba74-308518741c4f','usernametaolao','$2a$10$V0UYLiJ2OUYrvsQm8Z7WLOxJGcNjjCrDhrt.E5khC7Q8GvZdT3HHi','mackereldaz@gmail.com',NULL,NULL,NULL,NULL,1),('4c72ece6-bba7-41b5-b2bf-9c01340763de','datnhce180797','$2a$10$ASt2.QlfOcm6NKi66PqupOIC9UNwEfyRKTPZ6WnJ6zqX1eMqX8OMy','datnhce180797@fpt.edu.vn','Nguyen Hoang Dat','0704716414','Hau Giang','/src/assets/img/avatar/datnhce180797.png',1),('79e6981d-369d-4ad1-bcdd-01ab085aa0da','thinhhtce191706','$2a$10$C2lXQuIg8M19AqWrrEowRusyC5Tfi4fLmslzjn3rITGna1CQKc7mC','hotienthinh.ce191706@gmail.com','Thinh',NULL,NULL,'/src/assets/img/avatar/sample-user-avatar.png',1),('7ecb6318-044e-4b69-8133-4b26b1d8a980','username4','$2a$10$ZrQKDi09NgfHHHqZeULyRuH4SIL4PBoL1IAh2wkTOoE7fRMiDGVYK','username4@gmail.com','4',NULL,NULL,'/src/assets/img/avatar/sample-user-avatar.png',1),('c3417234-e73d-412c-83f2-cdc2d75969db','nhungpttce190544','$2a$10$K3sFC6wKIlv5Lf5R/VfzquXH81/i.siWPKtyEVDpO5REbPL/4.1tu','nhungptt.ce190544@gmail.com','Nhung',NULL,NULL,'/src/assets/img/avatar/sample-user-avatar.png',1),('e10e0048-4498-4f86-a478-0004a3ee31aa','deptrai100','$2a$10$PfNgtX9kA8mdg4eqvg.rDuJiV.Z9kKBp9VfH8Mp5.Fd/DPW0V9upi','deptrai100@gmail.com',NULL,NULL,NULL,NULL,0),('f4a3d59d-1c18-4beb-9396-c55173bf2fc2','username3','$2a$10$3siUlCG6ftXKjld3HW8mgOJpyaccB6cwmVhy/JpoeuTX.eT416GR6','username3@gmail.com','customer3',NULL,NULL,'/src/assets/img/avatar/sample-user-avatar.png',0),('ff00dd10-6cd5-4482-a10b-505afeba427a','tuyenntnce190631','$2a$10$gLso5BVkRv7WRFtaz1eyfeLEWFGM2e0WreUwtqhTEFwLtD7TJpA1G','tuyenntn.ce190631@gmail.com','Tuyen',NULL,NULL,'/src/assets/img/avatar/sample-user-avatar.png',0);
 /*!40000 ALTER TABLE `user` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -546,7 +545,7 @@ CREATE TABLE `user_role` (
 
 LOCK TABLES `user_role` WRITE;
 /*!40000 ALTER TABLE `user_role` DISABLE KEYS */;
-INSERT INTO `user_role` VALUES ('0d026e17-a295-4ed3-ba8b-eafa385a5e49','CUSTOMER'),('30e8bca8-23a0-4c5e-bb60-d03b5e22c0f3','STAFF'),('337710c7-ff88-4d63-a3e5-64c1e40df725','ADMIN'),('424544a6-5fbf-4ec7-bb0e-ea3047982384','CUSTOMER'),('46532aef-6159-4800-ba74-308518741c4f','CUSTOMER'),('4c72ece6-bba7-41b5-b2bf-9c01340763de','STAFF'),('79e6981d-369d-4ad1-bcdd-01ab085aa0da','STAFF'),('7ecb6318-044e-4b69-8133-4b26b1d8a980','CUSTOMER'),('c3417234-e73d-412c-83f2-cdc2d75969db','STAFF'),('f4a3d59d-1c18-4beb-9396-c55173bf2fc2','CUSTOMER'),('ff00dd10-6cd5-4482-a10b-505afeba427a','STAFF');
+INSERT INTO `user_role` VALUES ('0d026e17-a295-4ed3-ba8b-eafa385a5e49','CUSTOMER'),('30e8bca8-23a0-4c5e-bb60-d03b5e22c0f3','STAFF'),('319ac3b6-69bf-43b8-8acf-7ac19c93eafe','CUSTOMER'),('337710c7-ff88-4d63-a3e5-64c1e40df725','ADMIN'),('424544a6-5fbf-4ec7-bb0e-ea3047982384','CUSTOMER'),('46532aef-6159-4800-ba74-308518741c4f','CUSTOMER'),('4c72ece6-bba7-41b5-b2bf-9c01340763de','STAFF'),('79e6981d-369d-4ad1-bcdd-01ab085aa0da','STAFF'),('7ecb6318-044e-4b69-8133-4b26b1d8a980','CUSTOMER'),('c3417234-e73d-412c-83f2-cdc2d75969db','STAFF'),('e10e0048-4498-4f86-a478-0004a3ee31aa','CUSTOMER'),('f4a3d59d-1c18-4beb-9396-c55173bf2fc2','CUSTOMER'),('ff00dd10-6cd5-4482-a10b-505afeba427a','STAFF');
 /*!40000 ALTER TABLE `user_role` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -563,4 +562,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2025-11-04 14:40:33
+-- Dump completed on 2025-11-07 22:18:50
