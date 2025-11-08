@@ -115,17 +115,6 @@ public class BookController {
         return response;
     }
 
-<<<<<<< HEAD
-=======
-
-    @GetMapping("/active/search/{title}")
-    public APIResponse<List<BookResponse>> searchActiveBooksByTitle(@PathVariable("title") String title) {
-        APIResponse<List<BookResponse>> response;
-        response = bookService.searchActiveBooksByTitle(title);
-        return response;
-    }
->>>>>>> 7b80d4ecae2ec5b4c019e8daee851ef9a517b2f5
-
     @GetMapping("/active/search/{title}")
     public APIResponse<List<BookResponse>> searchActiveBooksByTitle(@PathVariable("title") String title) {
         APIResponse<List<BookResponse>> response;
