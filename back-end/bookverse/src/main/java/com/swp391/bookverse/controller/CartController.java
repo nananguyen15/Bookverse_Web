@@ -2,6 +2,7 @@ package com.swp391.bookverse.controller;
 
 import com.swp391.bookverse.dto.APIResponse;
 import com.swp391.bookverse.dto.request.AddToCartRequest;
+import com.swp391.bookverse.dto.request.CartItemUpdateRequest;
 import com.swp391.bookverse.dto.response.CartResponse;
 import com.swp391.bookverse.service.CartService;
 import lombok.AccessLevel;
@@ -44,7 +45,7 @@ public class CartController {
         return response;
     }
 
-    @PostMapping("/add-1-to-cart")
+    @PostMapping("/myCart/add-1-to-cart")
     public APIResponse<CartResponse> addToCart(@RequestBody AddToCartRequest request) {
         APIResponse<CartResponse> response = new APIResponse<>();
         CartResponse cartResponse = cartService.addOneToCart(request);
@@ -52,10 +53,26 @@ public class CartController {
         return response;
     }
 
-    @PostMapping("/remove-1-from-cart")
+    @PostMapping("/myCart/remove-1-from-cart")
     public APIResponse<CartResponse> removeFromCart(@RequestBody AddToCartRequest request) {
         APIResponse<CartResponse> response = new APIResponse<>();
         CartResponse cartResponse = cartService.removeOneFromCart(request);
+        response.setResult(cartResponse);
+        return response;
+    }
+
+    @PostMapping("/myCart/clear-an-item")
+    public APIResponse<CartResponse> clearAnItem(@RequestBody AddToCartRequest request) {
+        APIResponse<CartResponse> response = new APIResponse<>();
+        CartResponse cartResponse = cartService.clearAnItem(request);
+        response.setResult(cartResponse);
+        return response;
+    }
+
+    @PutMapping("myCart/update-item-quantity")
+    public APIResponse<CartResponse> updateItemQuantity(@RequestBody CartItemUpdateRequest request) {
+        APIResponse<CartResponse> response = new APIResponse<>();
+        CartResponse cartResponse = cartService.updateItemQuantity(request);
         response.setResult(cartResponse);
         return response;
     }

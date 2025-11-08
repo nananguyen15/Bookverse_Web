@@ -1,5 +1,6 @@
 package com.swp391.bookverse.service;
 
+import com.swp391.bookverse.dto.request.CartItemUpdateRequest;
 import com.swp391.bookverse.dto.response.CartResponse;
 import com.swp391.bookverse.entity.Cart;
 import com.swp391.bookverse.entity.CartItem;
@@ -173,4 +174,68 @@ public class CartService {
     }
 
 
+    /**
+     * Clear an item from current user's cart
+     * @param request
+     * @return CartResponse
+     */
+    public CartResponse clearAnItem(AddToCartRequest request) {
+        // Get current user from security context
+        var context = SecurityContextHolder.getContext();
+        String username = context.getAuthentication().getName();
+
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+
+        // Find active cart for user
+        Cart cart = cartRepository.findByUserIdAndActive(user.getId())
+                .orElseThrow(() -> new AppException(ErrorCode.CART_NOT_FOUND));
+
+        // Find the cart item
+        CartItem existingItem = cart.getCartItems().stream()
+                .filter(item -> item.getBook().getId().equals(request.getBookId()))
+                .findFirst()
+                .orElseThrow(() -> new AppException(ErrorCode.CART_ITEM_NOT_FOUND));
+
+        // Remove item
+        cart.removeCartItem(existingItem);
+
+        Cart savedCart = cartRepository.save(cart);
+        return cartMapper.toCartResponse(savedCart);
+    }
+
+    /**
+     * Update item quantity in current user's cart
+     * @param request
+     * @return CartResponse
+     */
+    public CartResponse updateItemQuantity(CartItemUpdateRequest request) {
+        // Get current user from security context
+        var context = SecurityContextHolder.getContext();
+        String username = context.getAuthentication().getName();
+
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+
+        // Find active cart for user
+        Cart cart = cartRepository.findByUserIdAndActive(user.getId())
+                .orElseThrow(() -> new AppException(ErrorCode.CART_NOT_FOUND));
+
+        // Find the cart item
+        CartItem existingItem = cart.getCartItems().stream()
+                .filter(item -> item.getBook().getId().equals(request.getBookId()))
+                .findFirst()
+                .orElseThrow(() -> new AppException(ErrorCode.CART_ITEM_NOT_FOUND));
+
+        // check if desired quantity exceed book stock
+        Book book = bookRepository.findById(request.getBookId())
+                .orElseThrow(() -> new AppException(ErrorCode.BOOK_NOT_FOUND));
+        if (book.getStockQuantity() < request.getQuantity()) {
+            throw new AppException(ErrorCode.EXCEED_STOCK);
+        }
+        // Update quantity
+        existingItem.setQuantity(request.getQuantity());
+        Cart savedCart = cartRepository.save(cart);
+        return cartMapper.toCartResponse(savedCart);
+    }
 }
