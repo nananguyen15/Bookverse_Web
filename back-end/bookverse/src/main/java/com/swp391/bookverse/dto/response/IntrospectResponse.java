@@ -14,4 +14,7 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE) // Set default access level for fields to private
 public class IntrospectResponse {
     boolean valid;
+    String username;
+    String id;
+    String role;
 }

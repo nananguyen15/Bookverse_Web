@@ -64,6 +64,9 @@ public class AuthenticationController {
                 .message(response.isValid() ? "Token valid" : "Token invalid")
                 .result(IntrospectResponse.builder()
                         .valid(response.isValid())
+                        .username(response.getUsername())
+                        .id(response.getId())
+                        .role(response.getRole())
                         .build())
                 .build();
     }

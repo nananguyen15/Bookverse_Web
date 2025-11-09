@@ -25,7 +25,7 @@ public enum ErrorCode {
 
     // Validation error codes for user entity
     USERNAME_INVALID(1004, "Username must be at least 3 characters long"),
-    PASSWORD_INVALID(1005, "Password must be at least 8 characters long"),
+    PASSWORD_INVALID(1005, "Password must be 8-16 characters long, including at least one uppercase letter, one lowercase letter, and one digit"),
     NAME_INVALID(1006, "Name must be at least 3 characters long"),
     EMAIL_INVALID(1007, "Invalid email address"),
     BIRTH_DATE_INVALID(1008, "Birth date must be in the past"),

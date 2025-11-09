@@ -18,6 +18,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.experimental.NonFinal;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -117,6 +118,10 @@ public class AuthenticationService {
 
         return IntrospectResponse.builder()
                 .valid(verified && expiryTime.after(new Date()))
+                .username(signedJWT.getJWTClaimsSet().getSubject())
+                .id(userRepository.findByUsername(signedJWT.getJWTClaimsSet().getSubject())
+                        .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND)).getId().toString())
+                .role(signedJWT.getJWTClaimsSet().getStringClaim("scope"))
                 .build();
     }
 }
