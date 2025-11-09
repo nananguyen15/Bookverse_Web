@@ -5,6 +5,8 @@ import com.swp391.bookverse.dto.request.UserCreationRequest;
 import com.swp391.bookverse.dto.request.UserUpdateRequest;
 import com.swp391.bookverse.dto.response.UserResponse;
 import com.swp391.bookverse.entity.User;
+import com.swp391.bookverse.exception.AppException;
+import com.swp391.bookverse.exception.ErrorCode;
 import com.swp391.bookverse.service.UserService;
 import jakarta.validation.Valid;
 import lombok.AccessLevel;
@@ -119,5 +121,20 @@ public class UserController {
     public UserResponse deleteUser(@PathVariable("userId") String userId) {
         return userService.changeActiveUserById(false, userId);
     }
+
+    @GetMapping("/id-by-email/{email}")
+    public APIResponse<String> getUserIdByEmail(@PathVariable("email") String email) {
+        APIResponse<String> response = new APIResponse<>();
+        String userId = userService.getUserIdByEmail(email);
+        if (userId == null) {
+            response.setCode(404);
+            response.setMessage("User not found.");
+            throw new AppException(ErrorCode.USER_NOT_FOUND);
+        } else {
+            response.setResult(userId);
+        }
+        return response;
+    }
+
 
 }

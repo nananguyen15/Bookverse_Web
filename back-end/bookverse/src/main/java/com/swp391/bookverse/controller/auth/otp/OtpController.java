@@ -4,6 +4,7 @@ import com.swp391.bookverse.dto.APIResponse;
 import com.swp391.bookverse.dto.request.auth.otp.SendByEmailRequest;
 // import com.swp391.bookverse.dto.request.auth.otp.SendForUserRequest;
 import com.swp391.bookverse.dto.request.auth.otp.VerifyRequest;
+import com.swp391.bookverse.dto.request.auth.otp.VerifyResetPasswordRequest;
 import com.swp391.bookverse.service.auth.otp.OtpService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -28,6 +29,11 @@ public class OtpController {
         return svc.sendOtpByEmail(req);
     }
 
+    @PostMapping("/send-by-email-reset-password")
+    public APIResponse<?> sendByEmailResetPassword(@RequestBody SendByEmailRequest req) {
+        return svc.sendOtpByEmailResetPassword(req);
+    }
+
 //    /**
 //     * Send OTP to email for a specific user and token type (default: LOGIN)
 //     * @param req
@@ -47,5 +53,10 @@ public class OtpController {
     @PostMapping("/verify")
     public ResponseEntity<?> verify(@RequestBody VerifyRequest req) {
         return ResponseEntity.ok(svc.verify(req));
+    }
+
+    @PostMapping("/verify-reset-password")
+    public ResponseEntity<?> verifyResetPassword(@RequestBody VerifyResetPasswordRequest req) {
+        return ResponseEntity.ok(svc.verifyResetPassword(req));
     }
 }

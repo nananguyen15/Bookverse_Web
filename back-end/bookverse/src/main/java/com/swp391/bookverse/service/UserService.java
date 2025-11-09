@@ -260,4 +260,21 @@ public class UserService {
 
         return userMapper.toUserResponse(userRepository.save(existingUser));
     }
+
+    public String getUserIdByEmail(String email) {
+        // Fetch the existing user by email
+        User existingUser = userRepository.findByEmail(email).orElse(null);
+
+        return existingUser != null ? existingUser.getId() : null;
+    }
+
+    public UserResponse changePassword(String userId, String newPassword) {
+        // Fetch the existing user by ID
+        User existingUser = userRepository.findById(userId).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+
+        // Encode the new password
+        existingUser.setPassword(passwordEncoder.encode(newPassword));
+
+        return userMapper.toUserResponse(userRepository.save(existingUser));
+    }
 }
