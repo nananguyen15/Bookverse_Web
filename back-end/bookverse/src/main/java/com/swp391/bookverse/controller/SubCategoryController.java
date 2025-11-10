@@ -58,9 +58,9 @@ public class SubCategoryController {
     }
 
     @PutMapping("/update/{subCategoryId}")
-    public APIResponse<SubCategoryResponse> ubdateSubCategory(@PathVariable("subCategoryId") Integer subCategoryId, SubCategoryCreationRequest request) {
+    public APIResponse<SubCategoryResponse> updateSubCategory(@PathVariable("subCategoryId") Integer subCategoryId, SubCategoryCreationRequest request) {
         APIResponse<SubCategoryResponse> response = new APIResponse<>();
-        response.setResult(subCategoryService.ubdateSubCategory(subCategoryId, request));
+        response.setResult(subCategoryService.updateSubCategory(subCategoryId, request));
         return response;
     }
 
@@ -75,6 +75,20 @@ public class SubCategoryController {
     public APIResponse<List<SubCategoryResponse>> getInactiveSubCategories() {
         APIResponse<List<SubCategoryResponse>> response = new APIResponse<>();
         response.setResult(subCategoryService.getInactiveSubCategories());
+        return response;
+    }
+
+    @PutMapping("/active/{subCategoryId}")
+    public APIResponse<SubCategoryResponse> activateSubCategory(@PathVariable("subCategoryId") Integer subCategoryId) {
+        APIResponse<SubCategoryResponse> response = new APIResponse<>();
+        response.setResult(subCategoryService.activateSubCategory(subCategoryId));
+        return response;
+    }
+
+    @PutMapping("/inactive/{subCategoryId}")
+    public APIResponse<SubCategoryResponse> deactivateSubCategory(@PathVariable("subCategoryId") Integer subCategoryId) {
+        APIResponse<SubCategoryResponse> response = new APIResponse<>();
+        response.setResult(subCategoryService.deactivateSubCategory(subCategoryId));
         return response;
     }
 }

@@ -85,7 +85,7 @@ public class SubCategoryService {
         return mapToSubCategoryResponse(subCategory);
     }
 
-    public SubCategoryResponse ubdateSubCategory(Integer subCategoryId, SubCategoryCreationRequest request) {
+    public SubCategoryResponse updateSubCategory(Integer subCategoryId, SubCategoryCreationRequest request) {
         SubCategory subCategory = subCategoryRepository.findById(Long.valueOf(subCategoryId))
                 .orElseThrow(() -> new AppException(ErrorCode.SUBCATEGORY_NOT_FOUND));
 
@@ -156,5 +156,21 @@ public class SubCategoryService {
         return subCategories.stream()
                 .map(this::mapToSubCategoryResponse)
                 .toList();
+    }
+
+    public SubCategoryResponse activateSubCategory(Integer subCategoryId) {
+        SubCategory subCategory = subCategoryRepository.findById(Long.valueOf(subCategoryId))
+                .orElseThrow(() -> new AppException(ErrorCode.SUBCATEGORY_NOT_FOUND));
+        subCategory.setActive(true);
+        subCategoryRepository.save(subCategory);
+        return mapToSubCategoryResponse(subCategory);
+    }
+
+    public SubCategoryResponse deactivateSubCategory(Integer subCategoryId) {
+        SubCategory subCategory = subCategoryRepository.findById(Long.valueOf(subCategoryId))
+                .orElseThrow(() -> new AppException(ErrorCode.SUBCATEGORY_NOT_FOUND));
+        subCategory.setActive(false);
+        subCategoryRepository.save(subCategory);
+        return mapToSubCategoryResponse(subCategory);
     }
 }
