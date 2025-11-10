@@ -238,4 +238,35 @@ public class CartService {
         Cart savedCart = cartRepository.save(cart);
         return cartMapper.toCartResponse(savedCart);
     }
+
+    public CartResponse addMultipleToCart(CartItemUpdateRequest request) {
+        // Get current user from security context
+        var context = SecurityContextHolder.getContext();
+        String username = context.getAuthentication().getName();
+
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+
+        // Find active cart for user
+        Cart cart = cartRepository.findByUserIdAndActive(user.getId())
+                .orElseThrow(() -> new AppException(ErrorCode.CART_NOT_FOUND));
+
+        // Find the cart item
+        CartItem existingItem = cart.getCartItems().stream()
+                .filter(item -> item.getBook().getId().equals(request.getBookId()))
+                .findFirst()
+                .orElseThrow(() -> new AppException(ErrorCode.CART_ITEM_NOT_FOUND));
+
+        // check if desired quantity exceed book stock
+        Book book = bookRepository.findById(request.getBookId())
+                .orElseThrow(() -> new AppException(ErrorCode.BOOK_NOT_FOUND));
+        int desiredTotal = existingItem.getQuantity() + request.getQuantity();
+        if (book.getStockQuantity() < desiredTotal) {
+            throw new AppException(ErrorCode.EXCEED_STOCK);
+        }
+        // Update quantity
+        existingItem.setQuantity(desiredTotal);
+        Cart savedCart = cartRepository.save(cart);
+        return cartMapper.toCartResponse(savedCart);
+    }
 }

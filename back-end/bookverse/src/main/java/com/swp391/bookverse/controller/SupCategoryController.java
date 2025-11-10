@@ -71,4 +71,19 @@ public class SupCategoryController {
         response.setResult(supCategoryService.getInactiveSupCategories());
         return response;
     }
+
+    @PutMapping("/active/{supCategoryId}")
+    public APIResponse<SupCategoryResponse> activateSupCategory(@PathVariable("supCategoryId") Integer supCategoryId) {
+        APIResponse<SupCategoryResponse> response = new APIResponse<>();
+        response.setResult(supCategoryService.activateSupCategory(supCategoryId));
+        return response;
+    }
+
+    @PutMapping("/inactive/{supCategoryId}")
+    public APIResponse<SupCategoryResponse> deactivateSupCategory(@PathVariable("supCategoryId") Integer supCategoryId) {
+        APIResponse<SupCategoryResponse> response = new APIResponse<>();
+        response.setResult(supCategoryService.deactivateSupCategory(supCategoryId));
+        return response;
+    }
+
 }

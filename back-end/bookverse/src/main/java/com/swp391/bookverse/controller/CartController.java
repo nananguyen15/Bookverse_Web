@@ -53,6 +53,14 @@ public class CartController {
         return response;
     }
 
+    @PostMapping("/myCart/add-multiple-to-cart")
+    public APIResponse<CartResponse> addMultipleToCart(@RequestBody CartItemUpdateRequest request) {
+        APIResponse<CartResponse> response = new APIResponse<>();
+        CartResponse cartResponse = cartService.addMultipleToCart(request);
+        response.setResult(cartResponse);
+        return response;
+    }
+
     @PostMapping("/myCart/remove-1-from-cart")
     public APIResponse<CartResponse> removeFromCart(@RequestBody AddToCartRequest request) {
         APIResponse<CartResponse> response = new APIResponse<>();

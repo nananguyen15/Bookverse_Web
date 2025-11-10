@@ -33,6 +33,9 @@ public class Payment {
     @Column(columnDefinition = "enum('PENDING', 'SUCCESS', 'FAILED') default 'PENDING'")
     private PaymentStatus status;
 
+    @Column(name = "amount")
+    private Double amount;
+
     @Column(name = "paid_at")
     private LocalDateTime paidAt;
 

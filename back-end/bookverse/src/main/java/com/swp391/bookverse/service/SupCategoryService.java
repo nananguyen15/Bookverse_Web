@@ -121,4 +121,30 @@ public class SupCategoryService {
                 .toList();
     }
 
+    /**
+     * Activate a sup category by its ID
+     * @param supCategoryId
+     * @return SupCategoryResponse
+     */
+    public SupCategoryResponse activateSupCategory(Integer supCategoryId) {
+        // find sup category by id or throw exception if not found
+        SupCategory supCategory = supCategoryRepository.findById(supCategoryId)
+                .orElseThrow(() -> new AppException(ErrorCode.SUP_CATEGORY_NOT_FOUND));
+        // activate sup category
+        supCategory.setActive(true);
+        // save activated sup category to repository
+        SupCategory activatedSupCategory = supCategoryRepository.save(supCategory);
+        return supCategoryMapper.toSupCategoryResponse(activatedSupCategory);
+    }
+
+    public SupCategoryResponse deactivateSupCategory(Integer supCategoryId) {
+        // find sup category by id or throw exception if not found
+        SupCategory supCategory = supCategoryRepository.findById(supCategoryId)
+                .orElseThrow(() -> new AppException(ErrorCode.SUP_CATEGORY_NOT_FOUND));
+        // deactivate sup category
+        supCategory.setActive(false);
+        // save deactivated sup category to repository
+        SupCategory deactivatedSupCategory = supCategoryRepository.save(supCategory);
+        return supCategoryMapper.toSupCategoryResponse(deactivatedSupCategory);
+    }
 }
