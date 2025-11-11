@@ -240,6 +240,11 @@ public class CartService {
     }
 
     public CartResponse addMultipleToCart(CartItemUpdateRequest request) {
+        // check if quantity is positive
+        if (request.getQuantity() <= 0) {
+            throw new AppException(ErrorCode.QUANTITY_INVALID);
+        }
+
         // Get current user from security context
         var context = SecurityContextHolder.getContext();
         String username = context.getAuthentication().getName();

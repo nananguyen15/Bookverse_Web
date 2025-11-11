@@ -16,7 +16,6 @@ public class PublisherUpdateRequest {
     @Column(nullable = false)
     String name;
     String address;
-    String image;
     @Column(nullable = false)
     Boolean active;
 }

@@ -1,6 +1,5 @@
 package com.swp391.bookverse.dto.request;
 
-import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
@@ -9,8 +8,7 @@ import lombok.experimental.FieldDefaults;
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class ReviewUpdateRequest {
-    Long bookId;
-    @NotBlank(message = "Comment must not be blank")
-    String comment;
+public class ReviewDeletionRequest {
+    String userId;
+    Long reviewId;
 }

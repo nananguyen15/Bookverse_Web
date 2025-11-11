@@ -116,12 +116,16 @@ public class AuthenticationService {
 
         var verified = signedJWT.verify(verifier);
 
+        boolean active = userRepository.findByUsername(signedJWT.getJWTClaimsSet().getSubject())
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND)).getIsActive();
+
         return IntrospectResponse.builder()
                 .valid(verified && expiryTime.after(new Date()))
                 .username(signedJWT.getJWTClaimsSet().getSubject())
                 .id(userRepository.findByUsername(signedJWT.getJWTClaimsSet().getSubject())
                         .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND)).getId().toString())
                 .role(signedJWT.getJWTClaimsSet().getStringClaim("scope"))
+                .active(active)
                 .build();
     }
 }

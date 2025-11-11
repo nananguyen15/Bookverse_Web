@@ -43,9 +43,10 @@ public class SecurityConfig {
 
     // Define endpoint access rules based on user roles and HTTP methods
 
-    String[] PUBLIC_POST_ENDPOINTS = {"api/auth/token", "api/auth/introspect", "api/users/create", "api/users/signup", "/api/otp/**"};
+    String[] PUBLIC_POST_ENDPOINTS = {"api/auth/token", "api/auth/introspect", "api/users/create", "api/users/signup", "api/otp/**"};
     String[] PUBLIC_GET_ENDPOINTS = {"api/users/id-by-email/**","api/users/myInfo","api/users/is-active/**","api/authors/**", "api/books/**",
-            "api/publishers/**", "api/sup-categories/**", "api/sub-categories/**", "api/cart/myCart", "api/payments/create", "api/payments/**", "api/payments/vnpay-return/**"};
+            "api/publishers/**", "api/sup-categories/**", "api/sub-categories/**", "api/cart/myCart", "api/payments/create", "api/payments/**",
+            "api/payments/vnpay-return/**", "api/reviews/**"};
     String[] PUBLIC_PUT_ENDPOINTS = {"api/users/myInfo"};
 
     String[] ADMIN_GET_ENDPOINTS = {"api/users/**"};
@@ -57,6 +58,11 @@ public class SecurityConfig {
     String[] STAFF_POST_ENDPOINTS = {""};
     String[] STAFF_PUT_ENDPOINTS = {""};
     String[] STAFF_DELETE_ENDPOINTS = {""};
+
+    String[] CUSTOMER_GET_ENDPOINTS = {""};
+    String[] CUSTOMER_POST_ENDPOINTS = {"api/reviews/**"};
+    String[] CUSTOMER_PUT_ENDPOINTS = {""};
+    String[] CUSTOMER_DELETE_ENDPOINTS = {""};
 
     /**
      * Configures the security filter chain for the application.

@@ -67,6 +67,11 @@ public enum ErrorCode {
     NO_CARTS_STORED(8003, "No carts stored in database"),
     EXCEED_STOCK(8004, "Requested quantity exceeds available stock"),
     PRODUCT_OUT_OF_STOCK(8005, "Product is out of stock"),
+    QUANTITY_INVALID(8006, "Quantity must be at least 1"),
+
+    // custom error codes for review entity
+    REVIEW_ALREADY_EXISTS(9001, "Review already exists for this user and book"),
+    REVIEW_NOT_FOUND(9002, "Review not found"),
 
     INVALID_KEY(99999, "Invalid message key provided")
     ;

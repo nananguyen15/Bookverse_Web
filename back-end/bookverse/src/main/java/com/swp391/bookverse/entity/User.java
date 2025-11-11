@@ -37,4 +37,8 @@ public class User {
     @CollectionTable(name = "user_role", joinColumns = @JoinColumn(name = "user_id"))
     @Column(name = "role")
     Set<String> roles;
+
+    public boolean getIsActive() {
+        return active;
+    }
 }

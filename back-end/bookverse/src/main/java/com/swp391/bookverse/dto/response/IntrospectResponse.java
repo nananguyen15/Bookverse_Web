@@ -17,4 +17,5 @@ public class IntrospectResponse {
     String username;
     String id;
     String role;
+    Boolean active;
 }

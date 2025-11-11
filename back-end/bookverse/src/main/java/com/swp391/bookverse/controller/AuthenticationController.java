@@ -67,6 +67,7 @@ public class AuthenticationController {
                         .username(response.getUsername())
                         .id(response.getId())
                         .role(response.getRole())
+                        .active(response.getActive())
                         .build())
                 .build();
     }
