@@ -74,6 +74,7 @@ public enum ErrorCode {
     // custom error codes for review entity
     REVIEW_ALREADY_EXISTS(9001, "Review already exists for this user and book"),
     REVIEW_NOT_FOUND(9002, "Review not found"),
+<<<<<<< HEAD
 
     // custom error codes for file upload
     INVALID_FILE_TYPE(10001, "File must be an image"),
@@ -81,6 +82,8 @@ public enum ErrorCode {
     INVALID_FILE_NAME(10003, "Invalid file name"),
     FILE_UPLOAD_FAILED(10004, "File upload failed"),
 
+=======
+>>>>>>> 544ae1a45056549dbbfcdd8d96b4ab4c07fd1e8f
 
     INVALID_KEY(99999, "Invalid message key provided")
     ;
