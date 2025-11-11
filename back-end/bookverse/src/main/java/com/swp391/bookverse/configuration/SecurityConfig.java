@@ -43,17 +43,11 @@ public class SecurityConfig {
 
     // Define endpoint access rules based on user roles and HTTP methods
 
-<<<<<<< HEAD
     String[] PUBLIC_POST_ENDPOINTS = {"api/auth/token", "api/auth/introspect", "api/users/create", "api/users/signup", "api/otp/**"};
     String[] PUBLIC_GET_ENDPOINTS = {"api/users/id-by-email/**","api/users/myInfo","api/users/is-active/**","api/authors/**", "api/books/**",
             "api/publishers/**", "api/sup-categories/**", "api/sub-categories/**", "api/cart/myCart", "api/payments/create", "api/payments/**",
             "api/payments/vnpay-return/**", "api/reviews/**"};
     String[] PUBLIC_PUT_ENDPOINTS = {"api/users/myInfo", "api/users/change-my-password"};
-=======
-    String[] PUBLIC_POST_ENDPOINTS = {"api/auth/token", "api/auth/introspect", "api/users/create", "api/users/signup", "/api/otp/**"};
-    String[] PUBLIC_GET_ENDPOINTS = {"api/users/id-by-email/**","api/users/myInfo","api/users/is-active/**","api/authors/**", "api/books/**", "api/publishers/**", "api/sup-categories/**", "api/sub-categories/**", "api/cart/myCart"};
-    String[] PUBLIC_PUT_ENDPOINTS = {"api/users/myInfo"};
->>>>>>> f66269b04ff8ccd44de48e94f3dc5e57a3c887da
 
     String[] ADMIN_GET_ENDPOINTS = {"api/users/**"};
     String[] ADMIN_POST_ENDPOINTS = {"api/authors/**", "api/books/**", "api/publishers/**", "api/sup-categories/**", "/api/sub-categories/**"};
