@@ -81,6 +81,7 @@ public enum ErrorCode {
     INVALID_FILE_NAME(10003, "Invalid file name"),
     FILE_UPLOAD_FAILED(10004, "File upload failed"),
 
+
     INVALID_KEY(99999, "Invalid message key provided")
     ;
 
