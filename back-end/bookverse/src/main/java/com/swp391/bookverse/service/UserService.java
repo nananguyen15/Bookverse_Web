@@ -1,5 +1,6 @@
 package com.swp391.bookverse.service;
 
+import com.swp391.bookverse.dto.request.UserChangePassWordRequest;
 import com.swp391.bookverse.dto.request.UserCreationRequest;
 import com.swp391.bookverse.dto.request.UserUpdateRequest;
 import com.swp391.bookverse.dto.response.UserResponse;
@@ -141,8 +142,8 @@ public class UserService {
 
         userMapper.updateUser(request, existingUser);
 
-        // encoding password
-        existingUser.setPassword(passwordEncoder.encode(existingUser.getPassword()));
+//        // encoding password
+//        existingUser.setPassword(passwordEncoder.encode(existingUser.getPassword()));
 
         return userMapper.toUserResponse(userRepository.save(existingUser));
     }
@@ -277,4 +278,27 @@ public class UserService {
 
         return userMapper.toUserResponse(userRepository.save(existingUser));
     }
+
+    public Boolean changeMyPassword(UserChangePassWordRequest request) {
+        // Get the username of the currently authenticated user
+        var context = SecurityContextHolder.getContext();
+        String contextName = context.getAuthentication().getName();
+        // Fetch a user by username from the repository
+        User existingUser = userRepository.findByUsername(contextName).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+
+        // Check if the old password matches
+        if (!passwordEncoder.matches(request.getOldPassword(), existingUser.getPassword())) {
+            throw new AppException(ErrorCode.INVALID_OLD_PASSWORD);
+        }
+
+        // check if the old password is the same as the new password
+        if (passwordEncoder.matches(request.getNewPassword(), existingUser.getPassword())) {
+            throw new AppException(ErrorCode.SAME_OLD_NEW_PASSWORD);
+        }
+        // Encode the new password and update
+        existingUser.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(existingUser);
+        return true;
+    }
+
 }

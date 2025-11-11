@@ -22,6 +22,7 @@ public enum ErrorCode {
     USER_NOT_FOUND(1002, "User not found"),
     NO_USERS_STORED(1003, "No users stored in database"),
     EMAIL_ALREADY_EXISTS(1010, "Email already exists"),
+    SAME_OLD_NEW_PASSWORD(1012, "New password must be different from old password"),
 
     // Validation error codes for user entity
     USERNAME_INVALID(1004, "Username must be at least 3 characters long"),
@@ -30,6 +31,7 @@ public enum ErrorCode {
     EMAIL_INVALID(1007, "Invalid email address"),
     BIRTH_DATE_INVALID(1008, "Birth date must be in the past"),
     ROLE_NOT_FOUND(1009, "Role not found"),
+    INVALID_OLD_PASSWORD(1011, "Old password is incorrect"),
 
     // Custom error codes for author entity
     AUTHOR_EXISTS(2001, "Author already exists"),

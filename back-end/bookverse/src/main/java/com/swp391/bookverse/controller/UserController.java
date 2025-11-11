@@ -1,6 +1,7 @@
 package com.swp391.bookverse.controller;
 
 import com.swp391.bookverse.dto.APIResponse;
+import com.swp391.bookverse.dto.request.UserChangePassWordRequest;
 import com.swp391.bookverse.dto.request.UserCreationRequest;
 import com.swp391.bookverse.dto.request.UserUpdateRequest;
 import com.swp391.bookverse.dto.response.UserResponse;
@@ -12,6 +13,7 @@ import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -67,6 +69,18 @@ public class UserController {
     @PutMapping("/myInfo")
     public UserResponse updateMyInfo(@RequestBody @Valid UserUpdateRequest request) {
         return userService.updateMyInfo(request);
+    }
+
+    @PutMapping("/change-my-password")
+    public APIResponse<?> changeMyPassword(@RequestBody UserChangePassWordRequest request) {
+        boolean changeSucess = userService.changeMyPassword(request);
+        if (changeSucess) {
+            APIResponse<?> response = new APIResponse<>();
+            response.setMessage("Password changed successfully.");
+            return response;
+        } else {
+            throw new AppException(ErrorCode.BAD_REQUEST);
+        }
     }
 
     @PutMapping("/update/{userId}")

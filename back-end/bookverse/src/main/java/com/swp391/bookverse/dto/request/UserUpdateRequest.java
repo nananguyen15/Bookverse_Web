@@ -23,9 +23,9 @@ public class UserUpdateRequest {
 //    String username;
 
     // Password must has at least one uppercase letter, one lowercase letter, one digit. Only allows letters, numbers, and underscores
-    @Pattern(regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)[a-zA-Z0-9_]+$", message = "PASSWORD_INVALID")
-    @Size(min = 8, max = 16, message = "PASSWORD_INVALID")
-    String password;
+//    @Pattern(regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)[a-zA-Z0-9_]+$", message = "PASSWORD_INVALID")
+//    @Size(min = 8, max = 16, message = "PASSWORD_INVALID")
+//    String password;
 //    @Email(message = "EMAIL_INVALID")
 //    String email;
     @Size(max = 255, message = "FULLNAME_INVALID")
