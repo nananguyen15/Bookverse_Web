@@ -212,12 +212,6 @@ export function SignUp() {
               <p className="mt-1 text-sm text-red-500">{errors.password}</p>
             )}
           </div>
-          <div className="flex items-center mb-6">
-          
-          </div>
-          {errors.agreed && (
-            <p className="mb-4 text-sm text-red-500">{errors.agreed}</p>
-          )}
           <button
             type="submit"
             disabled={isLoading}
@@ -226,10 +220,7 @@ export function SignUp() {
             {isLoading ? "Creating Account..." : "Create account"}
           </button>
         </form>
-
-        <div className="my-6 text-center text-beige-500">Or register with</div>
-
-        <p className="mt-8 text-center text-beige-700">
+        <p className="text-center text-beige-700">
           Already have an account?{" "}
           <Link to="/signin" className="font-semibold hover:underline">
             Log in
