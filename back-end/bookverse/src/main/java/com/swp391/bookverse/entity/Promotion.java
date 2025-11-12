@@ -6,28 +6,30 @@ import lombok.experimental.FieldDefaults;
 
 import java.time.LocalDate;
 
-/**
- * @Author huangdat
- */
-
-@Data
 @Entity
-@Builder
-@AllArgsConstructor
+@Table(name = "promotion")
+@Getter
+@Setter
 @NoArgsConstructor
+@AllArgsConstructor
+@Builder
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class Promotion {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long id;
 
-    @Lob
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "TINYTEXT")
     String content;
 
     Integer percentage;
+
+    @Column(name = "start_date", nullable = false)
+    LocalDate startDate;
+
+    @Column(name = "end_date", nullable = false)
+    LocalDate endDate;
+
     @Column(nullable = false)
-    String type;
-    @Column(nullable = false)
-    LocalDate promotionDay;
+    Boolean active;
 }

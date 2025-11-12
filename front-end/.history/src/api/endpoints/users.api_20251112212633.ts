@@ -188,18 +188,6 @@ export const usersApi = {
     await apiClient.put(`${USERS_ENDPOINT}/change-my-password`, data);
   },
 
-  // PUT change password by userId (admin or forgot password flow)
-  changePasswordByUserId: async (
-    userId: string,
-    newPassword: string
-  ): Promise<User> => {
-    const response = await apiClient.put<ApiResponse<User>>(
-      `${USERS_ENDPOINT}/change-password/${userId}`,
-      { newPassword }
-    );
-    return response.data.result;
-  },
-
   // PUT activate user - correct endpoint
   activate: async (userId: string): Promise<User> => {
     const response = await apiClient.put<ApiResponse<User>>(

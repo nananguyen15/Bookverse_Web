@@ -85,7 +85,7 @@ export function VerifyEmail() {
         tokenType: "LOGIN",
       });
 
-      console.log("✓ Email verified successfully");
+      console.log("Email verified successfully");
       alert(
         `Email verified successfully! Welcome ${username}! You can now sign in.`
       );
@@ -124,7 +124,7 @@ export function VerifyEmail() {
         tokenType: "LOGIN",
       });
 
-      console.log("✓ OTP resent to email:", email);
+      console.log("OTP resent to email:", email);
       alert(`A new OTP has been sent to ${email}`);
 
       // Reset timers
@@ -174,7 +174,7 @@ export function VerifyEmail() {
         <h1 className="mb-4 text-3xl font-bold font-heading">
           Verify Your Email
         </h1>
-        <p className="mb-2 text-beige-600">We've sent a 6-digit OTP code to</p>
+        <p className="mb-2 text-beige-400">We've sent a 6-digit OTP code to</p>
         <p className="mb-6 font-semibold text-beige-800">{email}</p>
 
         {timeLeft > 0 ? (

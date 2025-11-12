@@ -83,44 +83,28 @@ export const usersApi = {
     return response.data.result;
   },
 
-  // POST create user (admin) - with image upload support
+  // POST create user (admin) - JSON only (no image upload in create)
   create: async (
     data: Partial<User> & {
-      password?: string;
-      roles?: string[];
-      imageFile?: File;
+      password: string;
     }
   ): Promise<User> => {
-    const formData = new FormData();
+    // Backend now accepts JSON body with UserCreationRequest
+    const requestBody = {
+      username: data.username,
+      password: data.password,
+      email: data.email,
+      name: data.name,
+      phone: data.phone,
+      address: data.address,
+      birthDate: data.birthDate,
+      image: data.image, // Can pass image URL/path as string
+      active: data.active !== undefined ? data.active : true,
+    };
 
-    // Add text fields
-    if (data.username) formData.append("username", data.username);
-    if (data.password) formData.append("password", data.password);
-    if (data.email) formData.append("email", data.email);
-    if (data.name) formData.append("name", data.name);
-    if (data.phone) formData.append("phone", data.phone);
-    if (data.address) formData.append("address", data.address);
-    if (data.active !== undefined)
-      formData.append("active", String(data.active));
-
-    // Add roles
-    if (data.roles && data.roles.length > 0) {
-      data.roles.forEach((role) => formData.append("roles", role));
-    }
-
-    // Add image - either file or URL string
-    if (data.imageFile) {
-      // File upload
-      formData.append("image", data.imageFile);
-    } else if (data.image) {
-      // URL/path string
-      formData.append("imageUrl", data.image);
-    }
-
-    // Don't set Content-Type - let browser set it with boundary
     const response = await apiClient.post<ApiResponse<User>>(
       `${USERS_ENDPOINT}/create`,
-      formData
+      requestBody
     );
     return response.data.result;
   },
@@ -154,11 +138,20 @@ export const usersApi = {
     return response.data.result;
   },
 
-  // PUT update my info
+  // PUT update my info - JSON only (UserUpdateRequest)
   updateMyInfo: async (data: Partial<User>): Promise<User> => {
+    // Backend accepts UserUpdateRequest (JSON) - no password field
+    const requestBody = {
+      name: data.name,
+      phone: data.phone,
+      address: data.address,
+      birthDate: data.birthDate,
+      image: data.image, // Can pass image URL/path as string
+    };
+
     const response = await apiClient.put<ApiResponse<User>>(
       `${USERS_ENDPOINT}/myInfo`,
-      data
+      requestBody
     );
     return response.data.result;
   },
@@ -171,11 +164,10 @@ export const usersApi = {
     return response.data.result;
   },
 
-  // PUT change role
-  changeRole: async (userId: string, role: string): Promise<User> => {
+  // PUT change role - toggles between CUSTOMER and STAFF
+  changeRole: async (userId: string): Promise<User> => {
     const response = await apiClient.put<ApiResponse<User>>(
-      `${USERS_ENDPOINT}/change-role/${userId}`,
-      { role }
+      `${USERS_ENDPOINT}/change-role/${userId}`
     );
     return response.data.result;
   },
@@ -186,18 +178,6 @@ export const usersApi = {
     newPassword: string;
   }): Promise<void> => {
     await apiClient.put(`${USERS_ENDPOINT}/change-my-password`, data);
-  },
-
-  // PUT change password by userId (admin or forgot password flow)
-  changePasswordByUserId: async (
-    userId: string,
-    newPassword: string
-  ): Promise<User> => {
-    const response = await apiClient.put<ApiResponse<User>>(
-      `${USERS_ENDPOINT}/change-password/${userId}`,
-      { newPassword }
-    );
-    return response.data.result;
   },
 
   // PUT activate user - correct endpoint

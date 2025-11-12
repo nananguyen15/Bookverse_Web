@@ -39,12 +39,19 @@ public class BookController {
             @RequestParam(value = "image", required = false) MultipartFile imageFile,
             @RequestParam(value = "imageUrl", required = false) String imageUrl,
             @RequestParam(value = "active", defaultValue = "true") boolean active) {
-        
+
         APIResponse<Book> response;
-        response = bookService.createBook(title, description, price, authorId, publisherId, 
+        response = bookService.createBook(title, description, price, authorId, publisherId,
                                          categoryId, stockQuantity, publishedDate, imageFile, imageUrl, active);
         return response;
     }
+
+//    @PostMapping("/create")
+//    public APIResponse<Book> createBook(@ModelAttribute @Valid BookCreationRequest request) {
+//        APIResponse<Book> response;
+//        response = bookService.createBook(request);
+//        return response;
+//    }
 
     @GetMapping
     public APIResponse<List<BookResponse>> getBooks(){
@@ -120,10 +127,17 @@ public class BookController {
             @RequestParam(value = "publishedDate", required = false) String publishedDate,
             @RequestParam(value = "image", required = false) MultipartFile imageFile,
             @RequestParam(value = "imageUrl", required = false) String imageUrl) {
-        
+
         return bookService.updateBook(bookId, title, description, price, authorId, publisherId,
                                      categoryId, stockQuantity, publishedDate, imageFile, imageUrl);
     }
+
+//    @PutMapping("/update/{bookId}")
+//    public BookResponse updateBook(
+//            @PathVariable("bookId") Long bookId,
+//            @RequestBody BookUpdateRequest request) {
+//        return bookService.updateBook(bookId, request);
+//    }
 
     @PutMapping("/active/{bookId}")
     public APIResponse<BookActiveResponse> restoreBook(@PathVariable("bookId") Long bookId) {

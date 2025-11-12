@@ -33,11 +33,8 @@ const PUBLIC_AUTH_ENDPOINTS = [
   "/auth/token",
   "/auth/refresh",
   "/users/signup",
-  "/users/id-by-email",
   "/otp/send-by-email",
-  "/otp/send-by-email-reset-password",
   "/otp/verify",
-  "/otp/verify-reset-password",
 ];
 
 // Request interceptor - Add auth token only for protected endpoints

@@ -33,28 +33,20 @@ const PUBLIC_AUTH_ENDPOINTS = [
   "/auth/token",
   "/auth/refresh",
   "/users/signup",
-  "/users/id-by-email",
   "/otp/send-by-email",
-  "/otp/send-by-email-reset-password",
   "/otp/verify",
-  "/otp/verify-reset-password",
 ];
 
 // Request interceptor - Add auth token only for protected endpoints
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    // Check if this is a public auth endpoint (login, signup, OTP)
-    const isPublicAuthEndpoint = PUBLIC_AUTH_ENDPOINTS.some((endpoint) =>
-      config.url?.startsWith(endpoint)
-    );
-
-    // Check if this is a public GET request (books, authors, etc.)
+    // Public endpoints only apply to GET requests
     const isPublicGetRequest =
       config.method?.toUpperCase() === "GET" &&
-      PUBLIC_GET_ENDPOINTS.some((endpoint) => config.url?.startsWith(endpoint));
+      PUBLIC_ENDPOINTS.some((endpoint) => config.url?.startsWith(endpoint));
 
-    // Only add token if NOT a public endpoint
-    if (!isPublicAuthEndpoint && !isPublicGetRequest) {
+    // Add token for all non-public requests (POST, PUT, DELETE or protected GET)
+    if (!isPublicGetRequest) {
       const token = localStorage.getItem("token");
       if (token && config.headers) {
         config.headers.Authorization = `Bearer ${token}`;

@@ -10,7 +10,6 @@ export function SignUp() {
     username: "",
     email: "",
     password: "",
-    agreed: false,
   });
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [showPassword, setShowPassword] = useState(false);
@@ -50,21 +49,25 @@ export function SignUp() {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log("🔍 SignUp button clicked!");
+    console.log("📝 Form data:", formData);
+
     const newErrors: { [key: string]: string } = {};
 
     newErrors.username = validateUsername(formData.username);
     newErrors.email = validateEmail(formData.email);
     newErrors.password = validatePassword(formData.password);
-    if (!formData.agreed) newErrors.agreed = "You must agree to the terms.";
 
     // Remove empty errors
     Object.keys(newErrors).forEach((key) => {
       if (!newErrors[key]) delete newErrors[key];
     });
 
+    console.log("❌ Validation errors:", newErrors);
     setErrors(newErrors);
 
     if (Object.keys(newErrors).length === 0) {
+      console.log("✅ Validation passed! Calling API...");
       setIsLoading(true);
       try {
         // Call backend API to sign up
@@ -76,7 +79,8 @@ export function SignUp() {
 
         console.log("✓ User registered successfully:", user);
 
-        // Send OTP to email
+        // Send OTP to email (this may take 30-60 seconds)
+        console.log("📧 Sending OTP email... (this may take up to 60 seconds)");
         try {
           await authApi.sendOTP({
             email: formData.email,
@@ -212,13 +216,21 @@ export function SignUp() {
               <p className="mt-1 text-sm text-red-500">{errors.password}</p>
             )}
           </div>
+
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full py-3 font-semibold text-white transition-colors rounded-lg bg-beige-700 hover:bg-beige-800 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full px-4 py-2 font-semibold text-white transition-colors rounded-lg bg-beige-800 hover:bg-beige-900 disabled:bg-beige-400 disabled:cursor-not-allowed"
           >
-            {isLoading ? "Creating Account..." : "Create account"}
+            {isLoading ? "Creating Account..." : "Create Account"}
           </button>
+          
+          {/* Loading message for OTP email */}
+          {isLoading && (
+            <p className="text-center text-sm text-beige-600 mt-2">
+              ⏳ Please wait... Sending verification email may take up to 60 seconds
+            </p>
+          )}
         </form>
         <p className="text-center text-beige-700">
           Already have an account?{" "}

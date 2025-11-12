@@ -122,17 +122,17 @@ export const authApi = {
     tokenType: string;
     newPassword: string;
   }): Promise<void> => {
-    // Backend has dedicated endpoint that verifies OTP and resets password in one call
-    const response = await apiClient.post<ApiResponse<void>>(
-      `${OTP_ENDPOINT}/verify-reset-password`,
-      {
-        userId: data.userId,
-        email: data.email,
-        code: data.code,
-        tokenType: data.tokenType,
-        newPassword: data.newPassword,
-      }
-    );
-    return response.data.result;
+    // Step 1: Verify OTP first
+    await authApi.verifyOTP({
+      userId: data.userId,
+      email: data.email,
+      code: data.code,
+      tokenType: data.tokenType,
+    });
+
+    // Step 2: If OTP is valid, change password using usersApi
+    // Import usersApi inline to avoid circular dependency
+    const { usersApi } = await import("./users.api");
+    await usersApi.changePasswordByUserId(data.userId, data.newPassword);
   },
 };

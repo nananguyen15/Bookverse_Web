@@ -42,11 +42,18 @@ public class UserController {
             @RequestParam(value = "imageUrl", required = false) String imageUrl,
             @RequestParam(value = "active", defaultValue = "true") boolean active,
             @RequestParam(value = "roles", required = false) List<String> roles) {
-        
+
         APIResponse<User> response = new APIResponse<>();
         response.setResult(userService.createUser(username, password, email, name, phone, address, imageFile, imageUrl, active, roles));
         return response;
     }
+
+//    @PostMapping("/create")
+//    public APIResponse<User> createUser(@RequestBody @Valid UserCreationRequest request) {
+//        APIResponse<User> response = new APIResponse<>();
+//        response.setResult(userService.createUser(request));
+//        return response;
+//    }
 
     @GetMapping
     public APIResponse<List<UserResponse>> getUsers(){

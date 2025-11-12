@@ -82,7 +82,7 @@ public class AuthenticationService {
                 .issuer("http://localhost:8080/bookverse")
                 .issueTime(new Date())
                 .expirationTime(new Date(
-                        Instant.now().plus(1, ChronoUnit.HOURS).toEpochMilli()
+                        Instant.now().plus(24, ChronoUnit.HOURS).toEpochMilli()
                 ))
                 .claim("scope", String.join(" ", roles))
                 .build();

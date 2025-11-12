@@ -34,16 +34,23 @@ public class AuthorController {
             @RequestParam(value = "image", required = false) MultipartFile imageFile,
             @RequestParam(value = "imageUrl", required = false) String imageUrl,
             @RequestParam(value = "active", defaultValue = "true") boolean active) {
-        
+
         System.out.println("📥 Create author request received");
         System.out.println("   Name: " + name);
         System.out.println("   Image file: " + (imageFile != null ? imageFile.getOriginalFilename() : "null"));
         System.out.println("   Image URL: " + imageUrl);
-        
+
         APIResponse<Author> response = new APIResponse<>();
         response.setResult(authorService.createAuthor(name, bio, imageFile, imageUrl, active));
         return response;
     }
+
+//    @PostMapping("/create")
+//    public APIResponse<Author> createAuthor(@Valid @RequestBody AuthorCreationRequest request) {
+//        APIResponse<Author> response = new APIResponse<>();
+//        response.setResult(authorService.createAuthor(request));
+//        return response;
+//    }
 
     @GetMapping
     public APIResponse<List<AuthorResponse>> getAuthors(){
@@ -79,14 +86,21 @@ public class AuthorController {
             @RequestParam(value = "image", required = false) MultipartFile imageFile,
             @RequestParam(value = "imageUrl", required = false) String imageUrl,
             @RequestParam(value = "active", required = false) Boolean active) {
-        
+
         System.out.println("📥 Update author request received for ID: " + authorId);
         System.out.println("   Name: " + name);
         System.out.println("   Image file: " + (imageFile != null ? imageFile.getOriginalFilename() : "null"));
         System.out.println("   Image URL: " + imageUrl);
-        
+
         return authorService.updateAuthor(authorId, name, bio, imageFile, imageUrl, active);
     }
+
+//    @PutMapping("/update/{authorId}")
+//    public AuthorResponse updateAuthor(
+//            @PathVariable("authorId") Long authorId,
+//            @Valid @RequestBody AuthorUpdateRequest authorUpdateRequest) {
+//        return authorService.updateAuthor(authorId, authorUpdateRequest);
+//    }
 
     @PutMapping("/active/{authorId}")
     public AuthorActiveResponse restoreAuthor(@PathVariable("authorId") Long authorId) {

@@ -85,7 +85,7 @@ export const authApi = {
   // Send OTP for reset password (forgot password flow)
   sendOTPResetPassword: async (data: SendOTPRequest): Promise<void> => {
     const response = await apiClient.post<ApiResponse<void>>(
-      `${OTP_ENDPOINT}/send-by-email-reset-password`,
+      `${OTP_ENDPOINT}/send-by-email`,
       {
         email: data.email,
         tokenType: "RESET_PASSWORD",
@@ -110,28 +110,6 @@ export const authApi = {
     const response = await apiClient.post<ApiResponse<void>>(
       `${AUTH_ENDPOINT}/reset-password`,
       data
-    );
-    return response.data.result;
-  },
-
-  // Verify OTP and Reset Password (combined for forgot password flow)
-  verifyAndResetPassword: async (data: {
-    userId: string;
-    email: string;
-    code: string;
-    tokenType: string;
-    newPassword: string;
-  }): Promise<void> => {
-    // Backend has dedicated endpoint that verifies OTP and resets password in one call
-    const response = await apiClient.post<ApiResponse<void>>(
-      `${OTP_ENDPOINT}/verify-reset-password`,
-      {
-        userId: data.userId,
-        email: data.email,
-        code: data.code,
-        tokenType: data.tokenType,
-        newPassword: data.newPassword,
-      }
     );
     return response.data.result;
   },
