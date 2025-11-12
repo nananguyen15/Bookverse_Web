@@ -1,0 +1,53 @@
+server:
+  port: 8080
+  servlet:
+    context-path: /bookverse
+
+spring:
+  datasource:
+    url: "jdbc:mysql://localhost:3306/book_store"
+    username: root
+    password: root
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: datnh.work@gmail.com
+    password: ahnw uusy hmid ghta
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+    from: noreply@bookverse.app
+
+jwt:
+  signerKey: quadeptrai8hIrNT3QZjFzSdzZ3YvFWhQyoV4HnOrMbcsrIKMgHMlVctgWscP2zi
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs        # OpenAPI JSON path (default)
+  swagger-ui:
+    path: /docs               # UI entry path (redirects to /swagger-ui/index.html)
+    display-request-duration: true
+    operations-sorter: method
+    tags-sorter: alpha
+
+# src/main/resources/application.yaml
+cors:
+  allowed-origins:
+    - "http://localhost:3000"
+    - "http://127.0.0.1:3000"
+    - "http://localhost:5173" # Vite React default port
+    - "http://127.0.0.1:5173"
+
+logging:
+  level:
+    org.springframework.security: DEBUG
+    org.springframework.web: DEBUG
+
+
