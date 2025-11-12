@@ -40,7 +40,7 @@ interface Ward {
 }
 
 export function Profile() {
-  const [avatarUrl, setAvatarUrl] = useState<string>("");
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
   const [showError, setShowError] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
@@ -54,6 +54,7 @@ export function Profile() {
     handleSubmit,
     reset,
     watch,
+    setValue,
     formState: { errors },
   } = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
@@ -161,9 +162,9 @@ export function Profile() {
           province: addressParts.province,
         });
 
-        // Set avatar URL if exists
+        // Set avatar preview if exists
         if (userInfo.image) {
-          setAvatarUrl(userInfo.image);
+          setAvatarPreview(userInfo.image);
         }
       } catch (error) {
         console.error("❌ Failed to load profile:", error);
@@ -180,27 +181,11 @@ export function Profile() {
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // Check file size (max 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        setErrorMessage("Avatar file size must be less than 5MB");
-        setShowError(true);
-        setTimeout(() => setShowError(false), 5000);
-        return;
-      }
-
-      // Check file type
-      if (!file.type.startsWith("image/")) {
-        setErrorMessage("Please select an image file");
-        setShowError(true);
-        setTimeout(() => setShowError(false), 5000);
-        return;
-      }
-
-      // Create preview URL
-      const previewUrl = URL.createObjectURL(file);
-      setAvatarPreview(previewUrl);
-      setAvatarFile(file);
-      setAvatarChanged(true);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setAvatarPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
     }
   };
 
@@ -213,35 +198,13 @@ export function Profile() {
       // Combine address parts into single string
       const fullAddress = `${data.street}, ${data.ward}, ${data.district}, ${data.province}`;
 
-      // Prepare update data
-      const updateData: {
-        name: string;
-        phone: string;
-        address: string;
-        imageFile?: File;
-      } = {
+      // Call API to update profile
+      await usersApi.updateMyInfo({
         name: data.name,
         phone: data.phone,
         address: fullAddress,
-      };
-
-      // Only include image file if it was changed
-      if (avatarChanged && avatarFile) {
-        updateData.imageFile = avatarFile;
-      }
-
-      console.log("🔄 Updating profile with data:", {
-        name: updateData.name,
-        phone: updateData.phone,
-        address: updateData.address,
-        imageFile: updateData.imageFile ? `${updateData.imageFile.name} (${updateData.imageFile.size} bytes)` : undefined
+        image: avatarPreview || undefined,
       });
-
-      // Call API to update profile
-      await usersApi.updateMyInfo(updateData);
-
-      // Reset avatar changed flag
-      setAvatarChanged(false);
 
       // Dispatch custom event to notify other components (navbar, etc.)
       window.dispatchEvent(new Event("profileUpdated"));
@@ -399,7 +362,7 @@ export function Profile() {
           <h3 className="mb-4 text-lg font-semibold text-beige-900">
             Delivery Address
           </h3>
-
+          
           {/* Province/City */}
           <div className="mb-4">
             <label

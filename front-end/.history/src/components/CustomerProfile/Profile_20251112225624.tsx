@@ -40,7 +40,8 @@ interface Ward {
 }
 
 export function Profile() {
-  const [avatarUrl, setAvatarUrl] = useState<string>("");
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [avatarChanged, setAvatarChanged] = useState(false); // Track if avatar was changed
   const [showSuccess, setShowSuccess] = useState(false);
   const [showError, setShowError] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
@@ -54,6 +55,7 @@ export function Profile() {
     handleSubmit,
     reset,
     watch,
+    setValue,
     formState: { errors },
   } = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
@@ -161,9 +163,9 @@ export function Profile() {
           province: addressParts.province,
         });
 
-        // Set avatar URL if exists
+        // Set avatar preview if exists
         if (userInfo.image) {
-          setAvatarUrl(userInfo.image);
+          setAvatarPreview(userInfo.image);
         }
       } catch (error) {
         console.error("❌ Failed to load profile:", error);
@@ -180,27 +182,53 @@ export function Profile() {
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // Check file size (max 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        setErrorMessage("Avatar file size must be less than 5MB");
+      // Check file size (max 2MB for display)
+      if (file.size > 2 * 1024 * 1024) {
+        setErrorMessage("Avatar file size must be less than 2MB");
         setShowError(true);
         setTimeout(() => setShowError(false), 5000);
         return;
       }
 
-      // Check file type
-      if (!file.type.startsWith("image/")) {
-        setErrorMessage("Please select an image file");
-        setShowError(true);
-        setTimeout(() => setShowError(false), 5000);
-        return;
-      }
-
-      // Create preview URL
-      const previewUrl = URL.createObjectURL(file);
-      setAvatarPreview(previewUrl);
-      setAvatarFile(file);
-      setAvatarChanged(true);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64String = reader.result as string;
+        
+        // Compress/resize image if it's too long
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          
+          // Resize to max 200x200 for avatar
+          const maxSize = 200;
+          let width = img.width;
+          let height = img.height;
+          
+          if (width > height) {
+            if (width > maxSize) {
+              height *= maxSize / width;
+              width = maxSize;
+            }
+          } else {
+            if (height > maxSize) {
+              width *= maxSize / height;
+              height = maxSize;
+            }
+          }
+          
+          canvas.width = width;
+          canvas.height = height;
+          ctx?.drawImage(img, 0, 0, width, height);
+          
+          // Convert to base64 with compression (0.7 quality)
+          const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
+          setAvatarPreview(compressedBase64);
+          setAvatarChanged(true);
+        };
+        img.src = base64String;
+      };
+      reader.readAsDataURL(file);
     }
   };
 
@@ -218,23 +246,21 @@ export function Profile() {
         name: string;
         phone: string;
         address: string;
-        imageFile?: File;
+        image?: string;
       } = {
         name: data.name,
         phone: data.phone,
         address: fullAddress,
       };
 
-      // Only include image file if it was changed
-      if (avatarChanged && avatarFile) {
-        updateData.imageFile = avatarFile;
+      // Only include image if it was changed
+      if (avatarChanged && avatarPreview) {
+        updateData.image = avatarPreview;
       }
 
       console.log("🔄 Updating profile with data:", {
-        name: updateData.name,
-        phone: updateData.phone,
-        address: updateData.address,
-        imageFile: updateData.imageFile ? `${updateData.imageFile.name} (${updateData.imageFile.size} bytes)` : undefined
+        ...updateData,
+        image: updateData.image ? `${updateData.image.substring(0, 50)}...` : undefined
       });
 
       // Call API to update profile
@@ -399,7 +425,7 @@ export function Profile() {
           <h3 className="mb-4 text-lg font-semibold text-beige-900">
             Delivery Address
           </h3>
-
+          
           {/* Province/City */}
           <div className="mb-4">
             <label

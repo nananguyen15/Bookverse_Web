@@ -177,10 +177,33 @@ export function Address() {
           {editingAddress
             ? "Edit Address"
             : addresses.length > 0
-              ? "Update Address"
-              : "Add New Address"}
+            ? "Update Address"
+            : "Add New Address"}
         </h3>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            
+            <div>
+              <label
+                htmlFor="phone"
+                className="block text-sm font-medium text-beige-800"
+              >
+                Phone Number
+              </label>
+              <input
+                type="tel"
+                id="phone"
+                {...register("phone")}
+                className="block w-full px-3 py-2 mt-1 border rounded-md shadow-sm border-beige-300 focus:ring-beige-500 focus:border-beige-500"
+              />
+              {errors.phone && (
+                <p className="mt-1 text-sm text-red-600">
+                  {errors.phone.message}
+                </p>
+              )}
+            </div>
+          </div>
+
           <div>
             <label
               htmlFor="province"

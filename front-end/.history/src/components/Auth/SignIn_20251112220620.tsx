@@ -64,16 +64,16 @@ export function SignIn() {
 
       // Extract role from roles array and convert to lowercase
       // Backend returns roles as ["CUSTOMER", "STAFF", "ADMIN"]
-      const userRole = userInfo.roles && userInfo.roles.length > 0
-        ? userInfo.roles[0].toLowerCase()
+      const userRole = userInfo.roles && userInfo.roles.length > 0 
+        ? userInfo.roles[0].toLowerCase() 
         : "customer";
-
+      
       console.log("User role:", userRole);
 
       // Save user info to localStorage for AuthContext
       const users = JSON.parse(localStorage.getItem("users") || "[]");
       const existingUserIndex = users.findIndex((u: any) => u.username === userInfo.username);
-
+      
       const userData = {
         username: userInfo.username,
         email: userInfo.email,

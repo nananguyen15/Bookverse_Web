@@ -43,14 +43,12 @@ export function StaffProfile() {
     if (user?.username) {
       const users = JSON.parse(localStorage.getItem("users") || "[]");
       const staffUser = users.find((u: any) => u.username === user.username);
-      
+
       if (staffUser) {
         reset({
           fullName: staffUser.fullName || "",
           phone: staffUser.phone || "",
           email: staffUser.email || "",
-          gender: staffUser.gender || "not-specified",
-          birthDate: staffUser.birthDate || "",
         });
         if (staffUser.avatarUrl) {
           setAvatarPreview(staffUser.avatarUrl);
@@ -88,8 +86,6 @@ export function StaffProfile() {
           fullName: data.fullName,
           phone: data.phone,
           email: data.email,
-          gender: data.gender,
-          birthDate: data.birthDate,
           avatarUrl: avatarPreview,
         };
       }

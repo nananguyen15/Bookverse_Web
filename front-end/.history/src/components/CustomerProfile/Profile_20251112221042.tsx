@@ -1,15 +1,14 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { FaUserCircle } from "react-icons/fa";
-import { useAuth } from "../../contexts/AuthContext";
 
 const profileSchema = z.object({
   avatar: z
     .any()
     .refine((files) => {
-      if (!files || files.length === 0) return true;
+      if (!files || files.length === 0) return true; // Avatar is optional
       return files[0]?.size <= 10000000;
     }, `Max file size is 10MB.`)
     .optional(),
@@ -25,8 +24,7 @@ const profileSchema = z.object({
 
 type ProfileFormValues = z.infer<typeof profileSchema>;
 
-export function StaffProfile() {
-  const { user } = useAuth();
+export function Profile() {
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
   const {
@@ -38,27 +36,19 @@ export function StaffProfile() {
     resolver: zodResolver(profileSchema),
   });
 
-  // Load staff profile from users localStorage
+  // Load profile data from localStorage on mount
   useEffect(() => {
-    if (user?.username) {
-      const users = JSON.parse(localStorage.getItem("users") || "[]");
-      const staffUser = users.find((u: any) => u.username === user.username);
-      
-      if (staffUser) {
-        reset({
-          fullName: staffUser.fullName || "",
-          phone: staffUser.phone || "",
-          email: staffUser.email || "",
-          gender: staffUser.gender || "not-specified",
-          birthDate: staffUser.birthDate || "",
-        });
-        if (staffUser.avatarUrl) {
-          setAvatarPreview(staffUser.avatarUrl);
-        }
+    const savedProfile = localStorage.getItem("userProfile");
+    if (savedProfile) {
+      const profileData = JSON.parse(savedProfile);
+      reset(profileData);
+      if (profileData.avatarUrl) {
+        setAvatarPreview(profileData.avatarUrl);
       }
     }
-  }, [user, reset]);
+  }, [reset]);
 
+  // Hide success message when component unmounts or user navigates away
   useEffect(() => {
     return () => {
       setShowSuccess(false);
@@ -77,31 +67,20 @@ export function StaffProfile() {
   };
 
   const onSubmit = (data: ProfileFormValues) => {
-    if (!user?.username) return;
+    // Save profile data to localStorage
+    const profileData = {
+      ...data,
+      avatarUrl: avatarPreview, // Save avatar preview URL
+    };
+    localStorage.setItem("userProfile", JSON.stringify(profileData));
 
-    // Update user in users array
-    const users = JSON.parse(localStorage.getItem("users") || "[]");
-    const updatedUsers = users.map((u: any) => {
-      if (u.username === user.username) {
-        return {
-          ...u,
-          fullName: data.fullName,
-          phone: data.phone,
-          email: data.email,
-          gender: data.gender,
-          birthDate: data.birthDate,
-          avatarUrl: avatarPreview,
-        };
-      }
-      return u;
-    });
+    // Dispatch custom event to notify other components
+    window.dispatchEvent(new Event("profileUpdated"));
 
-    localStorage.setItem("users", JSON.stringify(updatedUsers));
-
-    // Dispatch event to update sidenav
-    window.dispatchEvent(new Event("staffProfileUpdated"));
-
+    // Show success message
     setShowSuccess(true);
+
+    // Hide success message after 3 seconds
     setTimeout(() => {
       setShowSuccess(false);
     }, 3000);
@@ -113,6 +92,7 @@ export function StaffProfile() {
         Personal Information
       </h2>
 
+      {/* Success Message */}
       {showSuccess && (
         <div className="p-4 mb-6 text-green-800 bg-green-100 border border-green-200 rounded-md">
           Your profile has been updated successfully!

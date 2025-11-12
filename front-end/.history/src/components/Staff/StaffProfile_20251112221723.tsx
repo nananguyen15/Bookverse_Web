@@ -43,14 +43,12 @@ export function StaffProfile() {
     if (user?.username) {
       const users = JSON.parse(localStorage.getItem("users") || "[]");
       const staffUser = users.find((u: any) => u.username === user.username);
-      
+
       if (staffUser) {
         reset({
           fullName: staffUser.fullName || "",
           phone: staffUser.phone || "",
           email: staffUser.email || "",
-          gender: staffUser.gender || "not-specified",
-          birthDate: staffUser.birthDate || "",
         });
         if (staffUser.avatarUrl) {
           setAvatarPreview(staffUser.avatarUrl);
@@ -88,8 +86,6 @@ export function StaffProfile() {
           fullName: data.fullName,
           phone: data.phone,
           email: data.email,
-          gender: data.gender,
-          birthDate: data.birthDate,
           avatarUrl: avatarPreview,
         };
       }
@@ -188,24 +184,6 @@ export function StaffProfile() {
           />
           {errors.phone && (
             <p className="mt-2 text-sm text-red-600">{errors.phone.message}</p>
-          )}
-        </div>
-
-        <div>
-          <label
-            htmlFor="email"
-            className="block text-sm font-medium text-beige-800"
-          >
-            Email
-          </label>
-          <input
-            type="email"
-            id="email"
-            {...register("email")}
-            className="block w-full px-3 py-2 mt-1 border rounded-md shadow-sm border-beige-300 focus:outline-none focus:ring-beige-500 focus:border-beige-500 sm:text-sm"
-          />
-          {errors.email && (
-            <p className="mt-2 text-sm text-red-600">{errors.email.message}</p>
           )}
         </div>
 

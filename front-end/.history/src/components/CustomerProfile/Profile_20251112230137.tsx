@@ -40,7 +40,9 @@ interface Ward {
 }
 
 export function Profile() {
-  const [avatarUrl, setAvatarUrl] = useState<string>("");
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarChanged, setAvatarChanged] = useState(false); // Track if avatar was changed
   const [showSuccess, setShowSuccess] = useState(false);
   const [showError, setShowError] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
@@ -54,6 +56,7 @@ export function Profile() {
     handleSubmit,
     reset,
     watch,
+    setValue,
     formState: { errors },
   } = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
@@ -161,9 +164,9 @@ export function Profile() {
           province: addressParts.province,
         });
 
-        // Set avatar URL if exists
+        // Set avatar preview if exists
         if (userInfo.image) {
-          setAvatarUrl(userInfo.image);
+          setAvatarPreview(userInfo.image);
         }
       } catch (error) {
         console.error("❌ Failed to load profile:", error);
@@ -399,7 +402,7 @@ export function Profile() {
           <h3 className="mb-4 text-lg font-semibold text-beige-900">
             Delivery Address
           </h3>
-
+          
           {/* Province/City */}
           <div className="mb-4">
             <label

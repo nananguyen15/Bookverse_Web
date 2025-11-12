@@ -137,7 +137,7 @@ export default function SearchSuggest() {
         </ul>
       )}
       {open && !loading && items.length === 0 && (
-        <div className="absolute z-10 w-full px-3 py-2 mt-1 text-gray-500 border rounded">
+        <div className="absolute z-10 w-full px-3 py-2 mt-1 text-gray-500 bg-white border rounded">
           No results
         </div>
       )}

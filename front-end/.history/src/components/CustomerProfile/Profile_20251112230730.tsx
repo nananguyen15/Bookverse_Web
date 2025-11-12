@@ -161,9 +161,9 @@ export function Profile() {
           province: addressParts.province,
         });
 
-        // Set avatar URL if exists
+        // Set avatar preview if exists
         if (userInfo.image) {
-          setAvatarUrl(userInfo.image);
+          setAvatarPreview(userInfo.image);
         }
       } catch (error) {
         console.error("❌ Failed to load profile:", error);
@@ -399,7 +399,7 @@ export function Profile() {
           <h3 className="mb-4 text-lg font-semibold text-beige-900">
             Delivery Address
           </h3>
-
+          
           {/* Province/City */}
           <div className="mb-4">
             <label

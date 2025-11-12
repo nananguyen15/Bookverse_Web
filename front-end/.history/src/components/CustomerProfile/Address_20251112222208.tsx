@@ -177,10 +177,11 @@ export function Address() {
           {editingAddress
             ? "Edit Address"
             : addresses.length > 0
-              ? "Update Address"
-              : "Add New Address"}
+            ? "Update Address"
+            : "Add New Address"}
         </h3>
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+
           <div>
             <label
               htmlFor="province"

@@ -40,7 +40,7 @@ interface Ward {
 }
 
 export function Profile() {
-  const [avatarUrl, setAvatarUrl] = useState<string>("");
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [showSuccess, setShowSuccess] = useState(false);
   const [showError, setShowError] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
@@ -54,6 +54,7 @@ export function Profile() {
     handleSubmit,
     reset,
     watch,
+    setValue,
     formState: { errors },
   } = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
@@ -161,9 +162,9 @@ export function Profile() {
           province: addressParts.province,
         });
 
-        // Set avatar URL if exists
+        // Set avatar preview if exists
         if (userInfo.image) {
-          setAvatarUrl(userInfo.image);
+          setAvatarPreview(userInfo.image);
         }
       } catch (error) {
         console.error("❌ Failed to load profile:", error);
@@ -180,27 +181,11 @@ export function Profile() {
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // Check file size (max 5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        setErrorMessage("Avatar file size must be less than 5MB");
-        setShowError(true);
-        setTimeout(() => setShowError(false), 5000);
-        return;
-      }
-
-      // Check file type
-      if (!file.type.startsWith("image/")) {
-        setErrorMessage("Please select an image file");
-        setShowError(true);
-        setTimeout(() => setShowError(false), 5000);
-        return;
-      }
-
-      // Create preview URL
-      const previewUrl = URL.createObjectURL(file);
-      setAvatarPreview(previewUrl);
-      setAvatarFile(file);
-      setAvatarChanged(true);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setAvatarPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
     }
   };
 
@@ -213,35 +198,13 @@ export function Profile() {
       // Combine address parts into single string
       const fullAddress = `${data.street}, ${data.ward}, ${data.district}, ${data.province}`;
 
-      // Prepare update data
-      const updateData: {
-        name: string;
-        phone: string;
-        address: string;
-        imageFile?: File;
-      } = {
+      // Call API to update profile
+      await usersApi.updateMyInfo({
         name: data.name,
         phone: data.phone,
         address: fullAddress,
-      };
-
-      // Only include image file if it was changed
-      if (avatarChanged && avatarFile) {
-        updateData.imageFile = avatarFile;
-      }
-
-      console.log("🔄 Updating profile with data:", {
-        name: updateData.name,
-        phone: updateData.phone,
-        address: updateData.address,
-        imageFile: updateData.imageFile ? `${updateData.imageFile.name} (${updateData.imageFile.size} bytes)` : undefined
+        image: avatarPreview || undefined,
       });
-
-      // Call API to update profile
-      await usersApi.updateMyInfo(updateData);
-
-      // Reset avatar changed flag
-      setAvatarChanged(false);
 
       // Dispatch custom event to notify other components (navbar, etc.)
       window.dispatchEvent(new Event("profileUpdated"));
@@ -399,113 +362,28 @@ export function Profile() {
           <h3 className="mb-4 text-lg font-semibold text-beige-900">
             Delivery Address
           </h3>
-
-          {/* Province/City */}
-          <div className="mb-4">
-            <label
-              htmlFor="province"
-              className="block mb-1 text-sm font-medium text-beige-800"
-            >
-              Province/City <span className="text-red-500">*</span>
-            </label>
-            <select
-              id="province"
-              {...register("province")}
-              className="block w-full px-3 py-2 border rounded-md shadow-sm border-beige-300 focus:outline-none focus:ring-beige-500 focus:border-beige-500 sm:text-sm"
-            >
-              <option value="">Select Province</option>
-              {provinces.map((province) => (
-                <option key={province.code} value={province.name}>
-                  {province.name}
-                </option>
-              ))}
-            </select>
-            {errors.province && (
-              <p className="mt-1 text-sm text-red-600">
-                {errors.province.message}
-              </p>
-            )}
-          </div>
-
-          {/* District & Ward in 2 columns */}
-          <div className="grid grid-cols-1 gap-4 mb-4 md:grid-cols-2">
-            {/* District */}
-            <div>
-              <label
-                htmlFor="district"
-                className="block mb-1 text-sm font-medium text-beige-800"
-              >
-                District <span className="text-red-500">*</span>
-              </label>
-              <select
-                id="district"
-                {...register("district")}
-                className="block w-full px-3 py-2 border rounded-md shadow-sm border-beige-300 focus:outline-none focus:ring-beige-500 focus:border-beige-500 sm:text-sm"
-                disabled={!selectedProvince}
-              >
-                <option value="">Select District</option>
-                {districtOptions.map((district) => (
-                  <option key={district.code} value={district.name}>
-                    {district.name}
-                  </option>
-                ))}
-              </select>
-              {errors.district && (
-                <p className="mt-1 text-sm text-red-600">
-                  {errors.district.message}
-                </p>
-              )}
-            </div>
-
-            {/* Ward/Commune */}
-            <div>
-              <label
-                htmlFor="ward"
-                className="block mb-1 text-sm font-medium text-beige-800"
-              >
-                Ward/Commune <span className="text-red-500">*</span>
-              </label>
-              <select
-                id="ward"
-                {...register("ward")}
-                className="block w-full px-3 py-2 border rounded-md shadow-sm border-beige-300 focus:outline-none focus:ring-beige-500 focus:border-beige-500 sm:text-sm"
-                disabled={!selectedDistrict}
-              >
-                <option value="">Select Ward</option>
-                {wardOptions.map((ward) => (
-                  <option key={ward.code} value={ward.name}>
-                    {ward.name}
-                  </option>
-                ))}
-              </select>
-              {errors.ward && (
-                <p className="mt-1 text-sm text-red-600">
-                  {errors.ward.message}
-                </p>
-              )}
-            </div>
-          </div>
-
-          {/* Street, House No. */}
           <div>
             <label
-              htmlFor="street"
+              htmlFor="address"
               className="block mb-1 text-sm font-medium text-beige-800"
             >
-              Street, House No. <span className="text-red-500">*</span>
+              Full Address <span className="text-red-500">*</span>
             </label>
-            <input
-              type="text"
-              id="street"
-              {...register("street")}
+            <textarea
+              id="address"
+              {...register("address")}
+              rows={3}
               className="block w-full px-3 py-2 border rounded-md shadow-sm border-beige-300 focus:outline-none focus:ring-beige-500 focus:border-beige-500 sm:text-sm"
-              placeholder="e.g., 123 Nguyen Hue Street"
+              placeholder="Enter your full address (street, ward, district, city/province)"
             />
-            {errors.street && (
+            {errors.address && (
               <p className="mt-1 text-sm text-red-600">
-                {errors.street.message}
+                {errors.address.message}
               </p>
             )}
+            <p className="mt-2 text-xs text-beige-500">
+              Example: 123 Nguyen Hue Street, Ward 1, District 1, Ho Chi Minh City
+            </p>
           </div>
         </div>
 
