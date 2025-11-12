@@ -28,7 +28,8 @@ public class Order {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, columnDefinition = "enum('PENDING', 'PROCESSING', 'DELIVERED', 'CANCELLED', 'RETURNED') default 'PENDING'")
-    private OrderStatus status;
+    @Builder.Default
+    private OrderStatus status = OrderStatus.PENDING;
 
     @Column(name = "total_amount", nullable = false)
     private Double totalAmount;
@@ -41,7 +42,8 @@ public class Order {
     private LocalDateTime createdAt;
 
     @Column(nullable = false)
-    private Boolean active;
+    @Builder.Default
+    private Boolean active = true;
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
