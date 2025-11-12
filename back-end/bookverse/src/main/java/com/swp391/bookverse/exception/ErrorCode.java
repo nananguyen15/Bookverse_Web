@@ -81,6 +81,11 @@ public enum ErrorCode {
     INVALID_FILE_NAME(10003, "Invalid file name"),
     FILE_UPLOAD_FAILED(10004, "File upload failed"),
 
+    // custom error codes for promotion entity
+    PROMOTION_NOT_FOUND(11001, "Promotion not found"),
+    INVALID_DATE_RANGE(11002, "Invalid date range"),
+    PROMOTION_CONTENT_EXISTS(11003, "Promotion content already exists"),
+
     INVALID_KEY(99999, "Invalid message key provided")
     ;
 

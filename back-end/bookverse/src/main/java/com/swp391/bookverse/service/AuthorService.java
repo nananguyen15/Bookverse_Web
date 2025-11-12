@@ -19,6 +19,7 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -70,7 +71,7 @@ public class AuthorService {
         if(authorRepository.existsByName(name)) {
             throw new AppException(ErrorCode.AUTHOR_EXISTS);
         }
-        
+
         // Handle image upload or URL
         String imagePath = null;
         if (imageFile != null && !imageFile.isEmpty()) {
@@ -78,14 +79,14 @@ public class AuthorService {
         } else if (imageUrl != null && !imageUrl.trim().isEmpty()) {
             imagePath = imageUrl.trim();
         }
-        
+
         // Create new Author entity
         Author author = new Author();
         author.setName(name);
         author.setBio(bio);
         author.setImage(imagePath);
         author.setActive(active);
-        
+
         return authorRepository.save(author);
     }
 
@@ -102,55 +103,57 @@ public class AuthorService {
             if (contentType == null || !contentType.startsWith("image/")) {
                 throw new AppException(ErrorCode.INVALID_FILE_TYPE);
             }
-            
+
             // Validate file size (max 5MB)
             long maxSize = 5 * 1024 * 1024; // 5MB in bytes
             if (imageFile.getSize() > maxSize) {
                 throw new AppException(ErrorCode.FILE_TOO_LARGE);
             }
-            
+
             // Get original filename and create a unique filename
             String originalFilename = imageFile.getOriginalFilename();
             if (originalFilename == null || originalFilename.isEmpty()) {
                 throw new AppException(ErrorCode.INVALID_FILE_NAME);
             }
-            
+
             // Extract file extension
             String fileExtension = "";
             int lastDotIndex = originalFilename.lastIndexOf('.');
             if (lastDotIndex > 0) {
                 fileExtension = originalFilename.substring(lastDotIndex);
             }
-            
+
             // Create unique filename with timestamp
             String timestamp = String.valueOf(System.currentTimeMillis());
             String cleanFilename = originalFilename.substring(0, lastDotIndex > 0 ? lastDotIndex : originalFilename.length())
                     .replaceAll("[^a-zA-Z0-9]", "-");
             String uniqueFilename = timestamp + "-" + cleanFilename + fileExtension;
-            
+
             // Determine the upload directory
             String projectRoot = System.getProperty("user.dir");
             // Remove the back-end path if present to get the project root
             projectRoot = projectRoot.replace("\\back-end\\bookverse", "");
             String uploadDir = projectRoot + "/front-end/public/img/" + folder;
-            
+
             // Create directory if it doesn't exist
             Path uploadPath = Paths.get(uploadDir);
             if (!Files.exists(uploadPath)) {
                 Files.createDirectories(uploadPath);
             }
-            
+
             // Save the file
             Path filePath = uploadPath.resolve(uniqueFilename);
             Files.copy(imageFile.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
-            
+
             // Return the relative path for storing in database
             return "/img/" + folder + "/" + uniqueFilename;
-            
+
         } catch (IOException e) {
             throw new AppException(ErrorCode.FILE_UPLOAD_FAILED);
         }
     }
+
+
 
     /**
      * Fetches all authors from the system.
@@ -203,7 +206,7 @@ public class AuthorService {
         // Fetch existing author from DB by ID. Throw exception if not found
         Author existingAuthor = authorRepository.findById(authorId)
                 .orElseThrow(() -> new AppException(ErrorCode.AUTHOR_NOT_FOUND));
-        
+
         // Update fields if provided
         if (name != null && !name.trim().isEmpty()) {
             // Check if new name already exists (and it's not the current author's name)
@@ -212,11 +215,11 @@ public class AuthorService {
             }
             existingAuthor.setName(name.trim());
         }
-        
+
         if (bio != null) {
             existingAuthor.setBio(bio);
         }
-        
+
         // Handle image update
         if (imageFile != null && !imageFile.isEmpty()) {
             String imagePath = handleImageUpload(imageFile, "author");
@@ -224,14 +227,15 @@ public class AuthorService {
         } else if (imageUrl != null && !imageUrl.trim().isEmpty()) {
             existingAuthor.setImage(imageUrl.trim());
         }
-        
+
         if (active != null) {
             existingAuthor.setActive(active);
         }
-        
+
         Author updatedAuthor = authorRepository.save(existingAuthor);
         return authorMapper.toAuthorResponse(updatedAuthor);
     }
+
 
     /**
      * Change the active status of an author by ID

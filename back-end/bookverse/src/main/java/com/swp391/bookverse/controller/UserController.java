@@ -30,21 +30,28 @@ import java.util.List;
 public class UserController {
     UserService userService;
 
-    @PostMapping(value = "/create", consumes = {"multipart/form-data"})
-    public APIResponse<User> createUser(
-            @RequestParam("username") String username,
-            @RequestParam("password") String password,
-            @RequestParam("email") String email,
-            @RequestParam(value = "name", required = false) String name,
-            @RequestParam(value = "phone", required = false) String phone,
-            @RequestParam(value = "address", required = false) String address,
-            @RequestParam(value = "image", required = false) MultipartFile imageFile,
-            @RequestParam(value = "imageUrl", required = false) String imageUrl,
-            @RequestParam(value = "active", defaultValue = "true") boolean active,
-            @RequestParam(value = "roles", required = false) List<String> roles) {
-        
+//    @PostMapping(value = "/create", consumes = {"multipart/form-data"})
+//    public APIResponse<User> createUser(
+//            @RequestParam("username") String username,
+//            @RequestParam("password") String password,
+//            @RequestParam("email") String email,
+//            @RequestParam(value = "name", required = false) String name,
+//            @RequestParam(value = "phone", required = false) String phone,
+//            @RequestParam(value = "address", required = false) String address,
+//            @RequestParam(value = "image", required = false) MultipartFile imageFile,
+//            @RequestParam(value = "imageUrl", required = false) String imageUrl,
+//            @RequestParam(value = "active", defaultValue = "true") boolean active,
+//            @RequestParam(value = "roles", required = false) List<String> roles) {
+//
+//        APIResponse<User> response = new APIResponse<>();
+//        response.setResult(userService.createUser(username, password, email, name, phone, address, imageFile, imageUrl, active, roles));
+//        return response;
+//    }
+
+    @PostMapping("/create")
+    public APIResponse<User> createUser(@RequestBody @Valid UserCreationRequest request) {
         APIResponse<User> response = new APIResponse<>();
-        response.setResult(userService.createUser(username, password, email, name, phone, address, imageFile, imageUrl, active, roles));
+        response.setResult(userService.createUser(request));
         return response;
     }
 
