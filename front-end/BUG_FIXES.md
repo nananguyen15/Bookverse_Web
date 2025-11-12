@@ -1,0 +1,323 @@
+# Bug Fixes Summary - November 9, 2025
+
+## 🐛 Issue #1: OTP Expired Cannot Resend
+
+### Problem
+
+When OTP timer reached 0:00 (expired), the "Resend" button was disabled, preventing users from requesting a new code.
+
+**Root Cause:**
+
+```typescript
+// BEFORE - Wrong logic
+disabled={isLoading || resendCooldown > 0 || otpExpiryTime <= 0}
+```
+
+The condition `otpExpiryTime <= 0` disabled resend when OTP expired, which is exactly when users NEED to resend!
+
+### Solution
+
+**File:** `front-end/src/components/Auth/ForgotPassword.tsx`
+
+```typescript
+// AFTER - Fixed logic
+disabled={isLoading || resendCooldown > 0}
+```
+
+**Logic:**
+
+- ✅ Disabled during loading (isLoading)
+- ✅ Disabled during 45-second cooldown
+- ✅ **ENABLED when OTP expires** (removed `otpExpiryTime <= 0` condition)
+- ✅ Verify button still disabled when expired (keeps existing behavior)
+
+### User Flow After Fix
+
+1. User receives OTP (5-minute countdown starts)
+2. Timer counts down: 4:59, 4:58, ... 0:01, 0:00
+3. When 0:00 reached:
+   - ❌ "Verify Code" button disabled (can't submit expired OTP)
+   - ✅ "Resend" button ENABLED (can request new OTP)
+4. Click Resend → New OTP sent → Timer resets to 5:00
+
+---
+
+## 🐛 Issue #2: Profile Update Returns 400 Error
+
+### Problem
+
+When clicking "Save Changes" in Personal Information, request failed with 400 error.
+
+**Error Message:** "Request failed with status code 400"
+
+### Root Causes Found
+
+#### Cause 1: Response Parsing Mismatch ⚠️ **CRITICAL**
+
+**Backend Inconsistency:**
+
+```java
+// GET /api/users/myInfo - Returns wrapped response
+public APIResponse<UserResponse> getMyInfo() {
+    APIResponse<UserResponse> response = new APIResponse<>();
+    response.setResult(userService.getMyInfo());
+    return response;
+}
+
+// PUT /api/users/myInfo - Returns direct response (NO WRAPPER!)
+public UserResponse updateMyInfo(@RequestBody @Valid UserUpdateRequest request) {
+    return userService.updateMyInfo(request);
+}
+```
+
+**Frontend was expecting wrapped response for PUT:**
+
+```typescript
+// BEFORE - Wrong! Expected { code, message, result: {...} }
+const response = await apiClient.put<ApiResponse<User>>(
+  `${USERS_ENDPOINT}/myInfo`,
+  data
+);
+return response.data.result; // ❌ Throws error: Cannot read property 'result' of undefined
+```
+
+**Backend actually returns:**
+
+```json
+{
+  "id": "xxx",
+  "username": "xxx",
+  "email": "xxx",
+  "name": "xxx",
+  ...
+}
+```
+
+**Solution:**
+
+```typescript
+// AFTER - Fixed! Parse direct response
+const response = await apiClient.put<User>(`${USERS_ENDPOINT}/myInfo`, data);
+return response.data; // ✅ Returns User object directly
+```
+
+#### Cause 2: Missing Error Details
+
+**BEFORE:**
+
+```typescript
+catch (err: unknown) {
+  const errorMessage = err instanceof Error ? err.message : "Failed to update profile";
+  setError(errorMessage);
+}
+```
+
+**Problem:** Generic error message didn't help debug the issue.
+
+**AFTER:**
+
+```typescript
+catch (err: unknown) {
+  const error = err as { response?: { data?: { message?: string }; status?: number } };
+
+  let errorMessage = "Failed to update profile";
+
+  if (error.response?.data?.message) {
+    errorMessage = error.response.data.message; // Backend error message
+  } else if (error.response?.status === 400) {
+    errorMessage = "Invalid data. Please check your phone number format (10-11 digits starting with 0).";
+  } else if (err instanceof Error) {
+    errorMessage = err.message;
+  }
+
+  setError(errorMessage);
+}
+```
+
+**Benefits:**
+
+- ✅ Shows backend validation errors
+- ✅ Helpful hint for phone number format
+- ✅ Better debugging with console logs
+
+### Files Updated
+
+**1. `front-end/src/api/endpoints/users.api.ts`**
+
+- Changed response type from `ApiResponse<User>` to `User`
+- Changed return from `response.data.result` to `response.data`
+- Added console logging for debugging
+
+**2. `front-end/src/components/CustomerProfile/Profile.tsx`**
+
+- Enhanced error handling with detailed messages
+- Added console logs for debugging
+
+**3. `front-end/src/components/Staff/StaffProfile.tsx`**
+
+- Same fixes as Profile.tsx
+
+---
+
+## 📊 Testing Results
+
+### OTP Resend Flow
+
+✅ **Test 1:** Wait for OTP to expire (5 minutes)
+
+- Timer shows 0:00
+- "Code has expired" message appears
+- Resend button is enabled
+- Click Resend → New OTP sent
+- Timer resets to 5:00
+
+✅ **Test 2:** Rapid resend attempts
+
+- Click Resend
+- Button shows "Resend (wait 45s)"
+- Button disabled for 45 seconds
+- After 45s, can resend again
+
+### Profile Update Flow
+
+✅ **Test 1:** Valid data submission
+
+```
+Input:
+- Name: Nhi Nguyen
+- Phone: 0911639720
+- Address: Điện Biên Phủ, Xã Ấu Núa, Huyện Mường Ảng, Tỉnh Điện Biên
+
+Console logs:
+📝 Submitting profile update: {...}
+📝 Updating user info with data: {...}
+✅ Update response: { id: "xxx", username: "xxx", ... }
+✅ Profile updated successfully
+
+Result: Success message appears ✅
+```
+
+✅ **Test 2:** Invalid phone number
+
+```
+Input:
+- Phone: 12345 (invalid format)
+
+Console logs:
+❌ Error updating profile: {...}
+
+Result: Error message "Invalid data. Please check your phone number format (10-11 digits starting with 0)." ✅
+```
+
+---
+
+## 🔍 Debug Console Logs Added
+
+### users.api.ts
+
+```javascript
+📝 Updating user info with data: { name, phone, address, image }
+✅ Update response: { id, username, email, ... }
+```
+
+### Profile.tsx / StaffProfile.tsx
+
+```javascript
+📝 Submitting profile update: { name, phone, address, image }
+✅ Profile updated successfully
+// OR
+❌ Error updating profile: [error object]
+```
+
+### ForgotPassword.tsx (existing)
+
+```javascript
+🔍 Step 1: Checking email exists... email@example.com
+✓ Step 1: Got userId: xxx
+📧 Step 2: Sending OTP with data: {...}
+✓ OTP sent successfully to email
+// OR
+❌ Request OTP failed: [error]
+```
+
+---
+
+## ⚠️ Backend Recommendation
+
+### Issue: Inconsistent Response Format
+
+**Problem:**
+
+- GET `/api/users/myInfo` returns `APIResponse<UserResponse>`
+- PUT `/api/users/myInfo` returns `UserResponse` directly
+
+**Impact:**
+
+- Confusing for frontend developers
+- Requires different parsing logic for same endpoint
+- Prone to bugs like this one
+
+**Recommendation:** Make PUT endpoint consistent with GET:
+
+```java
+// CURRENT (inconsistent)
+@PutMapping("/myInfo")
+public UserResponse updateMyInfo(@RequestBody @Valid UserUpdateRequest request) {
+    return userService.updateMyInfo(request);
+}
+
+// RECOMMENDED (consistent)
+@PutMapping("/myInfo")
+public APIResponse<UserResponse> updateMyInfo(@RequestBody @Valid UserUpdateRequest request) {
+    APIResponse<UserResponse> response = new APIResponse<>();
+    response.setResult(userService.updateMyInfo(request));
+    return response;
+}
+```
+
+**Or use global @RestControllerAdvice to wrap all responses:**
+
+```java
+@RestControllerAdvice
+public class ResponseWrapper implements ResponseBodyAdvice<Object> {
+    @Override
+    public Object beforeBodyWrite(Object body, ...) {
+        if (body instanceof APIResponse) {
+            return body;
+        }
+        APIResponse<Object> response = new APIResponse<>();
+        response.setResult(body);
+        return response;
+    }
+}
+```
+
+---
+
+## ✅ Summary
+
+### What Was Fixed
+
+1. ✅ OTP expired now allows resend (removed blocking condition)
+2. ✅ Profile update response parsing corrected (direct response vs wrapped)
+3. ✅ Better error messages with validation hints
+4. ✅ Console logging for easier debugging
+
+### Files Changed
+
+- `front-end/src/components/Auth/ForgotPassword.tsx` (OTP resend logic)
+- `front-end/src/api/endpoints/users.api.ts` (response parsing)
+- `front-end/src/components/CustomerProfile/Profile.tsx` (error handling)
+- `front-end/src/components/Staff/StaffProfile.tsx` (error handling)
+
+### User Impact
+
+- 🎯 Better UX: Can resend OTP after expiration
+- 🎯 Profile updates work correctly
+- 🎯 Clear error messages guide users
+- 🎯 Developers can debug issues faster
+
+---
+
+**Status:** ✅ Both issues resolved and tested  
+**Last Updated:** November 9, 2025, 23:30

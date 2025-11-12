@@ -1,0 +1,383 @@
+import { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { Navbar } from "../components/Navbar/Navbar";
+import { Footer } from "../components/Footer/Footer";
+import { heroBookGroups } from "../data/books";
+import { seriesData } from "../data/series";
+import type { Book } from "../data/books";
+import type { Series } from "../data/series";
+import { useAuth } from "../contexts/AuthContext";
+import { FaStar, FaRegStar } from "react-icons/fa";
+
+type Review = {
+  id: string;
+  userId: string;
+  username: string;
+  rating: number;
+  comment: string;
+  date: string;
+};
+
+export function ProductDetail() {
+  const { type, id } = useParams<{ type: string; id: string }>();
+  const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
+  const [product, setProduct] = useState<(Book | Series) | null>(null);
+  const [quantity, setQuantity] = useState(1);
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [newReview, setNewReview] = useState({ rating: 5, comment: "" });
+  const [canReview, setCanReview] = useState(false);
+
+  useEffect(() => {
+    if (!type || !id) return;
+
+    // Find product
+    let foundProduct = null;
+    if (type === "book") {
+      foundProduct = heroBookGroups.flat().find((b) => b.id.toString() === id);
+    } else if (type === "series") {
+      foundProduct = seriesData.find((s) => s.id.toString() === id);
+    }
+
+    if (!foundProduct) {
+      navigate("/");
+      return;
+    }
+
+    setProduct(foundProduct);
+
+    // Load reviews from localStorage
+    const allReviews = JSON.parse(localStorage.getItem("reviews") || "{}");
+    const productKey = `${type}-${id}`;
+    setReviews(allReviews[productKey] || []);
+
+    // Check if user can review (must be logged in and purchased)
+    if (isAuthenticated) {
+      const purchases = JSON.parse(localStorage.getItem("purchases") || "[]");
+      const hasPurchased = purchases.some(
+        (p: any) => p.productId === id && p.productType === type && p.delivered
+      );
+      setCanReview(hasPurchased);
+    }
+  }, [type, id, navigate, isAuthenticated]);
+
+  const handleAddToCart = () => {
+    if (!isAuthenticated) {
+      navigate("/signin");
+      return;
+    }
+    console.log("Adding to cart:", { type, id, quantity });
+    alert(`Added ${quantity} item(s) to cart!`);
+  };
+
+  const handleBuyNow = () => {
+    if (!isAuthenticated) {
+      navigate("/signin");
+      return;
+    }
+    console.log("Buy now:", { type, id, quantity });
+    alert("Redirecting to checkout...");
+  };
+
+  const handleSubmitReview = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!canReview || !product) return;
+
+    const review: Review = {
+      id: Date.now().toString(),
+      userId: "current-user", // In real app, get from auth context
+      username: "Current User",
+      rating: newReview.rating,
+      comment: newReview.comment,
+      date: new Date().toISOString(),
+    };
+
+    const allReviews = JSON.parse(localStorage.getItem("reviews") || "{}");
+    const productKey = `${type}-${id}`;
+    allReviews[productKey] = [...(allReviews[productKey] || []), review];
+    localStorage.setItem("reviews", JSON.stringify(allReviews));
+
+    setReviews([...reviews, review]);
+    setNewReview({ rating: 5, comment: "" });
+    alert("Review submitted successfully!");
+  };
+
+  if (!product) return null;
+
+  const averageRating =
+    reviews.length > 0
+      ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
+      : 0;
+
+  return (
+    <>
+      <Navbar />
+      <div className="min-h-screen px-16 py-12 bg-beige-50">
+        {/* Breadcrumb */}
+        <div className="mb-6 text-sm text-beige-600">
+          <a href="/" className="hover:underline">
+            Home
+          </a>{" "}
+          /
+          <a href={`/${type}s`} className="hover:underline">
+            {" "}
+            {type === "book" ? "Books" : "Series"}
+          </a>{" "}
+          /<span className="text-beige-900"> {product.title}</span>
+        </div>
+
+        {/* Main Content */}
+        <div className="grid grid-cols-1 gap-12 lg:grid-cols-2">
+          {/* Left: Image & Actions */}
+          <div className="flex flex-col items-center">
+            <div className="w-full max-w-md mb-6 overflow-hidden rounded-lg shadow-lg">
+              <img
+                src={product.image || "/placeholder-book.jpg"}
+                alt={product.title}
+                className="object-cover w-full h-auto"
+              />
+            </div>
+            <div className="w-full max-w-md space-y-4">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium text-beige-800">
+                  Quantity:
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  max={product.stock_quantity}
+                  value={quantity}
+                  onChange={(e) =>
+                    setQuantity(
+                      Math.max(
+                        1,
+                        Math.min(
+                          product.stock_quantity,
+                          parseInt(e.target.value) || 1
+                        )
+                      )
+                    )
+                  }
+                  className="w-20 px-3 py-2 border rounded-lg border-beige-300 focus:outline-none focus:ring-2 focus:ring-beige-500"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <button
+                  onClick={handleAddToCart}
+                  className="py-3 font-semibold text-white transition-colors rounded-lg bg-beige-700 hover:bg-beige-800"
+                >
+                  Add to Cart
+                </button>
+                <button
+                  onClick={handleBuyNow}
+                  className="py-3 font-semibold transition-colors border-2 rounded-lg text-beige-700 border-beige-700 hover:bg-beige-700 hover:text-white"
+                >
+                  Buy Now
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Right: Product Info */}
+          <div>
+            <h1 className="mb-4 text-4xl font-bold text-beige-900">
+              {product.title}
+            </h1>
+
+            <div className="flex items-center gap-2 mb-6">
+              <div className="flex">
+                {[1, 2, 3, 4, 5].map((star) =>
+                  star <= Math.round(averageRating) ? (
+                    <FaStar key={star} className="text-yellow-500" />
+                  ) : (
+                    <FaRegStar key={star} className="text-gray-300" />
+                  )
+                )}
+              </div>
+              <span className="text-sm text-beige-600">
+                ({reviews.length} {reviews.length === 1 ? "review" : "reviews"})
+              </span>
+            </div>
+
+            <div className="mb-6 text-3xl font-bold text-beige-900">
+              ${product.price.toFixed(2)}
+            </div>
+
+            <div className="space-y-3 text-beige-700">
+              <div className="grid grid-cols-3 gap-2">
+                <span className="font-semibold">Author:</span>
+                <span className="col-span-2">
+                  {(product as Book).authorId ||
+                    (product as Series).author_id ||
+                    "N/A"}
+                </span>
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                <span className="font-semibold">Publisher:</span>
+                <span className="col-span-2">
+                  Publisher #{product.publisher_id}
+                </span>
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                <span className="font-semibold">Category:</span>
+                <span className="col-span-2">
+                  Category #{product.category_id}
+                </span>
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                <span className="font-semibold">Published:</span>
+                <span className="col-span-2">{product.published_date}</span>
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                <span className="font-semibold">Stock:</span>
+                <span className="col-span-2">
+                  {product.stock_quantity > 0 ? (
+                    <span className="text-green-600">
+                      {product.stock_quantity} in stock
+                    </span>
+                  ) : (
+                    <span className="text-red-600">Out of stock</span>
+                  )}
+                </span>
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                <span className="font-semibold">Product ID:</span>
+                <span className="col-span-2">#{product.id}</span>
+              </div>
+            </div>
+
+            <div className="pt-6 mt-6 border-t border-beige-200">
+              <h3 className="mb-3 text-xl font-semibold text-beige-900">
+                Description
+              </h3>
+              <p className="leading-relaxed text-beige-700">
+                {product.description}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Reviews Section */}
+        <div className="pt-12 mt-12 border-t border-beige-200">
+          <h2 className="mb-6 text-3xl font-bold text-beige-900">
+            Customer Reviews
+          </h2>
+
+          {/* Write Review Form (only if user can review) */}
+          {isAuthenticated && canReview && (
+            <div className="p-6 mb-8 rounded-lg bg-beige-100">
+              <h3 className="mb-4 text-xl font-semibold text-beige-900">
+                Write a Review
+              </h3>
+              <form onSubmit={handleSubmitReview}>
+                <div className="mb-4">
+                  <label className="block mb-2 text-sm font-medium text-beige-800">
+                    Rating
+                  </label>
+                  <div className="flex gap-2">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        type="button"
+                        onClick={() =>
+                          setNewReview({ ...newReview, rating: star })
+                        }
+                        className="text-2xl"
+                      >
+                        {star <= newReview.rating ? (
+                          <FaStar className="text-yellow-500" />
+                        ) : (
+                          <FaRegStar className="text-gray-300" />
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="mb-4">
+                  <label className="block mb-2 text-sm font-medium text-beige-800">
+                    Comment
+                  </label>
+                  <textarea
+                    value={newReview.comment}
+                    onChange={(e) =>
+                      setNewReview({ ...newReview, comment: e.target.value })
+                    }
+                    className="w-full px-4 py-2 border rounded-lg border-beige-300 focus:outline-none focus:ring-2 focus:ring-beige-500"
+                    rows={4}
+                    required
+                  />
+                </div>
+                <button
+                  type="submit"
+                  className="px-6 py-2 font-semibold text-white transition-colors rounded-lg bg-beige-700 hover:bg-beige-800"
+                >
+                  Submit Review
+                </button>
+              </form>
+            </div>
+          )}
+
+          {!isAuthenticated && (
+            <p className="mb-8 text-beige-600">
+              <a href="/signin" className="font-semibold hover:underline">
+                Sign in
+              </a>{" "}
+              to write a review.
+            </p>
+          )}
+
+          {isAuthenticated && !canReview && (
+            <p className="mb-8 text-beige-600">
+              You can write a review after purchasing and receiving this
+              product.
+            </p>
+          )}
+
+          {/* Reviews List */}
+          <div className="space-y-6">
+            {reviews.length === 0 ? (
+              <p className="text-beige-600">
+                No reviews yet. Be the first to review this product!
+              </p>
+            ) : (
+              reviews.map((review) => (
+                <div
+                  key={review.id}
+                  className="p-6 border rounded-lg border-beige-200"
+                >
+                  <div className="flex items-start justify-between mb-3">
+                    <div>
+                      <p className="font-semibold text-beige-900">
+                        {review.username}
+                      </p>
+                      <div className="flex gap-1 mt-1">
+                        {[1, 2, 3, 4, 5].map((star) =>
+                          star <= review.rating ? (
+                            <FaStar
+                              key={star}
+                              className="text-sm text-yellow-500"
+                            />
+                          ) : (
+                            <FaRegStar
+                              key={star}
+                              className="text-sm text-gray-300"
+                            />
+                          )
+                        )}
+                      </div>
+                    </div>
+                    <span className="text-sm text-beige-600">
+                      {new Date(review.date).toLocaleDateString()}
+                    </span>
+                  </div>
+                  <p className="text-beige-700">{review.comment}</p>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </div>
+      <Footer />
+    </>
+  );
+}

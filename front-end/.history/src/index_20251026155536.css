@@ -1,0 +1,32 @@
+@font-face {
+  font-family: "LovelyHome";
+  src: url("/font/LovelyHome-9aBZ.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "BelgianoSerif2";
+  src: url("/font/BelgianoSerif2.ttf") format("truetype");
+}
+
+@import "tailwindcss";
+
+@theme {
+  
+  --color-beige-100: rgb(248, 244, 225);
+  --color-beige-300: rgb(175, 143, 111);
+  --color-beige-500: rgb(116, 81, 45);
+  --color-beige-700: rgb(84, 51, 16);
+  --color-beige-800: rgb(66, 33, 0);
+  --color-beige-900: rgb(51, 20, 0);
+  --font-brand: "LovelyHome", serif;
+  --font-heading: "BelgianoSerif2", serif;
+}
+
+/* Component utility for brand text: uses theme variables */
+@layer components {
+  .brand-text {
+    @apply text-beige-900;
+    font-family: var(--font-brand);
+    font-size: 1.5rem; /* default brand font-size */
+  }
+}

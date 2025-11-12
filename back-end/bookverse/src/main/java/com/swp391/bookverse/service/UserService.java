@@ -20,7 +20,13 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -300,4 +306,155 @@ public class UserService {
         userRepository.save(existingUser);
         return true;
     }
+
+    /**
+     * Handle image upload and save to file system
+     * @param imageFile the uploaded image file
+     * @param folder the folder to save in (avatar, book, author, etc.)
+     * @return the database path (/src/assets/img/folder/filename.jpg)
+     */
+    private String handleImageUpload(MultipartFile imageFile, String folder) {
+        System.out.println("🔍 handleImageUpload called - imageFile: " + 
+            (imageFile != null ? imageFile.getOriginalFilename() + " (" + imageFile.getSize() + " bytes)" : "null"));
+        
+        if (imageFile == null || imageFile.isEmpty()) {
+            System.out.println("⚠️ Image file is null or empty, skipping upload");
+            return null;
+        }
+
+        try {
+            // Validate file type
+            String contentType = imageFile.getContentType();
+            if (contentType == null || !contentType.startsWith("image/")) {
+                throw new AppException(ErrorCode.INVALID_FILE_TYPE);
+            }
+
+            // Validate file size (max 5MB)
+            if (imageFile.getSize() > 5 * 1024 * 1024) {
+                throw new AppException(ErrorCode.FILE_TOO_LARGE);
+            }
+
+            // Generate unique filename
+            String originalFilename = imageFile.getOriginalFilename();
+            if (originalFilename == null || originalFilename.isEmpty()) {
+                throw new AppException(ErrorCode.INVALID_FILE_NAME);
+            }
+
+            String timestamp = String.valueOf(System.currentTimeMillis());
+            String cleanFilename = originalFilename.toLowerCase()
+                    .replaceAll("[^a-z0-9.]", "-")
+                    .replaceAll("-+", "-");
+            String filename = timestamp + "-" + cleanFilename;
+
+            // Create upload directory if not exists
+            // Use absolute path to avoid creating nested folders
+            String projectRoot = System.getProperty("user.dir").replace("\\back-end\\bookverse", "");
+            String uploadDir = projectRoot + "/front-end/public/img/" + folder;
+            Path uploadPath = Paths.get(uploadDir);
+            
+            System.out.println("📁 Upload directory: " + uploadPath.toAbsolutePath());
+            
+            if (!Files.exists(uploadPath)) {
+                Files.createDirectories(uploadPath);
+                System.out.println("✅ Created directory: " + uploadPath.toAbsolutePath());
+            }
+
+            // Save file
+            Path filePath = uploadPath.resolve(filename);
+            Files.copy(imageFile.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+
+            // Return DB path
+            String dbPath = "/img/" + folder + "/" + filename;
+            System.out.println("✅ Image uploaded: " + dbPath);
+            return dbPath;
+
+        } catch (IOException e) {
+            System.err.println("❌ Image upload failed: " + e.getMessage());
+            throw new AppException(ErrorCode.FILE_UPLOAD_FAILED);
+        }
+    }
+
+    /**
+     * Creates a new user with image upload support
+     */
+    @PreAuthorize("hasAuthority('SCOPE_ADMIN')")
+    public User createUser(String username, String password, String email, 
+                          String name, String phone, String address,
+                          MultipartFile imageFile, String imageUrl, boolean active, List<String> roles) {
+        
+        // Check if username already exists
+        if(userRepository.existsByUsername(username)) {
+            throw new AppException(ErrorCode.USER_EXISTS);
+        }
+
+        // Check if email already exists
+        if(userRepository.existsByEmail(email)) {
+            throw new AppException(ErrorCode.EMAIL_ALREADY_EXISTS);
+        }
+
+        // Handle image
+        String imagePath = null;
+        if (imageFile != null && !imageFile.isEmpty()) {
+            // User uploaded a file
+            imagePath = handleImageUpload(imageFile, "avatar");
+            System.out.println("✅ Created with uploaded file: " + imagePath);
+        } else if (imageUrl != null && !imageUrl.trim().isEmpty()) {
+            // User provided a URL/path
+            imagePath = imageUrl.trim();
+            System.out.println("✅ Created with image URL: " + imageUrl);
+        }
+
+        // Create new user
+        User user = new User();
+        user.setUsername(username);
+        user.setPassword(passwordEncoder.encode(password));
+        user.setEmail(email);
+        user.setName(name);
+        user.setPhone(phone);
+        user.setAddress(address);
+        user.setImage(imagePath);
+        user.setActive(active);
+
+        // Set roles
+        HashSet<String> userRoles = new HashSet<>();
+        if (roles != null && !roles.isEmpty()) {
+            userRoles.addAll(roles);
+        } else {
+            userRoles.add(Role.CUSTOMER.name());
+        }
+        user.setRoles(userRoles);
+
+        return userRepository.save(user);
+    }
+
+    /**
+     * Updates an existing user with image upload support
+     */
+    @PreAuthorize("hasAuthority('SCOPE_ADMIN')")
+    public UserResponse updateUser(String id, String name, String phone, 
+                                   String address, MultipartFile imageFile, String imageUrl) {
+        // Fetch existing user
+        User existingUser = userRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+
+        // Update fields
+        if (name != null) existingUser.setName(name);
+        if (phone != null) existingUser.setPhone(phone);
+        if (address != null) existingUser.setAddress(address);
+
+        // Handle image update
+        if (imageFile != null && !imageFile.isEmpty()) {
+            // User uploaded a file
+            String imagePath = handleImageUpload(imageFile, "avatar");
+            existingUser.setImage(imagePath);
+            System.out.println("✅ Updated with uploaded file: " + imagePath);
+        } else if (imageUrl != null && !imageUrl.trim().isEmpty()) {
+            // User provided a URL/path
+            existingUser.setImage(imageUrl.trim());
+            System.out.println("✅ Updated with image URL: " + imageUrl);
+        }
+
+        return userMapper.toUserResponse(userRepository.save(existingUser));
+    }
+
 }

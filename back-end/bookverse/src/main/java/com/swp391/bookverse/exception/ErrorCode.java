@@ -44,8 +44,8 @@ public enum ErrorCode {
     NO_BOOKS_STORED(3003, "No books stored in database"),
 
     // Custom error codes for publisher entity
-    PUBLISHER_EXISTS(4001, "PublisherController already exists"),
-    PUBLISHER_NOT_FOUND(4002, "PublisherController not found"),
+    PUBLISHER_EXISTS(4001, "Publisher already exists"),
+    PUBLISHER_NOT_FOUND(4002, "Publisher not found"),
     NO_PUBLISHERS_STORED(4003, "No publishers stored in database"),
 
     // Custom error codes for category entity
@@ -75,11 +75,11 @@ public enum ErrorCode {
     REVIEW_ALREADY_EXISTS(9001, "Review already exists for this user and book"),
     REVIEW_NOT_FOUND(9002, "Review not found"),
 
-    // custom error codes for promotion entity
-    PROMOTION_NOT_FOUND(10001, "Promotion not found"),
-    INVALID_DATE_RANGE(10002, "End date must be after start date"),
-    PROMOTION_CONTENT_EXISTS(10003, "Promotion content already exists"),
-
+    // custom error codes for file upload
+    INVALID_FILE_TYPE(10001, "File must be an image"),
+    FILE_TOO_LARGE(10002, "File size must be less than 5MB"),
+    INVALID_FILE_NAME(10003, "Invalid file name"),
+    FILE_UPLOAD_FAILED(10004, "File upload failed"),
 
     INVALID_KEY(99999, "Invalid message key provided")
     ;

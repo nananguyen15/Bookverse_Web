@@ -4,6 +4,7 @@ import com.swp391.bookverse.dto.APIResponse;
 import com.swp391.bookverse.dto.request.PublisherCreationRequest;
 import com.swp391.bookverse.dto.request.PublisherUpdateRequest;
 import com.swp391.bookverse.dto.response.PublisherResponse;
+import com.swp391.bookverse.dto.response.PublisherActiveResponse;
 import com.swp391.bookverse.entity.Publisher;
 import com.swp391.bookverse.service.PublisherService;
 import jakarta.validation.Valid;
@@ -46,6 +47,16 @@ public class PublisherController {
     @PutMapping("/update/{PublisherId}")
     public PublisherResponse updatePublisher(@PathVariable("PublisherId") Long publisherId, @RequestBody @Valid PublisherUpdateRequest request) {
         return publisherService.updatePublisher(publisherId, request);
+    }
+
+    @PutMapping("/active/{publisherId}")
+    public PublisherActiveResponse restorePublisher(@PathVariable("publisherId") Long publisherId) {
+        return publisherService.changeActivePublisherById(true, publisherId);
+    }
+
+    @PutMapping("/inactive/{publisherId}")
+    public PublisherActiveResponse deactivatePublisher(@PathVariable("publisherId") Long publisherId) {
+        return publisherService.changeActivePublisherById(false, publisherId);
     }
 
     @GetMapping("/active")

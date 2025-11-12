@@ -22,7 +22,7 @@ import java.util.List;
 public class SubCategoryController {
     SubCategoryService subCategoryService;
     @PostMapping("/create")
-    public APIResponse<SubCategoryResponse> createSubCategory(SubCategoryCreationRequest request) {
+    public APIResponse<SubCategoryResponse> createSubCategory(@RequestBody SubCategoryCreationRequest request) {
         APIResponse<SubCategoryResponse> response = new APIResponse<>();
         response.setResult(subCategoryService.createSubCategory(request));
         return response;
@@ -58,7 +58,7 @@ public class SubCategoryController {
     }
 
     @PutMapping("/update/{subCategoryId}")
-    public APIResponse<SubCategoryResponse> updateSubCategory(@PathVariable("subCategoryId") Integer subCategoryId, SubCategoryCreationRequest request) {
+    public APIResponse<SubCategoryResponse> updateSubCategory(@PathVariable("subCategoryId") Integer subCategoryId, @RequestBody SubCategoryCreationRequest request) {
         APIResponse<SubCategoryResponse> response = new APIResponse<>();
         response.setResult(subCategoryService.updateSubCategory(subCategoryId, request));
         return response;

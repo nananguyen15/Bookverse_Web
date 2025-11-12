@@ -1,0 +1,67 @@
+import { IoMdNotifications, IoMdSearch } from "react-icons/io";
+
+export function Navbar() {
+  const links: [string, string][] = [
+    ["Books", "#"],
+    ["Series", "#"],
+    ["Category", "#"],
+    ["About Us", "#"],
+    ["Q&A", "#"],
+  ];
+  return (
+    <nav className="flex flex-row items-center justify-between w-full px-10 py-3 bg-beige-50">
+      {/* Brand text */}
+      <h1 className="font-bold brand-text mr-7">
+        <a href="#">BookVerse</a>
+      </h1>
+
+      {/* Navigation links */}
+      <div className="flex-1">
+        <ul className="flex flex-row gap-5">
+          {links.map(([title, url]) => (
+            <li key={title}>
+              <a
+                href={url}
+                className="inline-block text-gray-800 transition-colors group hover:text-beige-900 font-heading"
+              >
+                <span className="relative z-10">{title}</span>
+                <span className="block max-w-0 group-hover:max-w-full transition-all duration-200 h-0.5 bg-beige-300 mt-1" />
+              </a>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      {/* Right section: Search + Notifications + Cart + Auth*/}
+          <div className="flex gap-2 ">
+            <a
+              href="#"
+              className="inline-flex items-center justify-center px-3 py-1 transition-colors border rounded-md border-sky-600 text-sky-600 hover:bg-sky-600 hover:text-white leading-none"
+            >
+              Login
+            </a>
+            <a
+              href="#"
+              className="inline-flex items-center justify-center px-3 py-1 transition-colors border rounded-md border-sky-600 text-sky-600 hover:bg-sky-600 hover:text-white leading-none"
+            >
+              Sign Up
+            </a>
+          </div>
+            <IoMdSearch />
+          </button>
+          <a href="#">
+            <IoMdNotifications />
+          </a>
+          <div className="flex gap-2">
+            <button className="px-3 py-1 transition-colors border rounded-md background-transparent border-beige-700 text-beige-700 hover:bg-beige-700 hover:text-white">
+              <a href="#">Login</a>
+            </button>
+            <button className="px-3 py-1 transition-colors border rounded-md background-transparent border-beige-700 text-beige-700 hover:bg-beige-700 hover:text-white">
+              <a href="#">Sign Up</a>
+            </button>
+          </div>
+        </div>
+      </div>
+    </nav>
+  );
+}

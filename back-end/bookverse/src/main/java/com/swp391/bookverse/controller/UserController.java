@@ -15,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -29,11 +30,22 @@ import java.util.List;
 public class UserController {
     UserService userService;
 
-    @PostMapping("/create")
-    public APIResponse<User> createUser(@RequestBody @Valid UserCreationRequest request) {
+    @PostMapping(value = "/create", consumes = {"multipart/form-data"})
+    public APIResponse<User> createUser(
+            @RequestParam("username") String username,
+            @RequestParam("password") String password,
+            @RequestParam("email") String email,
+            @RequestParam(value = "name", required = false) String name,
+            @RequestParam(value = "phone", required = false) String phone,
+            @RequestParam(value = "address", required = false) String address,
+            @RequestParam(value = "image", required = false) MultipartFile imageFile,
+            @RequestParam(value = "imageUrl", required = false) String imageUrl,
+            @RequestParam(value = "active", defaultValue = "true") boolean active,
+            @RequestParam(value = "roles", required = false) List<String> roles) {
+        
         APIResponse<User> response = new APIResponse<>();
-        response.setResult(userService.createUser(request));
-       return response;
+        response.setResult(userService.createUser(username, password, email, name, phone, address, imageFile, imageUrl, active, roles));
+        return response;
     }
 
     @GetMapping
@@ -83,9 +95,15 @@ public class UserController {
         }
     }
 
-    @PutMapping("/update/{userId}")
-    public UserResponse updateUser(@PathVariable("userId") String userId, @RequestBody @Valid UserUpdateRequest request) {
-        return userService.updateUser(userId, request);
+    @PutMapping(value = "/update/{userId}", consumes = {"multipart/form-data"})
+    public UserResponse updateUser(
+            @PathVariable("userId") String userId,
+            @RequestParam(value = "name", required = false) String name,
+            @RequestParam(value = "phone", required = false) String phone,
+            @RequestParam(value = "address", required = false) String address,
+            @RequestParam(value = "image", required = false) MultipartFile imageFile,
+            @RequestParam(value = "imageUrl", required = false) String imageUrl) {
+        return userService.updateUser(userId, name, phone, address, imageFile, imageUrl);
     }
 
     @PutMapping("/change-role/{userId}")

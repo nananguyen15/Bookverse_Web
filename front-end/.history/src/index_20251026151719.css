@@ -1,0 +1,11 @@
+@import "tailwindcss";
+
+@font-face {
+  font-family: "LovelyHome";
+  src: url("/font/LovelyHome-9aBZ.ttf") format("truetype");
+}
+
+@font-face {
+  font-family: "BelgianoSerif2";
+  src: url("/font/BelgianoSerif2.ttf") format("truetype");
+}
