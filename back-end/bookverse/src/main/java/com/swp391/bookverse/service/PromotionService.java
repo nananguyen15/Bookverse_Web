@@ -3,11 +3,14 @@ package com.swp391.bookverse.service;
 import com.swp391.bookverse.dto.request.PromotionCreationRequest;
 import com.swp391.bookverse.dto.request.PromotionUpdateRequest;
 import com.swp391.bookverse.dto.response.PromotionResponse;
+import com.swp391.bookverse.dto.response.SubCategoryResponse;
 import com.swp391.bookverse.entity.Promotion;
+import com.swp391.bookverse.entity.SubCategory;
 import com.swp391.bookverse.exception.AppException;
 import com.swp391.bookverse.exception.ErrorCode;
 import com.swp391.bookverse.mapper.PromotionMapper;
 import com.swp391.bookverse.repository.PromotionRepository;
+import com.swp391.bookverse.repository.SubCategoryRepository;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -25,6 +28,7 @@ import java.util.List;
 public class PromotionService {
     PromotionRepository promotionRepository;
     PromotionMapper promotionMapper;
+    SubCategoryRepository subCategoryRepository;
 
     /**
      * Create a new promotion. Only admins can perform this action.
@@ -129,4 +133,23 @@ public class PromotionService {
     }
 
 
+    /**
+     * Get all sub-categories that have promotion_id = id.
+     */
+    public List<SubCategoryResponse> getSubCategoriesByPromotionId(Long id) {
+        // check if promotion exists
+        promotionRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.PROMOTION_NOT_FOUND));
+
+        // find all sub-categories that have this promotion_id
+        List<SubCategory> subCategories = subCategoryRepository.findByPromotionId(id);
+
+        if (subCategories.isEmpty()) {
+            throw new AppException(ErrorCode.SUBCATEGORY_NOT_FOUND);
+        }
+
+        return subCategories.stream()
+                .map(promotionMapper::toSubCategoryResponse)
+                .toList();
+    }
 }

@@ -19,4 +19,5 @@ public interface PromotionRepository extends JpaRepository<Promotion, Long> {
     List<Promotion> findExpiredPromotions(LocalDate currentDate);
 
     boolean existsByContentIgnoreCase(@NotBlank(message = "Content is required") @Size(max = 255, message = "Content must not exceed 255 characters") String content);
+
 }

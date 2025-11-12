@@ -29,7 +29,11 @@ public class SubCategory {
     @Lob
     String description;
 
-//    Long discountId;
+
+    // Keep this if you still want the entity relationship
+    @ManyToOne
+    @JoinColumn(name = "promotion_id", insertable = false, updatable = false)
+    private Promotion promotion;
 
     @Column(nullable = false)
     Boolean active;

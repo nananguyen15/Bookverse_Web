@@ -3,8 +3,11 @@ package com.swp391.bookverse.mapper;
 import com.swp391.bookverse.dto.request.PromotionCreationRequest;
 import com.swp391.bookverse.dto.request.PromotionUpdateRequest;
 import com.swp391.bookverse.dto.response.PromotionResponse;
+import com.swp391.bookverse.dto.response.SubCategoryResponse;
 import com.swp391.bookverse.entity.Promotion;
+import com.swp391.bookverse.entity.SubCategory;
 import org.mapstruct.*;
+import org.springframework.data.jpa.repository.EntityGraph;
 
 import java.time.LocalDate;
 
@@ -22,4 +25,6 @@ public interface PromotionMapper {
         LocalDate now = LocalDate.now();
         return !now.isBefore(promotion.getStartDate()) && !now.isAfter(promotion.getEndDate());
     }
+    @Mapping(target = "supCategoryId", source = "supCategory.id")
+    SubCategoryResponse toSubCategoryResponse(SubCategory subCategory);
 }

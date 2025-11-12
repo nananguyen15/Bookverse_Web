@@ -4,6 +4,7 @@ import com.swp391.bookverse.dto.APIResponse;
 import com.swp391.bookverse.dto.request.PromotionCreationRequest;
 import com.swp391.bookverse.dto.request.PromotionUpdateRequest;
 import com.swp391.bookverse.dto.response.PromotionResponse;
+import com.swp391.bookverse.dto.response.SubCategoryResponse;
 import com.swp391.bookverse.service.PromotionService;
 import jakarta.validation.Valid;
 import lombok.AccessLevel;
@@ -59,7 +60,7 @@ public class PromotionController {
                 .build();
     }
 
-    @PutMapping("/{id}")
+    @PutMapping("/update/{id}")
     public APIResponse<PromotionResponse> updatePromotion(
             @PathVariable Long id,
             @Valid @RequestBody PromotionUpdateRequest request) {
@@ -79,6 +80,16 @@ public class PromotionController {
     public APIResponse<PromotionResponse> togglePromotionInactiveStatus(@PathVariable Long id) {
         return APIResponse.<PromotionResponse>builder()
                 .result(promotionService.changeActiveStatusPromotion(id, false))
+                .build();
+    }
+
+    /**
+     * Get all sub-categories that have active promotions
+     */
+    @GetMapping("/{id}/sub-categories")
+    public APIResponse<List<SubCategoryResponse>> getSubCategoriesByPromotionId(@PathVariable Long id) {
+        return APIResponse.<List<SubCategoryResponse>>builder()
+                .result(promotionService.getSubCategoriesByPromotionId(id))
                 .build();
     }
 }
