@@ -40,11 +40,6 @@ public class BookController {
             @RequestParam(value = "imageUrl", required = false) String imageUrl,
             @RequestParam(value = "active", defaultValue = "true") boolean active) {
         
-        System.out.println("📥 Create book request received");
-        System.out.println("   Title: " + title);
-        System.out.println("   Image file: " + (imageFile != null ? imageFile.getOriginalFilename() : "null"));
-        System.out.println("   Image URL: " + imageUrl);
-        
         APIResponse<Book> response;
         response = bookService.createBook(title, description, price, authorId, publisherId, 
                                          categoryId, stockQuantity, publishedDate, imageFile, imageUrl, active);
@@ -125,11 +120,6 @@ public class BookController {
             @RequestParam(value = "publishedDate", required = false) String publishedDate,
             @RequestParam(value = "image", required = false) MultipartFile imageFile,
             @RequestParam(value = "imageUrl", required = false) String imageUrl) {
-        
-        System.out.println("📥 Update book request received for ID: " + bookId);
-        System.out.println("   Title: " + title);
-        System.out.println("   Image file: " + (imageFile != null ? imageFile.getOriginalFilename() : "null"));
-        System.out.println("   Image URL: " + imageUrl);
         
         return bookService.updateBook(bookId, title, description, price, authorId, publisherId,
                                      categoryId, stockQuantity, publishedDate, imageFile, imageUrl);

@@ -58,11 +58,7 @@ public class SubCategoryController {
     }
 
     @PutMapping("/update/{subCategoryId}")
-<<<<<<< HEAD
     public APIResponse<SubCategoryResponse> updateSubCategory(@PathVariable("subCategoryId") Integer subCategoryId, @RequestBody SubCategoryCreationRequest request) {
-=======
-    public APIResponse<SubCategoryResponse> updateSubCategory(@PathVariable("subCategoryId") Integer subCategoryId, SubCategoryCreationRequest request) {
->>>>>>> 544ae1a45056549dbbfcdd8d96b4ab4c07fd1e8f
         APIResponse<SubCategoryResponse> response = new APIResponse<>();
         response.setResult(subCategoryService.updateSubCategory(subCategoryId, request));
         return response;

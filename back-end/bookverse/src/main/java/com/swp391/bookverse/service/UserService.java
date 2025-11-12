@@ -284,13 +284,6 @@ public class UserService {
 
         return userMapper.toUserResponse(userRepository.save(existingUser));
     }
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-<<<<<<< HEAD
->>>>>>> 544ae1a45056549dbbfcdd8d96b4ab4c07fd1e8f
-=======
->>>>>>> 544ae1a45056549dbbfcdd8d96b4ab4c07fd1e8f
 
     public Boolean changeMyPassword(UserChangePassWordRequest request) {
         // Get the username of the currently authenticated user
@@ -314,8 +307,6 @@ public class UserService {
         return true;
     }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
     /**
      * Handle image upload and save to file system
      * @param imageFile the uploaded image file
@@ -466,12 +457,4 @@ public class UserService {
         return userMapper.toUserResponse(userRepository.save(existingUser));
     }
 
-=======
-=======
->>>>>>> f66269b04ff8ccd44de48e94f3dc5e57a3c887da
->>>>>>> 544ae1a45056549dbbfcdd8d96b4ab4c07fd1e8f
-=======
-=======
->>>>>>> f66269b04ff8ccd44de48e94f3dc5e57a3c887da
->>>>>>> 544ae1a45056549dbbfcdd8d96b4ab4c07fd1e8f
 }
