@@ -4,6 +4,7 @@ import com.swp391.bookverse.dto.APIResponse;
 import com.swp391.bookverse.dto.request.PublisherCreationRequest;
 import com.swp391.bookverse.dto.request.PublisherUpdateRequest;
 import com.swp391.bookverse.dto.response.PublisherResponse;
+import com.swp391.bookverse.dto.response.PublisherActiveResponse;
 import com.swp391.bookverse.entity.Publisher;
 import com.swp391.bookverse.exception.AppException;
 import com.swp391.bookverse.exception.ErrorCode;
@@ -59,8 +60,10 @@ public class PublisherService {
         // check if publisher with the given id exists
         Publisher publisher = publisherRepository.findById(publisherId)
                 .orElseThrow(() -> new AppException(ErrorCode.PUBLISHER_NOT_FOUND));
-        // check if the updated name already exists in db
-        if (publisherRepository.existsByNameIgnoreCase(request.getName())) {
+        
+        // check if the updated name already exists in db (but not the current publisher)
+        if (!request.getName().equalsIgnoreCase(publisher.getName()) 
+                && publisherRepository.existsByNameIgnoreCase(request.getName())) {
             throw new AppException(ErrorCode.PUBLISHER_EXISTS);
         }
 
@@ -69,6 +72,26 @@ public class PublisherService {
         // save the updated publisher entity and map it to PublisherResponse
         Publisher updatedPublisher = publisherRepository.save(publisher);
         return publisherMapper.toPublisherResponse(updatedPublisher);
+    }
+
+    /**
+     * Change the active status of a publisher by ID
+     * @param isActive new active status
+     * @param publisherId publisher ID
+     * @return PublisherActiveResponse with updated status
+     */
+    public PublisherActiveResponse changeActivePublisherById(Boolean isActive, Long publisherId) {
+        Publisher existingPublisher = publisherRepository.findById(publisherId)
+                .orElseThrow(() -> new AppException(ErrorCode.PUBLISHER_NOT_FOUND));
+        
+        existingPublisher.setActive(isActive);
+        publisherRepository.save(existingPublisher);
+        
+        return PublisherActiveResponse.builder()
+                .id(existingPublisher.getId())
+                .name(existingPublisher.getName())
+                .active(existingPublisher.getActive())
+                .build();
     }
 
     public List<PublisherResponse> getActivePublishers() {

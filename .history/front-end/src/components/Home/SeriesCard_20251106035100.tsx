@@ -1,0 +1,36 @@
+import { BaseCard } from "./BaseCard";
+
+interface Series {
+  id: number;
+  name: string;
+  description?: string;
+  image?: string;
+  active: boolean;
+}
+
+type SeriesCardProps = {
+  series: Series;
+  onAddToCart?: (seriesId: string | number) => void;
+};
+
+export function SeriesCard({ series, onAddToCart }: SeriesCardProps) {
+  if (!series) {
+    return null;
+  }
+
+  // Mock author name based on author_id (replace with real data later)
+  const authorName = `Author ${series.author_id}`;
+
+  return (
+    <BaseCard
+      id={series.id}
+      title={series.title}
+      author={authorName}
+      price={series.price}
+      image={series.image}
+      layout="horizontal"
+      onAddToCart={onAddToCart}
+      detailUrl={`/series/${series.id}`}
+    />
+  );
+}

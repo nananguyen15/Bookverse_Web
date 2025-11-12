@@ -36,6 +36,10 @@ public class SupCategoryService {
         }
         // map request to entity and save to repository
         SupCategory supCategory = supCategoryMapper.toSupCategory(request);
+        // Set default active to true if null
+        if (supCategory.getActive() == null) {
+            supCategory.setActive(true);
+        }
         SupCategory savedSupCategory = supCategoryRepository.save(supCategory);
         // map saved entity to response and return
         return supCategoryMapper.toSupCategoryResponse(savedSupCategory);
@@ -88,6 +92,10 @@ public class SupCategoryService {
         }
         // update sup category fields
         supCategory.setName(request.getName());
+        // Keep active status if provided, otherwise keep current value
+        if (request.getActive() != null) {
+            supCategory.setActive(request.getActive());
+        }
         // save updated sup category to repository
         SupCategory updatedSupCategory = supCategoryRepository.save(supCategory);
         return supCategoryMapper.toSupCategoryResponse(updatedSupCategory);

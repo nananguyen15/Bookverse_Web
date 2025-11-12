@@ -24,7 +24,7 @@ import java.util.List;
 public class SupCategoryController {
     SupCategoryService supCategoryService;
     @PostMapping("/create")
-    public APIResponse<SupCategoryResponse> createSupCategory(SupCategoryCreationRequest request) {
+    public APIResponse<SupCategoryResponse> createSupCategory(@RequestBody SupCategoryCreationRequest request) {
         APIResponse<SupCategoryResponse> response = new APIResponse<>();
         response.setResult(supCategoryService.createSupCategory(request));
         return response;
@@ -52,7 +52,7 @@ public class SupCategoryController {
     }
 
     @PutMapping("/update/{supCategoryId}")
-    public APIResponse<SupCategoryResponse> updateSupCategory(@PathVariable("supCategoryId") Integer supCategoryId, SupCategoryCreationRequest request) {
+    public APIResponse<SupCategoryResponse> updateSupCategory(@PathVariable("supCategoryId") Integer supCategoryId, @RequestBody SupCategoryCreationRequest request) {
         APIResponse<SupCategoryResponse> response = new APIResponse<>();
         response.setResult(supCategoryService.updateSupCategory(supCategoryId, request));
         return response;

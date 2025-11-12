@@ -33,7 +33,7 @@ import static com.swp391.bookverse.configuration.VNPayConfig.*;
 public class PaymentController {
 
     @GetMapping("/create")
-    public ResponseEntity<String> createPayment(@RequestBody PaymentCreationRequest request) throws UnsupportedEncodingException {
+    public ResponseEntity<String> createPayment() throws UnsupportedEncodingException {
 
         String orderType = "other";
 //        long amount = Integer.parseInt(req.getParameter("amount"))*100;

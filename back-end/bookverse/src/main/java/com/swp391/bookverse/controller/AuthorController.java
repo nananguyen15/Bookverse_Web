@@ -5,6 +5,7 @@ import com.swp391.bookverse.dto.request.AuthorCreationRequest;
 import com.swp391.bookverse.dto.request.AuthorUpdateRequest;
 import com.swp391.bookverse.dto.response.AuthorResponse;
 import com.swp391.bookverse.dto.response.BookResponse;
+import com.swp391.bookverse.dto.response.AuthorActiveResponse;
 import com.swp391.bookverse.entity.Author;
 import com.swp391.bookverse.service.AuthorService;
 import jakarta.validation.Valid;
@@ -12,6 +13,7 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -25,11 +27,29 @@ import java.util.List;
 public class AuthorController {
     AuthorService authorService;
 
+//    @PostMapping(value = "/create", consumes = {"multipart/form-data"})
+//    public APIResponse<Author> createAuthor(
+//            @RequestParam(value = "name", required = false) String name,
+//            @RequestParam(value = "bio", required = false) String bio,
+//            @RequestParam(value = "image", required = false) MultipartFile imageFile,
+//            @RequestParam(value = "imageUrl", required = false) String imageUrl,
+//            @RequestParam(value = "active", defaultValue = "true") boolean active) {
+//
+//        System.out.println("📥 Create author request received");
+//        System.out.println("   Name: " + name);
+//        System.out.println("   Image file: " + (imageFile != null ? imageFile.getOriginalFilename() : "null"));
+//        System.out.println("   Image URL: " + imageUrl);
+//
+//        APIResponse<Author> response = new APIResponse<>();
+//        response.setResult(authorService.createAuthor(name, bio, imageFile, imageUrl, active));
+//        return response;
+//    }
+
     @PostMapping("/create")
-    public APIResponse<Author> createAuthor(@RequestBody @Valid AuthorCreationRequest request) {
+    public APIResponse<Author> createAuthor(@Valid @RequestBody AuthorCreationRequest request) {
         APIResponse<Author> response = new APIResponse<>();
         response.setResult(authorService.createAuthor(request));
-         return response;
+        return response;
     }
 
     @GetMapping
@@ -58,9 +78,38 @@ public class AuthorController {
         return authorService.getAuthorById(authorId);
     }
 
+//    @PutMapping(value = "/update/{authorId}", consumes = {"multipart/form-data"})
+//    public AuthorResponse updateAuthor(
+//            @PathVariable("authorId") Long authorId,
+//            @RequestParam(value = "name", required = false) String name,
+//            @RequestParam(value = "bio", required = false) String bio,
+//            @RequestParam(value = "image", required = false) MultipartFile imageFile,
+//            @RequestParam(value = "imageUrl", required = false) String imageUrl,
+//            @RequestParam(value = "active", required = false) Boolean active) {
+//
+//        System.out.println("📥 Update author request received for ID: " + authorId);
+//        System.out.println("   Name: " + name);
+//        System.out.println("   Image file: " + (imageFile != null ? imageFile.getOriginalFilename() : "null"));
+//        System.out.println("   Image URL: " + imageUrl);
+//
+//        return authorService.updateAuthor(authorId, name, bio, imageFile, imageUrl, active);
+//    }
+
     @PutMapping("/update/{authorId}")
-    public AuthorResponse updateAuthor(@PathVariable("authorId") Long authorId, @RequestBody @Valid AuthorUpdateRequest request) {
-        return authorService.updateAuthor(authorId, request);
+    public AuthorResponse updateAuthor(
+            @PathVariable("authorId") Long authorId,
+            @Valid @RequestBody AuthorUpdateRequest authorUpdateRequest) {
+        return authorService.updateAuthor(authorId, authorUpdateRequest);
+    }
+
+    @PutMapping("/active/{authorId}")
+    public AuthorActiveResponse restoreAuthor(@PathVariable("authorId") Long authorId) {
+        return authorService.changeActiveAuthorById(true, authorId);
+    }
+
+    @PutMapping("/inactive/{authorId}")
+    public AuthorActiveResponse deactivateAuthor(@PathVariable("authorId") Long authorId) {
+        return authorService.changeActiveAuthorById(false, authorId);
     }
 
     @GetMapping("/active")

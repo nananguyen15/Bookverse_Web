@@ -19,7 +19,14 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -51,6 +58,122 @@ public class BookService {
         response.setResult(book);
         return response;
     }
+
+    /**
+     * Create a new book with multipart image upload support
+     */
+    public APIResponse<Book> createBook(String title, String description, Double price, 
+                                       Long authorId, Long publisherId, Long categoryId,
+                                       Integer stockQuantity, String publishedDate,
+                                       MultipartFile imageFile, String imageUrl, boolean active) {
+        if (bookRepository.existsByTitleIgnoreCase(title)) {
+            throw new AppException(ErrorCode.BOOK_EXISTS);
+        }
+
+        // Handle image upload
+        String imagePath = null;
+        if (imageFile != null && !imageFile.isEmpty()) {
+            imagePath = handleImageUpload(imageFile, "book");
+            System.out.println("✅ Created book with uploaded file: " + imagePath);
+        } else if (imageUrl != null && !imageUrl.trim().isEmpty()) {
+            imagePath = imageUrl.trim();
+            System.out.println("✅ Created book with image URL: " + imageUrl);
+        }
+
+        // Create book entity
+        Book book = new Book();
+        book.setTitle(title);
+        book.setDescription(description);
+        book.setPrice(price);
+        book.setStockQuantity(stockQuantity);
+        book.setPublishedDate(LocalDate.parse(publishedDate));
+        book.setImage(imagePath);
+        book.setActive(active);
+
+        // Set relationships
+        if (authorId != null) {
+            Author author = authorRepository.findById(authorId)
+                    .orElseThrow(() -> new AppException(ErrorCode.AUTHOR_NOT_FOUND));
+            book.setAuthor(author);
+        }
+        if (publisherId != null) {
+            Publisher publisher = publisherRepository.findById(publisherId)
+                    .orElseThrow(() -> new AppException(ErrorCode.PUBLISHER_NOT_FOUND));
+            book.setPublisher(publisher);
+        }
+        if (categoryId != null) {
+            SubCategory subCategory = subCategoryRepository.findById(categoryId)
+                    .orElseThrow(() -> new AppException(ErrorCode.CATEGORY_NOT_FOUND));
+            book.setCategory(subCategory);
+        }
+
+        bookRepository.save(book);
+        
+        APIResponse<Book> response = new APIResponse<>();
+        response.setResult(book);
+        return response;
+    }
+
+    private String handleImageUpload(MultipartFile imageFile, String folder) {
+        System.out.println("🔍 handleImageUpload called - imageFile: " + 
+            (imageFile != null ? imageFile.getOriginalFilename() + " (" + imageFile.getSize() + " bytes)" : "null"));
+        
+        if (imageFile == null || imageFile.isEmpty()) {
+            System.out.println("⚠️ Image file is null or empty, skipping upload");
+            return null;
+        }
+
+        try {
+            // Validate file type
+            String contentType = imageFile.getContentType();
+            if (contentType == null || !contentType.startsWith("image/")) {
+                throw new AppException(ErrorCode.INVALID_FILE_TYPE);
+            }
+
+            // Validate file size (max 5MB)
+            if (imageFile.getSize() > 5 * 1024 * 1024) {
+                throw new AppException(ErrorCode.FILE_TOO_LARGE);
+            }
+
+            // Generate unique filename
+            String originalFilename = imageFile.getOriginalFilename();
+            if (originalFilename == null || originalFilename.isEmpty()) {
+                throw new AppException(ErrorCode.INVALID_FILE_NAME);
+            }
+
+            String timestamp = String.valueOf(System.currentTimeMillis());
+            String cleanFilename = originalFilename.toLowerCase()
+                    .replaceAll("[^a-z0-9.]", "-")
+                    .replaceAll("-+", "-");
+            String filename = timestamp + "-" + cleanFilename;
+
+            // Create upload directory if not exists
+            String projectRoot = System.getProperty("user.dir").replace("\\back-end\\bookverse", "");
+            String uploadDir = projectRoot + "/front-end/public/img/" + folder;
+            Path uploadPath = Paths.get(uploadDir);
+            
+            System.out.println("📁 Upload directory: " + uploadPath.toAbsolutePath());
+            
+            if (!Files.exists(uploadPath)) {
+                Files.createDirectories(uploadPath);
+                System.out.println("✅ Created directory: " + uploadPath.toAbsolutePath());
+            }
+
+            // Save file
+            Path filePath = uploadPath.resolve(filename);
+            Files.copy(imageFile.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+
+            // Return DB path
+            String dbPath = "/img/" + folder + "/" + filename;
+            System.out.println("✅ Image uploaded: " + dbPath);
+            return dbPath;
+
+        } catch (IOException e) {
+            System.err.println("❌ Image upload failed: " + e.getMessage());
+            throw new AppException(ErrorCode.FILE_UPLOAD_FAILED);
+        }
+    }
+
 
     /**
      * Get all books stored in the system.
@@ -153,6 +276,55 @@ public class BookService {
         Book updatedBook = bookRepository.save(existingBook);
         return mapToBookResponse(updatedBook);
     }
+
+    /**
+     * Update book with multipart image upload support
+     */
+    public BookResponse updateBook(Long bookId, String title, String description, Double price,
+                                   Long authorId, Long publisherId, Long categoryId,
+                                   Integer stockQuantity, String publishedDate,
+                                   MultipartFile imageFile, String imageUrl) {
+        Book existingBook = bookRepository.findById(bookId)
+                .orElseThrow(() -> new AppException(ErrorCode.BOOK_NOT_FOUND));
+
+        // Update fields (only if provided)
+        if (title != null) existingBook.setTitle(title);
+        if (description != null) existingBook.setDescription(description);
+        if (price != null) existingBook.setPrice(price);
+        if (stockQuantity != null) existingBook.setStockQuantity(stockQuantity);
+        if (publishedDate != null) existingBook.setPublishedDate(LocalDate.parse(publishedDate));
+
+        // Handle image update
+        if (imageFile != null && !imageFile.isEmpty()) {
+            String imagePath = handleImageUpload(imageFile, "book");
+            existingBook.setImage(imagePath);
+            System.out.println("✅ Updated book with uploaded file: " + imagePath);
+        } else if (imageUrl != null && !imageUrl.trim().isEmpty()) {
+            existingBook.setImage(imageUrl.trim());
+            System.out.println("✅ Updated book with image URL: " + imageUrl);
+        }
+
+        // Update relationships
+        if (authorId != null) {
+            Author author = authorRepository.findById(authorId)
+                    .orElseThrow(() -> new AppException(ErrorCode.AUTHOR_NOT_FOUND));
+            existingBook.setAuthor(author);
+        }
+        if (publisherId != null) {
+            Publisher publisher = publisherRepository.findById(publisherId)
+                    .orElseThrow(() -> new AppException(ErrorCode.PUBLISHER_NOT_FOUND));
+            existingBook.setPublisher(publisher);
+        }
+        if (categoryId != null) {
+            SubCategory subCategory = subCategoryRepository.findById(categoryId)
+                    .orElseThrow(() -> new AppException(ErrorCode.CATEGORY_NOT_FOUND));
+            existingBook.setCategory(subCategory);
+        }
+
+        Book updatedBook = bookRepository.save(existingBook);
+        return mapToBookResponse(updatedBook);
+    }
+
 
     /**
      * Change the active status of a book by its ID.

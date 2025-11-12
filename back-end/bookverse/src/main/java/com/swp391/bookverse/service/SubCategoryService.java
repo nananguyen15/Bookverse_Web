@@ -95,7 +95,10 @@ public class SubCategoryService {
         subCategory.setSupCategory(supCategory);
         subCategory.setName(request.getName());
         subCategory.setDescription(request.getDescription());
-        subCategory.setActive(request.getActive());
+        // Keep active status if provided, otherwise keep current value
+        if (request.getActive() != null) {
+            subCategory.setActive(request.getActive());
+        }
 
         subCategoryRepository.save(subCategory);
         return mapToSubCategoryResponse(subCategory);
@@ -134,7 +137,7 @@ public class SubCategoryService {
                 .supCategory(supCategory)
                 .name(request.getName())
                 .description(request.getDescription())
-                .active(request.getActive())
+                .active(request.getActive() != null ? request.getActive() : true) // Default to true if null
                 .build();
     }
 
