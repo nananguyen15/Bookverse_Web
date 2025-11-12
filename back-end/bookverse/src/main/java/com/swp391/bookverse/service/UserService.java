@@ -278,7 +278,6 @@ public class UserService {
 
         return userMapper.toUserResponse(userRepository.save(existingUser));
     }
-<<<<<<< HEAD
 
     public Boolean changeMyPassword(UserChangePassWordRequest request) {
         // Get the username of the currently authenticated user
@@ -301,7 +300,4 @@ public class UserService {
         userRepository.save(existingUser);
         return true;
     }
-
-=======
->>>>>>> f66269b04ff8ccd44de48e94f3dc5e57a3c887da
 }

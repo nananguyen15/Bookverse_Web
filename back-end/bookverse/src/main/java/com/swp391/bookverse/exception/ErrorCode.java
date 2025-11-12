@@ -75,6 +75,12 @@ public enum ErrorCode {
     REVIEW_ALREADY_EXISTS(9001, "Review already exists for this user and book"),
     REVIEW_NOT_FOUND(9002, "Review not found"),
 
+    // custom error codes for promotion entity
+    PROMOTION_NOT_FOUND(10001, "Promotion not found"),
+    INVALID_DATE_RANGE(10002, "End date must be after start date"),
+    PROMOTION_CONTENT_EXISTS(10003, "Promotion content already exists"),
+
+
     INVALID_KEY(99999, "Invalid message key provided")
     ;
 
