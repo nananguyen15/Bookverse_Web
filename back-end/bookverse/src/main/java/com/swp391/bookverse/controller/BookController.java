@@ -26,32 +26,32 @@ import java.util.List;
 public class BookController {
     BookService bookService;
 
-//    @PostMapping(value = "/create", consumes = {"multipart/form-data"})
-//    public APIResponse<Book> createBook(
-//            @RequestParam(value = "title", required = false) String title,
-//            @RequestParam(value = "description", required = false) String description,
-//            @RequestParam(value = "price", required = false) Double price,
-//            @RequestParam(value = "authorId", required = false) Long authorId,
-//            @RequestParam(value = "publisherId", required = false) Long publisherId,
-//            @RequestParam(value = "categoryId", required = false) Long categoryId,
-//            @RequestParam(value = "stockQuantity", required = false) Integer stockQuantity,
-//            @RequestParam(value = "publishedDate", required = false) String publishedDate,
-//            @RequestParam(value = "image", required = false) MultipartFile imageFile,
-//            @RequestParam(value = "imageUrl", required = false) String imageUrl,
-//            @RequestParam(value = "active", defaultValue = "true") boolean active) {
-//
-//        APIResponse<Book> response;
-//        response = bookService.createBook(title, description, price, authorId, publisherId,
-//                                         categoryId, stockQuantity, publishedDate, imageFile, imageUrl, active);
-//        return response;
-//    }
+    @PostMapping(value = "/create", consumes = {"multipart/form-data"})
+    public APIResponse<Book> createBook(
+            @RequestParam(value = "title", required = false) String title,
+            @RequestParam(value = "description", required = false) String description,
+            @RequestParam(value = "price", required = false) Double price,
+            @RequestParam(value = "authorId", required = false) Long authorId,
+            @RequestParam(value = "publisherId", required = false) Long publisherId,
+            @RequestParam(value = "categoryId", required = false) Long categoryId,
+            @RequestParam(value = "stockQuantity", required = false) Integer stockQuantity,
+            @RequestParam(value = "publishedDate", required = false) String publishedDate,
+            @RequestParam(value = "image", required = false) MultipartFile imageFile,
+            @RequestParam(value = "imageUrl", required = false) String imageUrl,
+            @RequestParam(value = "active", defaultValue = "true") boolean active) {
 
-    @PostMapping("/create")
-    public APIResponse<Book> createBook(@ModelAttribute @Valid BookCreationRequest request) {
         APIResponse<Book> response;
-        response = bookService.createBook(request);
+        response = bookService.createBook(title, description, price, authorId, publisherId,
+                                         categoryId, stockQuantity, publishedDate, imageFile, imageUrl, active);
         return response;
     }
+
+//    @PostMapping("/create")
+//    public APIResponse<Book> createBook(@ModelAttribute @Valid BookCreationRequest request) {
+//        APIResponse<Book> response;
+//        response = bookService.createBook(request);
+//        return response;
+//    }
 
     @GetMapping
     public APIResponse<List<BookResponse>> getBooks(){
@@ -114,30 +114,30 @@ public class BookController {
         return response;
     }
 
-//    @PutMapping(value = "/update/{bookId}", consumes = {"multipart/form-data"})
-//    public BookResponse updateBook(
-//            @PathVariable("bookId") Long bookId,
-//            @RequestParam(value = "title", required = false) String title,
-//            @RequestParam(value = "description", required = false) String description,
-//            @RequestParam(value = "price", required = false) Double price,
-//            @RequestParam(value = "authorId", required = false) Long authorId,
-//            @RequestParam(value = "publisherId", required = false) Long publisherId,
-//            @RequestParam(value = "categoryId", required = false) Long categoryId,
-//            @RequestParam(value = "stockQuantity", required = false) Integer stockQuantity,
-//            @RequestParam(value = "publishedDate", required = false) String publishedDate,
-//            @RequestParam(value = "image", required = false) MultipartFile imageFile,
-//            @RequestParam(value = "imageUrl", required = false) String imageUrl) {
-//
-//        return bookService.updateBook(bookId, title, description, price, authorId, publisherId,
-//                                     categoryId, stockQuantity, publishedDate, imageFile, imageUrl);
-//    }
-
-    @PutMapping("/update/{bookId}")
+    @PutMapping(value = "/update/{bookId}", consumes = {"multipart/form-data"})
     public BookResponse updateBook(
             @PathVariable("bookId") Long bookId,
-            @RequestBody BookUpdateRequest request) {
-        return bookService.updateBook(bookId, request);
+            @RequestParam(value = "title", required = false) String title,
+            @RequestParam(value = "description", required = false) String description,
+            @RequestParam(value = "price", required = false) Double price,
+            @RequestParam(value = "authorId", required = false) Long authorId,
+            @RequestParam(value = "publisherId", required = false) Long publisherId,
+            @RequestParam(value = "categoryId", required = false) Long categoryId,
+            @RequestParam(value = "stockQuantity", required = false) Integer stockQuantity,
+            @RequestParam(value = "publishedDate", required = false) String publishedDate,
+            @RequestParam(value = "image", required = false) MultipartFile imageFile,
+            @RequestParam(value = "imageUrl", required = false) String imageUrl) {
+
+        return bookService.updateBook(bookId, title, description, price, authorId, publisherId,
+                                     categoryId, stockQuantity, publishedDate, imageFile, imageUrl);
     }
+
+//    @PutMapping("/update/{bookId}")
+//    public BookResponse updateBook(
+//            @PathVariable("bookId") Long bookId,
+//            @RequestBody BookUpdateRequest request) {
+//        return bookService.updateBook(bookId, request);
+//    }
 
     @PutMapping("/active/{bookId}")
     public APIResponse<BookActiveResponse> restoreBook(@PathVariable("bookId") Long bookId) {

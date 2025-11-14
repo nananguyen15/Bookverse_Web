@@ -19,8 +19,6 @@ const profileSchema = z.object({
     .min(1, "Phone number is required")
     .regex(/^0[3-9]\d{8}$/, "Invalid Vietnamese phone number"),
   email: z.string().email("Invalid email address"),
-  gender: z.enum(["male", "female", "not-specified"]),
-  birthDate: z.string().refine((val) => !isNaN(Date.parse(val)), {
     message: "Invalid date format",
   }),
 });
@@ -208,47 +206,6 @@ export function StaffProfile() {
           />
           {errors.email && (
             <p className="mt-2 text-sm text-red-600">{errors.email.message}</p>
-          )}
-        </div>
-
-        <div>
-          <label
-            htmlFor="gender"
-            className="block text-sm font-medium text-beige-800"
-          >
-            Gender
-          </label>
-          <select
-            id="gender"
-            {...register("gender")}
-            className="block w-full px-3 py-2 mt-1 border rounded-md shadow-sm border-beige-300 focus:outline-none focus:ring-beige-500 focus:border-beige-500 sm:text-sm"
-          >
-            <option value="male">Male</option>
-            <option value="female">Female</option>
-            <option value="not-specified">Prefer not to say</option>
-          </select>
-          {errors.gender && (
-            <p className="mt-2 text-sm text-red-600">{errors.gender.message}</p>
-          )}
-        </div>
-
-        <div>
-          <label
-            htmlFor="birthDate"
-            className="block text-sm font-medium text-beige-800"
-          >
-            Date of Birth
-          </label>
-          <input
-            type="date"
-            id="birthDate"
-            {...register("birthDate")}
-            className="block w-full px-3 py-2 mt-1 border rounded-md shadow-sm border-beige-300 focus:outline-none focus:ring-beige-500 focus:border-beige-500 sm:text-sm"
-          />
-          {errors.birthDate && (
-            <p className="mt-2 text-sm text-red-600">
-              {errors.birthDate.message}
-            </p>
           )}
         </div>
 

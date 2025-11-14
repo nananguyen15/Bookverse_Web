@@ -1,0 +1,170 @@
+package com.swp391.bookverse.service;
+
+
+import com.swp391.bookverse.dto.request.SupCategoryCreationRequest;
+import com.swp391.bookverse.dto.response.SubCategoryResponse;
+import com.swp391.bookverse.dto.response.SupCategoryResponse;
+import com.swp391.bookverse.entity.Book;
+import com.swp391.bookverse.entity.SubCategory;
+import com.swp391.bookverse.entity.SupCategory;
+import com.swp391.bookverse.exception.AppException;
+import com.swp391.bookverse.exception.ErrorCode;
+import com.swp391.bookverse.mapper.SupCategoryMapper;
+import com.swp391.bookverse.repository.BookRepository;
+import com.swp391.bookverse.repository.SubCategoryRepository;
+import com.swp391.bookverse.repository.SupCategoryRepository;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+
+/**
+ * @Author huangdat
+ */
+@Service
+@RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
+public class SupCategoryService {
+    SupCategoryRepository supCategoryRepository;
+    SupCategoryMapper supCategoryMapper;
+    SubCategoryRepository subCategoryRepository;
+    BookRepository bookRepository;
+
+    public SupCategoryResponse createSupCategory(SupCategoryCreationRequest request) {
+        // check if sup category name already exists
+        if(supCategoryRepository.existsByNameIgnoreCase(request.getName())) {
+            throw new AppException(ErrorCode.SUP_CATEGORY_EXISTS);
+        }
+        // map request to entity and save to repository
+        SupCategory supCategory = supCategoryMapper.toSupCategory(request);
+        SupCategory savedSupCategory = supCategoryRepository.save(supCategory);
+        // map saved entity to response and return
+        return supCategoryMapper.toSupCategoryResponse(savedSupCategory);
+    }
+
+    public List<SupCategoryResponse> getSupCategories() {
+        // check if there are any sup categories stored in DB
+        if(supCategoryRepository.count() == 0) {
+            throw new AppException(ErrorCode.NO_SUP_CATEGORIES_STORED);
+        }
+        // map list of SupCategory to list of SupCategoryResponse
+        List<SupCategory> supCategories = supCategoryRepository.findAll();
+        return supCategories.stream()
+                .map(supCategoryMapper::toSupCategoryResponse)
+                .toList();
+    }
+
+    public List<SubCategoryResponse> getSubCategoriesBySupCategoryId(Integer supCategoryId) {
+        // find sup category by id or throw exception if not found
+        SupCategory supCategory = supCategoryRepository.findById(supCategoryId)
+                .orElseThrow(() -> new AppException(ErrorCode.SUP_CATEGORY_NOT_FOUND));
+        // get sub categories by sup category
+        List<SubCategory> subCategories = subCategoryRepository.findBySupCategory(supCategory);
+        // map list of SubCategory to list of SubCategoryResponse
+        return subCategories.stream()
+                .map(subCategory -> new SubCategoryResponse(
+                        subCategory.getId(),
+                        subCategory.getSupCategory().getId(),
+                        subCategory.getName(),
+                        subCategory.getDescription(),
+                        subCategory.getActive()
+                ))
+                .toList();
+    }
+
+    public SupCategoryResponse getSupCategoryById(Integer supCategoryId) {
+        // find sup category by id or throw exception if not found
+        SupCategory supCategory = supCategoryRepository.findById(supCategoryId)
+                .orElseThrow(() -> new AppException(ErrorCode.SUP_CATEGORY_NOT_FOUND));
+        return supCategoryMapper.toSupCategoryResponse(supCategory);
+    }
+
+    public SupCategoryResponse updateSupCategory(Integer supCategoryId, SupCategoryCreationRequest request) {
+        // find sup category by id or throw exception if not found
+        SupCategory supCategory = supCategoryRepository.findById(supCategoryId)
+                .orElseThrow(() -> new AppException(ErrorCode.SUP_CATEGORY_NOT_FOUND));
+        // check if the updated name already exists in db
+        if (supCategoryRepository.existsByNameIgnoreCase(request.getName())) {
+            throw new AppException(ErrorCode.SUP_CATEGORY_EXISTS);
+        }
+        // update sup category fields
+        supCategory.setName(request.getName());
+        // save updated sup category to repository
+        SupCategory updatedSupCategory = supCategoryRepository.save(supCategory);
+        return supCategoryMapper.toSupCategoryResponse(updatedSupCategory);
+    }
+
+    public List<SupCategoryResponse> getActiveSupCategories() {
+        // check if there are any books stored in DB
+        if (supCategoryRepository.countByActiveTrue() == 0) {
+            throw new AppException(ErrorCode.NO_SUP_CATEGORIES_STORED);
+        }
+
+        // map list of active SupCategory to list of SupCategoryResponse
+        List<SupCategory> supCategories = supCategoryRepository.findByActiveTrue();
+        return supCategories.stream()
+                .map(supCategoryMapper::toSupCategoryResponse)
+                .toList();
+    }
+
+    public List<SupCategoryResponse> getInactiveSupCategories() {
+        // check if there are any books stored in DB
+        if (supCategoryRepository.count() == supCategoryRepository.countByActiveTrue()) {
+            throw new AppException(ErrorCode.NO_SUP_CATEGORIES_STORED);
+        }
+
+        // map list of inactive SupCategory to list of SupCategoryResponse
+        List<SupCategory> supCategories = supCategoryRepository.findAll().stream()
+                .filter(supCategory -> !supCategory.getActive())
+                .toList();
+        return supCategories.stream()
+                .map(supCategoryMapper::toSupCategoryResponse)
+                .toList();
+    }
+
+    /**
+     * Activate a sup category by its ID
+     * Also reactivates all its sub categories (but NOT books - must be done manually)
+     * @param supCategoryId
+     * @return SupCategoryResponse
+     */
+    @Transactional
+    public SupCategoryResponse activateSupCategory(Integer supCategoryId) {
+        SupCategory supCategory = supCategoryRepository.findById(supCategoryId)
+                .orElseThrow(() -> new AppException(ErrorCode.SUP_CATEGORY_NOT_FOUND));
+        
+        supCategory.setActive(true);
+        supCategoryRepository.save(supCategory);
+        
+        // Cascade: activate all sub categories
+        subCategoryRepository.updateActiveBySupCategoryId(supCategoryId, true);
+        
+        return supCategoryMapper.toSupCategoryResponse(supCategory);
+    }
+
+    /**
+     * Deactivate a sup category by its ID
+     * CASCADE: Also deactivates all its sub categories and all books in those sub categories
+     * @param supCategoryId
+     * @return SupCategoryResponse
+     */
+    @Transactional
+    public SupCategoryResponse deactivateSupCategory(Integer supCategoryId) {
+        SupCategory supCategory = supCategoryRepository.findById(supCategoryId)
+                .orElseThrow(() -> new AppException(ErrorCode.SUP_CATEGORY_NOT_FOUND));
+        
+        supCategory.setActive(false);
+        supCategoryRepository.save(supCategory);
+        
+        // CASCADE Level 1: deactivate all sub categories
+        subCategoryRepository.updateActiveBySupCategoryId(supCategoryId, false);
+        
+        // CASCADE Level 2: deactivate all books in this sup category
+        bookRepository.updateActiveBySupCategoryId(supCategoryId, false);
+        
+        return supCategoryMapper.toSupCategoryResponse(supCategory);
+    }
+}

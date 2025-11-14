@@ -93,7 +93,6 @@ public enum ErrorCode {
     ORDER_CANNOT_BE_CANCELLED(1400, "Order cannot be cancelled"),
     ORDER_CANNOT_BE_UPDATED(1400, "Order cannot be updated"),
 
-
     INVALID_KEY(99999, "Invalid message key provided")
     ;
 

@@ -6,3 +6,6 @@ export * from "./api/author.types";
 export * from "./api/publisher.types";
 export * from "./api/user.types";
 export * from "./api/auth.types";
+export * from "./api/order.types";
+export * from "./api/cart.types";
+export * from "./api/review.types";
