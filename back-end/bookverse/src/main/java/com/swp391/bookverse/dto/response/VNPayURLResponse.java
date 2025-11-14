@@ -1,8 +1,9 @@
-package com.swp391.bookverse.dto.request;
+package com.swp391.bookverse.dto.response;
 
-import com.swp391.bookverse.enums.OrderStatus;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
+
+import java.io.Serializable;
 
 /**
  * @Author huangdat
@@ -12,7 +13,8 @@ import lombok.experimental.FieldDefaults;
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE) // Set default access level for fields to private
-public class OrderUpdateRequest {
-    OrderStatus status;
-    String cancelReason;
+public class VNPayURLResponse implements Serializable{
+    String status;
+    String message;
+    String URL;
 }

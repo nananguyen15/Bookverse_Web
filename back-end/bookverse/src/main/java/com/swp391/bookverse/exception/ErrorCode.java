@@ -9,6 +9,7 @@ public enum ErrorCode {
     OK(200, "OK"),
     BAD_REQUEST(400, "Bad Request"),
     UNAUTHORIZED(401, "Unauthorized error"),
+    UNAUTHORIZED_ACTION(402, "Unauthoried action"),
     FORBIDDEN(403, "Forbidden"),
     NOT_FOUND(404, "Not Found"),
     METHOD_NOT_ALLOWED(405, "Method Not Allowed"),
@@ -87,11 +88,17 @@ public enum ErrorCode {
     PROMOTION_CONTENT_EXISTS(11003, "Promotion content already exists"),
 
     // custom error codes for order entity
-    CART_EMPTY(1400, "Cart is empty"),
-    INSUFFICIENT_STOCK(1400, "Insufficient stock for one or more items"),
-    ORDER_NOT_FOUND(1404, "Order not found"),
-    ORDER_CANNOT_BE_CANCELLED(1400, "Order cannot be cancelled"),
-    ORDER_CANNOT_BE_UPDATED(1400, "Order cannot be updated"),
+    CART_EMPTY(1401, "Cart is empty"),
+    INSUFFICIENT_STOCK(1402, "Insufficient stock for one or more items"),
+    ORDER_NOT_FOUND(1403, "Order not found"),
+    ORDER_CANNOT_BE_CANCELLED(1404, "Order cannot be cancelled"),
+    ORDER_CANNOT_BE_UPDATED(1405, "Order cannot be updated for some reasons"),
+    ORDER_UPDATE_STATUS_DUPLICATE(1406, "New status must be different from current status"),
+    ORDER_CANCELLED(1407, "Order has been cancelled"),
+
+    // custom error codes for payment entity
+    PAYMENT_ALREADY_EXISTS(1501, "Payment already exists for this order"),
+    PAYMENT_NOT_FOUND(1502, "Payment not found"),
 
     INVALID_KEY(99999, "Invalid message key provided")
     ;

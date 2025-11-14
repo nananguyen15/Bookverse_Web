@@ -16,7 +16,6 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 public class Payment {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -43,3 +42,4 @@ public class Payment {
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 }
+

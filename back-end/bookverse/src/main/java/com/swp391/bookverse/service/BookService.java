@@ -5,16 +5,10 @@ import com.swp391.bookverse.dto.request.BookCreationRequest;
 import com.swp391.bookverse.dto.request.BookUpdateRequest;
 import com.swp391.bookverse.dto.response.BookActiveResponse;
 import com.swp391.bookverse.dto.response.BookResponse;
-import com.swp391.bookverse.entity.Author;
-import com.swp391.bookverse.entity.Book;
-import com.swp391.bookverse.entity.Publisher;
-import com.swp391.bookverse.entity.SubCategory;
+import com.swp391.bookverse.entity.*;
 import com.swp391.bookverse.exception.AppException;
 import com.swp391.bookverse.exception.ErrorCode;
-import com.swp391.bookverse.repository.AuthorRepository;
-import com.swp391.bookverse.repository.BookRepository;
-import com.swp391.bookverse.repository.PublisherRepository;
-import com.swp391.bookverse.repository.SubCategoryRepository;
+import com.swp391.bookverse.repository.*;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -40,6 +34,8 @@ public class BookService {
     PublisherRepository publisherRepository;
     SubCategoryRepository subCategoryRepository;
     BookRepository bookRepository;
+    OrderRepository orderRepository;
+    SupCategoryRepository supCategoryRepository;
 
     /**
      * Create a new book based on the provided request.
@@ -214,6 +210,17 @@ public class BookService {
                 bookResponses.add(bookResponse);
             }
         }
+
+        // filtering: get only book that has sub-category active = true and sup-category active = true
+        bookResponses = bookResponses.stream()
+            .filter(bookResponse -> {
+                Book book = bookRepository.findById(bookResponse.getId())
+                    .orElseThrow(() -> new AppException(ErrorCode.BOOK_NOT_FOUND));
+                SubCategory subCategory = book.getCategory();
+                SupCategory supCategory = subCategory.getSupCategory();
+                return subCategory.getActive() && supCategory.getActive();
+            })
+            .collect(Collectors.toList());
 
         response.setResult(bookResponses);
         return response;
