@@ -33,6 +33,8 @@ public class CartItem {
     @Column(nullable = false)
     Integer quantity;
 
+    double subtotal;
+
 
     // Helper method to calculate subtotal
     public Double getSubtotal() {

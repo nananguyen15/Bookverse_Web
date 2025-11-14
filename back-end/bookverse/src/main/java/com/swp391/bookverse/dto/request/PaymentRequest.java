@@ -1,14 +1,8 @@
 package com.swp391.bookverse.dto.request;
 
-import com.swp391.bookverse.entity.Order;
 import com.swp391.bookverse.enums.PaymentMethod;
-import com.swp391.bookverse.enums.PaymentStatus;
-import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
-import org.hibernate.annotations.CreationTimestamp;
-
-import java.time.LocalDateTime;
 
 /**
  * @Author huangdat
@@ -18,10 +12,6 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE) // Set default access level for fields to private
-public class PaymentCreationRequest {
-    Long orderId;
-
-    @Enumerated(EnumType.STRING)
-    @Column(columnDefinition = "enum('COD', 'VNPAY')")
+public class PaymentRequest {
     PaymentMethod method;
 }

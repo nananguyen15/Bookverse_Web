@@ -1,23 +1,26 @@
 package com.swp391.bookverse.controller;
 
 import com.nimbusds.jose.shaded.gson.Gson;
-import com.nimbusds.jose.shaded.gson.JsonObject;
 import com.swp391.bookverse.configuration.VNPayConfig;
 import com.swp391.bookverse.dto.APIResponse;
 import com.swp391.bookverse.dto.request.PaymentCreationRequest;
+import com.swp391.bookverse.dto.request.VNPayURLCreationRequest;
 import com.swp391.bookverse.dto.response.PaymentResponse;
+import com.swp391.bookverse.dto.response.VNPayURLResponse;
 import com.swp391.bookverse.dto.response.TransactionStatusResponse;
-import jakarta.servlet.http.HttpServletRequest;
+import com.swp391.bookverse.service.PaymentService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
+import java.time.ZoneId;
 import java.util.*;
 
 import static com.swp391.bookverse.configuration.VNPayConfig.*;
@@ -31,21 +34,52 @@ import static com.swp391.bookverse.configuration.VNPayConfig.*;
 @FieldDefaults(makeFinal = true, level = AccessLevel.PRIVATE)
 @RequestMapping("/api/payments")
 public class PaymentController {
+    PaymentService paymentService;
 
-    @GetMapping("/create")
-    public ResponseEntity<String> createPayment() throws UnsupportedEncodingException {
+    @PostMapping("/create-payment-record")
+    @PreAuthorize("hasAuthority('SCOPE_CUSTOMER')")
+    public APIResponse<PaymentResponse> createPaymentRecord(@RequestBody PaymentCreationRequest request) {
+        PaymentResponse paymentResponse = paymentService.createPayment(request);
+
+        APIResponse<PaymentResponse> response = new APIResponse<>();
+        response.setResult(paymentResponse);
+        return response;
+//        PaymentResponse paymentResponse = PaymentResponse.builder()
+//                .id(1L)
+//                .orderId(request.getOrderId())
+//                .method(request.getMethod())
+//                .status(null) // Set appropriate status
+//                .amount(request.getAmount())
+//                .paidAt(null) // Set paidAt if applicable
+//                .createdAt(new Date().toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime())
+//                .build();
+//
+//        APIResponse<PaymentResponse> response = new APIResponse<>();
+//        response.setResult(paymentResponse);
+//        return response;
+    }
+
+    @PutMapping("/payment-done/{paymentId}")
+    @PreAuthorize("hasAuthority('SCOPE_CUSTOMER')")
+    public APIResponse<PaymentResponse> markPaymentAsDone(@PathVariable Long paymentId) {
+        PaymentResponse paymentResponse = paymentService.markPaymentAsDone(paymentId);
+        APIResponse<PaymentResponse> response = new APIResponse<>();
+        response.setResult(paymentResponse);
+        return response;
+    }
+
+    @PostMapping("/create-vnpay-url")
+    public ResponseEntity<String> createPayment(@RequestBody VNPayURLCreationRequest request) throws UnsupportedEncodingException {
 
         String orderType = "other";
 //        long amount = Integer.parseInt(req.getParameter("amount"))*100;
 //        String bankCode = req.getParameter("bankCode");
 
-        long amount = 10000*100; // Example amount
+        long amount = request.getAmountInVND() * 100;
 
         String vnp_TxnRef = VNPayConfig.getRandomNumber(8);
         //String vnp_IpAddr = VNPayConfig.getIpAddress(req);
         String vnp_IpAddr = "171.246.74.195";
-
-
 
         String vnp_TmnCode = VNPayConfig.vnp_TmnCode;
 
@@ -108,18 +142,18 @@ public class PaymentController {
 //        Gson gson = new Gson();
 //        resp.getWriter().write(gson.toJson(job));
 
-        PaymentResponse paymentResponse = new PaymentResponse();
-        paymentResponse.setStatus("OK");
-        paymentResponse.setMessage("Success");
-        paymentResponse.setURL(paymentUrl);
+        VNPayURLResponse vnPayURLResponse = new VNPayURLResponse();
+        vnPayURLResponse.setStatus("OK");
+        vnPayURLResponse.setMessage("Success");
+        vnPayURLResponse.setURL(paymentUrl);
 
-//        APIResponse<PaymentResponse> response = new APIResponse<>();
+//        APIResponse<VNPayURLResponse> response = new APIResponse<>();
 //        response.setResult(paymentResponse);
 //        return response;
 
 
-        APIResponse<PaymentResponse> response = new APIResponse<>();
-        response.setResult(paymentResponse);
+        APIResponse<VNPayURLResponse> response = new APIResponse<>();
+        response.setResult(vnPayURLResponse);
 
         // convert Java object to JSON string
         String json = new Gson().toJson(response);
@@ -167,6 +201,8 @@ public class PaymentController {
                 .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
                 .body(json);
     }
+
+
 
 
 }

@@ -92,4 +92,15 @@ public class OrderController {
                 .result(orderService.cancelMyOrder(id))
                 .build();
     }
+
+    @PutMapping("/myOrders/change-address/{id}")
+    public APIResponse<OrderResponse> changeAddressMyOrder(
+            @PathVariable Long id,
+            @RequestBody OrderCreationRequest request) {
+        return APIResponse.<OrderResponse>builder()
+                .code(200)
+                .result(orderService.changeAddressMyOrder(id, request.getAddress()))
+                .build();
+    }
+
 }

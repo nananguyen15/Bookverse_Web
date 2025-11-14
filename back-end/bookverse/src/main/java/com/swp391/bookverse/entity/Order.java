@@ -27,19 +27,23 @@ public class Order {
     private User user;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, columnDefinition = "enum('PENDING', 'PROCESSING', 'DELIVERED', 'CANCELLED', 'RETURNED') default 'PENDING'")
+    @Column(nullable = false, columnDefinition = "enum('PENDING', 'PROCESSING', 'DELIVERED', 'CANCELLED') default 'PENDING'")
     @Builder.Default
     private OrderStatus status = OrderStatus.PENDING;
 
     @Column(name = "total_amount", nullable = false)
     private Double totalAmount;
 
-    @Column(length = 50)
+    @Column(length = 255, nullable = false)
     private String address;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
+
+    // cancel reason match the columm cancel_reason (can be null)
+    @Column(name = "cancel_reason", length = 500)
+    private String cancelReason;
 
     @Column(nullable = false)
     @Builder.Default

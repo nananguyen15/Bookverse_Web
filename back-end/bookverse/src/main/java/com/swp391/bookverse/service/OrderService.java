@@ -4,7 +4,6 @@ import com.swp391.bookverse.dto.request.OrderCreationRequest;
 import com.swp391.bookverse.dto.request.OrderUpdateRequest;
 import com.swp391.bookverse.dto.response.OrderResponse;
 import com.swp391.bookverse.entity.*;
-import com.swp391.bookverse.enums.CartStatus;
 import com.swp391.bookverse.enums.OrderStatus;
 import com.swp391.bookverse.exception.AppException;
 import com.swp391.bookverse.exception.ErrorCode;
@@ -34,6 +33,13 @@ public class OrderService {
     CartRepository cartRepository;
     OrderMapper orderMapper;
 
+    /**
+     *  THIS IS THE NEW ONE TO CREATE ORDER FROM CART
+     * Create order from current user's cart
+     * When order is created, the cart and its items are cleared (just like that)
+     * @param request
+     * @return
+     */
     @Transactional
     public OrderResponse createOrder(OrderCreationRequest request) {
         // Get current user
@@ -89,18 +95,9 @@ public class OrderService {
         // Save order
         Order savedOrder = orderRepository.save(order);
 
-        // Mark cart as checked out and clear items
-        cart.setStatus(CartStatus.CHECKED_OUT);
+        // Clear all items from cart
         cart.getCartItems().clear();
         cartRepository.save(cart);
-
-        // Create new active cart for user
-        Cart newCart = Cart.builder()
-                .user(user)
-                .active(true)
-                .status(CartStatus.ACTIVE)
-                .build();
-        cartRepository.save(newCart);
 
         return orderMapper.toOrderResponse(savedOrder);
     }
@@ -138,11 +135,13 @@ public class OrderService {
         Order order = orderRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
 
+        // check if the changed status is different from the current status
+        if (request.getStatus() != null && request.getStatus() == order.getStatus()) {
+            throw new AppException(ErrorCode.ORDER_UPDATE_STATUS_DUPLICATE);
+        }
+
         if (request.getStatus() != null) {
             order.setStatus(request.getStatus());
-        }
-        if (request.getAddress() != null) {
-            order.setAddress(request.getAddress());
         }
 
         Order updatedOrder = orderRepository.save(order);
@@ -151,10 +150,12 @@ public class OrderService {
 
     @Transactional
     public OrderResponse cancelMyOrder(Long id) {
+        // Get current user
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
+        // Find order
         Order order = orderRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
 
@@ -174,22 +175,55 @@ public class OrderService {
         return orderMapper.toOrderResponse(updatedOrder);
     }
 
-    @Transactional
-    public void cancelOrder(Long id) {
-        Order order = orderRepository.findByIdWithItems(id)
+//    @Transactional
+//    public void cancelOrder(Long id) {
+//        Order order = orderRepository.findByIdWithItems(id)
+//                .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
+//
+//        if (order.getStatus() != OrderStatus.PENDING) {
+//            throw new AppException(ErrorCode.ORDER_CANNOT_BE_CANCELLED);
+//        }
+//
+//        // Restore stock
+//        for (OrderItem item : order.getOrderItems()) {
+//            Book book = item.getBook();
+//            book.setStockQuantity(book.getStockQuantity() + item.getQuantity());
+//        }
+//
+//        order.setStatus(OrderStatus.CANCELLED);
+//        orderRepository.save(order);
+//    }
+
+
+    /**
+     * Change address of current user's order. Only allowed if order status is PENDING.
+     * @param id
+     * @param newAddress
+     * @return updated OrderResponse
+     */
+    public OrderResponse changeAddressMyOrder(Long id, String newAddress) {
+        // Get current user
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+
+        // Find order
+        Order order = orderRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
 
+        // check if the order belongs to the user
+        if (!order.getUser().getId().equals(user.getId())) {
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+        }
+
+        // check if the order status is PENDING
         if (order.getStatus() != OrderStatus.PENDING) {
-            throw new AppException(ErrorCode.ORDER_CANNOT_BE_CANCELLED);
+            throw new AppException(ErrorCode.ORDER_CANNOT_BE_UPDATED);
         }
 
-        // Restore stock
-        for (OrderItem item : order.getOrderItems()) {
-            Book book = item.getBook();
-            book.setStockQuantity(book.getStockQuantity() + item.getQuantity());
-        }
+        order.setAddress(newAddress);
 
-        order.setStatus(OrderStatus.CANCELLED);
-        orderRepository.save(order);
+        Order updatedOrder = orderRepository.save(order);
+        return orderMapper.toOrderResponse(updatedOrder);
     }
 }

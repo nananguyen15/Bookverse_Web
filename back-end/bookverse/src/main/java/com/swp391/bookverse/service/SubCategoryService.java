@@ -112,10 +112,17 @@ public class SubCategoryService {
         if (subCategories.isEmpty()) {
             throw new AppException(ErrorCode.NO_SUBCATEGORIES_STORED);
         }
+
+        // filtering: only response subc-categories that has sup-category active=true
+        subCategories = subCategories.stream()
+                .filter(subCategory -> subCategory.getSupCategory().getActive())
+                .toList();
+
         return subCategories.stream()
                 .map(this::mapToSubCategoryResponse)
                 .toList();
     }
+
     public List<SubCategoryResponse> getInactiveSubCategories() {
         List<SubCategory> subCategories = subCategoryRepository.findAll()
                 .stream()
