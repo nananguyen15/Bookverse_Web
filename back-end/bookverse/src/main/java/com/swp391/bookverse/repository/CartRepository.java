@@ -18,6 +18,7 @@ public interface CartRepository extends JpaRepository<Cart, Long> {
     @Query("SELECT c FROM Cart c WHERE c.user.id = :userId")
     Optional<Cart> findByUserId(@Param("userId") String userId);
 
-    @Query("SELECT c FROM Cart c WHERE c.active = true AND c.user.id != :userId")
-    List<Cart> findAllActiveCartsExcludingUser(String currentUserId);
+    @Query("SELECT c FROM Cart c WHERE c.active = true AND c.user.id <> :userId")
+    List<Cart> findAllActiveCartsExcludingUser(@Param("userId") String userId);
+
 }
