@@ -1,5 +1,6 @@
 package com.swp391.bookverse.entity;
 
+import com.swp391.bookverse.enums.CartStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -34,6 +35,11 @@ public class Cart {
 
     @Column(nullable = false)
     Boolean active;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    @Builder.Default
+    CartStatus status = CartStatus.ACTIVE;
 
     // Helper methods
     public void addCartItem(CartItem cartItem) {

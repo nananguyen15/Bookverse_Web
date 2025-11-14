@@ -86,6 +86,13 @@ public enum ErrorCode {
     INVALID_DATE_RANGE(11002, "Invalid date range"),
     PROMOTION_CONTENT_EXISTS(11003, "Promotion content already exists"),
 
+    // custom error codes for order entity
+    CART_EMPTY(1400, "Cart is empty"),
+    INSUFFICIENT_STOCK(1400, "Insufficient stock for one or more items"),
+    ORDER_NOT_FOUND(1404, "Order not found"),
+    ORDER_CANNOT_BE_CANCELLED(1400, "Order cannot be cancelled"),
+    ORDER_CANNOT_BE_UPDATED(1400, "Order cannot be updated"),
+
     INVALID_KEY(99999, "Invalid message key provided")
     ;
 

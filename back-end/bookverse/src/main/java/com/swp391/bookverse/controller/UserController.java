@@ -48,13 +48,6 @@ public class UserController {
         return response;
     }
 
-//    @PostMapping("/create")
-//    public APIResponse<User> createUser(@RequestBody @Valid UserCreationRequest request) {
-//        APIResponse<User> response = new APIResponse<>();
-//        response.setResult(userService.createUser(username, password, email, name, phone, address, imageFile, imageUrl, active, roles));
-//        return response;
-//    }
-
     // @PostMapping("/create")
     // public APIResponse<User> createUser(@RequestBody @Valid UserCreationRequest request) {
     //     APIResponse<User> response = new APIResponse<>();
@@ -100,11 +93,16 @@ public class UserController {
             @RequestParam(value = "birthDate", required = false) String birthDate,
             @RequestParam(value = "image", required = false) MultipartFile imageFile,
             @RequestParam(value = "imageUrl", required = false) String imageUrl) {
-        
+
         APIResponse<UserResponse> response = new APIResponse<>();
         response.setResult(userService.updateMyInfo(name, phone, address, birthDate, imageFile, imageUrl));
         return response;
     }
+
+//    @PutMapping("/myInfo")
+//    public UserResponse updateMyInfo(@RequestBody @Valid UserUpdateRequest request) {
+//        return userService.updateMyInfo(request);
+//    }
 
     @PutMapping("/change-my-password")
     public APIResponse<?> changeMyPassword(@RequestBody UserChangePassWordRequest request) {
@@ -190,6 +188,4 @@ public class UserController {
         }
         return response;
     }
-
-
 }
