@@ -548,4 +548,28 @@ public class BookService {
         response.setResult(bookResponses);
         return response;
     }
+
+    public APIResponse<List<BookResponse>> getTopSellingActiveBooks() {
+        // Get a list of book IDs sorted by total sold quantity in descending order
+        List<Long> topSellingBookIds = orderRepository.findTopSellingBookIds();
+        for (Long id : topSellingBookIds) {
+            System.out.println("🏆 Top selling book ID: " + id);
+        }
+
+        // Fetch the corresponding Book entities and filter by active status
+        List<BookResponse> topSellingBooks = topSellingBookIds.stream()
+            .map(bookId -> bookRepository.findById(bookId)
+                .orElseThrow(() -> new AppException(ErrorCode.BOOK_NOT_FOUND)))
+            .filter(Book::getActive)
+            .map(this::mapToBookResponse)
+            .collect(Collectors.toList());
+
+        if (topSellingBooks.isEmpty()) {
+            throw new AppException(ErrorCode.NO_BOOKS_STORED);
+        }
+
+        APIResponse<List<BookResponse>> response = new APIResponse<>();
+        response.setResult(topSellingBooks);
+        return response;
+    }
 }

@@ -25,4 +25,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     @Query("SELECT o FROM Order o LEFT JOIN FETCH o.orderItems oi LEFT JOIN FETCH oi.book WHERE o.id = :id AND o.active = true")
     Optional<Order> findByIdWithItems(@Param("id") Long id);
 
+    // Custom query to find top-selling book IDs
+    @Query("SELECT oi.book.id FROM Order o JOIN o.orderItems oi WHERE o.status = 'DELIVERED' GROUP BY oi.book.id ORDER BY SUM(oi.quantity) DESC")
+    List<Long> findTopSellingBookIds();
 }
