@@ -8,10 +8,7 @@ import com.swp391.bookverse.enums.OrderStatus;
 import com.swp391.bookverse.exception.AppException;
 import com.swp391.bookverse.exception.ErrorCode;
 import com.swp391.bookverse.mapper.OrderMapper;
-import com.swp391.bookverse.repository.BookRepository;
-import com.swp391.bookverse.repository.CartRepository;
-import com.swp391.bookverse.repository.OrderRepository;
-import com.swp391.bookverse.repository.UserRepository;
+import com.swp391.bookverse.repository.*;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -19,6 +16,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -34,11 +32,13 @@ public class OrderService {
     OrderMapper orderMapper;
 
     /**
-     *  THIS IS THE NEW ONE TO CREATE ORDER FROM CART
      * Create order from current user's cart
      * When order is created, the cart and its items are cleared (just like that)
+     * Also reduce stock quantity of ordered books.
+     * If other users have the same books in their carts, check and update their carts accordingly.
+     *
      * @param request
-     * @return
+     * @return OrderResponse
      */
     @Transactional
     public OrderResponse createOrder(OrderCreationRequest request) {
@@ -65,6 +65,7 @@ public class OrderService {
                 .build();
 
         double totalAmount = 0.0;
+        List<Long> affectedBookIds = new ArrayList<>();
 
         // Transfer cart items to order items
         for (CartItem cartItem : cart.getCartItems()) {
@@ -88,6 +89,7 @@ public class OrderService {
 
             // Reduce stock quantity
             book.setStockQuantity(book.getStockQuantity() - cartItem.getQuantity());
+            affectedBookIds.add(book.getId());
         }
 
         order.setTotalAmount(totalAmount);
@@ -95,11 +97,49 @@ public class OrderService {
         // Save order
         Order savedOrder = orderRepository.save(order);
 
-        // Clear all items from cart
+        // Clear current user's cart
         cart.getCartItems().clear();
         cartRepository.save(cart);
 
+        // Update other users' carts with affected books
+        updateOtherUsersCarts(affectedBookIds, user.getId());
+
         return orderMapper.toOrderResponse(savedOrder);
+    }
+
+    /**
+     * Update or remove items from other users' carts if stock is insufficient
+     */
+    void updateOtherUsersCarts(List<Long> bookIds, String currentUserId) {
+        // Find all active carts except current user
+        List<Cart> otherCarts = cartRepository.findAllActiveCartsExcludingUser(currentUserId);
+
+        for (Cart cart : otherCarts) {
+            boolean cartModified = false;
+
+            for (CartItem item : new ArrayList<>(cart.getCartItems())) {
+                if (bookIds.contains(item.getBook().getId())) {
+                    Book book = item.getBook();
+
+                    // If requested quantity exceeds available stock
+                    if (item.getQuantity() > book.getStockQuantity()) {
+                        if (book.getStockQuantity() == 0) {
+                            // Remove item if no stock
+                            cart.getCartItems().remove(item);
+                        } else {
+                            // Adjust quantity to available stock
+                            item.setQuantity(book.getStockQuantity());
+                        }
+                        cartModified = true;
+                    }
+                }
+            }
+
+            // Save cart if modified
+            if (cartModified) {
+                cartRepository.save(cart);
+            }
+        }
     }
 
     public OrderResponse getOrderById(Long id) {
@@ -148,6 +188,12 @@ public class OrderService {
         return orderMapper.toOrderResponse(updatedOrder);
     }
 
+    /**
+     * Cancel current user's order. Only allowed if order status is PENDING.
+     * Restore stock quantities when order is cancelled.
+     * @param id
+     * @return updated OrderResponse
+     */
     @Transactional
     public OrderResponse cancelMyOrder(Long id) {
         // Get current user
@@ -155,8 +201,8 @@ public class OrderService {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
 
-        // Find order
-        Order order = orderRepository.findById(id)
+        // Find order with items
+        Order order = orderRepository.findByIdWithItems(id)
                 .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
 
         // check if the order belongs to the user
@@ -169,11 +215,19 @@ public class OrderService {
             throw new AppException(ErrorCode.ORDER_CANNOT_BE_UPDATED);
         }
 
+        // Restore stock quantities
+        for (OrderItem item : order.getOrderItems()) {
+            Book book = item.getBook();
+            book.setStockQuantity(book.getStockQuantity() + item.getQuantity());
+            bookRepository.save(book);
+        }
+
         order.setStatus(OrderStatus.CANCELLED);
 
         Order updatedOrder = orderRepository.save(order);
         return orderMapper.toOrderResponse(updatedOrder);
     }
+
 
 //    @Transactional
 //    public void cancelOrder(Long id) {
