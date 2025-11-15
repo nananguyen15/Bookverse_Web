@@ -162,4 +162,14 @@ public class ReviewService {
         // Map and return response
         return reviewMapper.toReviewResponse(updatedReview);
     }
+
+    public Boolean isBookReviewedByUser(Long bookId) {
+        // Get current authenticated user
+        User user = userRepository.findByUsername(
+                SecurityContextHolder.getContext().getAuthentication().getName())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        // Check if a review exists for the user and book
+        return reviewRepository.existsByUserIdAndBookId(user.getId(), bookId);
+    }
 }

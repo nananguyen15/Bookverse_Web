@@ -100,6 +100,10 @@ public enum ErrorCode {
     PAYMENT_ALREADY_EXISTS(1501, "Payment already exists for this order"),
     PAYMENT_NOT_FOUND(1502, "Payment not found"),
 
+    // custom error codes for notification entity
+    NOTIFICATION_NOT_FOUND(1601, "Notification not found"),
+    INVALID_REQUEST(1602, "Invalid notification request"),
+
     INVALID_KEY(99999, "Invalid message key provided")
     ;
 
