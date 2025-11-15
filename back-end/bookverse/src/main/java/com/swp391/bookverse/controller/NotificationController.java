@@ -3,6 +3,7 @@ package com.swp391.bookverse.controller;
 import com.swp391.bookverse.dto.APIResponse;
 import com.swp391.bookverse.dto.request.NotificationBroadCastCreationRequest;
 import com.swp391.bookverse.dto.request.NotificationCreationRequest;
+import com.swp391.bookverse.dto.request.NotificationUpdateRequest;
 import com.swp391.bookverse.dto.response.NotificationResponse;
 import com.swp391.bookverse.dto.response.UserResponse;
 import com.swp391.bookverse.service.NotificationService;
@@ -132,6 +133,36 @@ public class NotificationController {
         return APIResponse.<Void>builder()
                 .code(200)
                 .message("All notifications marked as read")
+                .build();
+    }
+
+    @PutMapping("/update/{id}")
+    @PreAuthorize("hasAnyAuthority('SCOPE_ADMIN')")
+    public APIResponse<NotificationResponse> updateNotification(@PathVariable Long id, @RequestBody NotificationUpdateRequest request) {
+        return APIResponse.<NotificationResponse>builder()
+                .code(200)
+                .result(notificationService.updateNotification(id, request))
+                .message("Notification updated successfully")
+                .build();
+    }
+
+    @DeleteMapping("/myNotifications/delete/{id}")
+    @PreAuthorize("hasAnyAuthority('SCOPE_CUSTOMER')")
+    public APIResponse<Void> deleteMyNotification(@PathVariable Long id) {
+        notificationService.deleteMyNotification(id);
+        return APIResponse.<Void>builder()
+                .code(200)
+                .message("Notification deleted successfully")
+                .build();
+    }
+
+    @DeleteMapping("/admin-delete/{id}")
+    @PreAuthorize("hasAnyAuthority('SCOPE_ADMIN')")
+    public APIResponse<Void> adminDeleteNotification(@PathVariable Long id) {
+        notificationService.adminDeleteNotification(id);
+        return APIResponse.<Void>builder()
+                .code(200)
+                .message("Notification deleted successfully by admin")
                 .build();
     }
 
