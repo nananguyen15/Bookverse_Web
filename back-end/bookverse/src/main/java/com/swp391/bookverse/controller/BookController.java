@@ -163,11 +163,11 @@ public class BookController {
         return response;
     }
 
-//    @GetMapping("/active/top-selling")
-//    public APIResponse<List<BookResponse>> getTopSellingActiveBooks() {
-//        APIResponse<List<BookResponse>> response;
-//        response = bookService.getTopSellingActiveBooks();
-//        return response;
-//    }
+        @GetMapping("/active/top-selling")
+        public APIResponse<List<BookResponse>> getTopSellingActiveBooks() {
+            APIResponse<List<BookResponse>> response;
+            response = bookService.getTopSellingActiveBooks();
+            return response;
+        }
 
 }

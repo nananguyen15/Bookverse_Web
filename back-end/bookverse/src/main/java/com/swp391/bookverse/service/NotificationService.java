@@ -37,60 +37,6 @@ public class NotificationService {
     NotificationMapper notificationMapper;
     UserMapper userMapper;
 
-    // Public service methods for system notifications
-
-//    @Transactional
-//    public void notifyBookAdded(Long bookId, String bookTitle) {
-//        List<User> customers = userRepository.findAllByRolesContaining(Role.CUSTOMER);
-//        String content = String.format("New book available: %s", bookTitle);
-//
-//        customers.forEach(user -> createNotification(
-//                user.getId(),
-//                content,
-//                NotificationType.FOR_CUSTOMERS
-//        ));
-//
-//        log.info("Notified {} customers about new book: {}", customers.size(), bookTitle);
-//    }
-
-//    @Transactional
-//    public void notifyCartUpdatedDueToStockChange(String userId, String bookTitle) {
-//        String content = String.format(
-//                "Your cart has been updated. '%s' was removed due to insufficient stock.",
-//                bookTitle
-//        );
-//        createNotification(userId, content, NotificationType.FOR_CUSTOMERS_PERSONAL);
-//        log.info("Notified user {} about cart update for book: {}", userId, bookTitle);
-//    }
-
-//    @Transactional
-//    public void notifyOrderStatusChange(String userId, Long orderId, String status) {
-//        String content = String.format("Your order #%d status has been updated to: %s", orderId, status);
-//        createNotification(userId, content, NotificationType.FOR_CUSTOMERS_PERSONAL);
-//        log.info("Notified user {} about order {} status change to {}", userId, orderId, status);
-//    }
-
-//    @Transactional
-//    public void notifyLowStock(Long bookId, String bookTitle, int stockQuantity) {
-//        List<User> staffAndAdmins = userRepository.findAllByRolesContainingAny(
-//                List.of(Role.ADMIN, Role.STAFF)
-//        );
-//        String content = String.format(
-//                "Low stock alert: '%s' only has %d units remaining",
-//                bookTitle,
-//                stockQuantity
-//        );
-//
-//        staffAndAdmins.forEach(user -> {
-//            NotificationType type = user.getRoles().contains(Role.ADMIN)
-//                    ? NotificationType.FOR_ADMINS
-//                    : NotificationType.FOR_STAFFS;
-//            createNotification(user.getId(), content, type);
-//        });
-//
-//        log.info("Notified {} staff/admins about low stock for: {}", staffAndAdmins.size(), bookTitle);
-//    }
-
     // Admin APIs
 
     /**
