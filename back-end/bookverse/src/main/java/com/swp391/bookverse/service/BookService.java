@@ -3,9 +3,11 @@ package com.swp391.bookverse.service;
 import com.swp391.bookverse.dto.APIResponse;
 import com.swp391.bookverse.dto.request.BookCreationRequest;
 import com.swp391.bookverse.dto.request.BookUpdateRequest;
+import com.swp391.bookverse.dto.request.NotificationBroadCastCreationRequest;
 import com.swp391.bookverse.dto.response.BookActiveResponse;
 import com.swp391.bookverse.dto.response.BookResponse;
 import com.swp391.bookverse.entity.*;
+import com.swp391.bookverse.enums.NotificationType;
 import com.swp391.bookverse.exception.AppException;
 import com.swp391.bookverse.exception.ErrorCode;
 import com.swp391.bookverse.repository.*;
@@ -36,6 +38,7 @@ public class BookService {
     BookRepository bookRepository;
     OrderRepository orderRepository;
     SupCategoryRepository supCategoryRepository;
+    NotificationService notificationService;
 
     /**
      * Create a new book based on the provided request.
@@ -107,6 +110,21 @@ public class BookService {
         
         APIResponse<Book> response = new APIResponse<>();
         response.setResult(book);
+
+        // Send notification about new book for customers
+        NotificationBroadCastCreationRequest notificationRequest = NotificationBroadCastCreationRequest.builder()
+            .type(NotificationType.FOR_CUSTOMERS)
+            .content("New book added: " + book.getTitle())
+            .build();
+        notificationService.createBroadcastNotification(notificationRequest);
+
+        // Send notification about new book for staffs
+        notificationRequest = NotificationBroadCastCreationRequest.builder()
+            .type(NotificationType.FOR_STAFFS)
+            .content("New book added: " + book.getTitle())
+            .build();
+        notificationService.createBroadcastNotification(notificationRequest);
+
         return response;
     }
 
@@ -329,6 +347,14 @@ public class BookService {
         }
 
         Book updatedBook = bookRepository.save(existingBook);
+
+        // Send notification about book update for staffs
+        NotificationBroadCastCreationRequest notificationRequest = NotificationBroadCastCreationRequest.builder()
+            .type(NotificationType.FOR_STAFFS)
+            .content("Book updated: " + existingBook.getTitle())
+            .build();
+        notificationService.createBroadcastNotification(notificationRequest);
+
         return mapToBookResponse(updatedBook);
     }
 
@@ -348,6 +374,15 @@ public class BookService {
 
         APIResponse<BookActiveResponse> response = new APIResponse<>();
         response.setResult(mapToBookActiveResponse(existingBook));
+
+        // Send notification about book status change for staffs
+        String status = isActive ? "restored" : "deactivated";
+        NotificationBroadCastCreationRequest notificationRequest = NotificationBroadCastCreationRequest.builder()
+            .type(NotificationType.FOR_STAFFS)
+            .content("Book " + status + ": " + existingBook.getTitle())
+            .build();
+        notificationService.createBroadcastNotification(notificationRequest);
+
         return response;
     }
 
@@ -549,12 +584,13 @@ public class BookService {
         return response;
     }
 
+    /**
+     * Get a list of top-selling active books.
+     * @return
+     */
     public APIResponse<List<BookResponse>> getTopSellingActiveBooks() {
         // Get a list of book IDs sorted by total sold quantity in descending order
         List<Long> topSellingBookIds = orderRepository.findTopSellingBookIds();
-        for (Long id : topSellingBookIds) {
-            System.out.println("🏆 Top selling book ID: " + id);
-        }
 
         // Fetch the corresponding Book entities and filter by active status
         List<BookResponse> topSellingBooks = topSellingBookIds.stream()

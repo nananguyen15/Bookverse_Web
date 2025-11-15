@@ -2,6 +2,7 @@ package com.swp391.bookverse.service;
 
 import com.swp391.bookverse.dto.request.AuthorCreationRequest;
 import com.swp391.bookverse.dto.request.AuthorUpdateRequest;
+import com.swp391.bookverse.dto.request.NotificationBroadCastCreationRequest;
 import com.swp391.bookverse.dto.request.UserUpdateRequest;
 import com.swp391.bookverse.dto.response.AuthorResponse;
 import com.swp391.bookverse.dto.response.BookResponse;
@@ -10,6 +11,7 @@ import com.swp391.bookverse.dto.response.AuthorActiveResponse;
 import com.swp391.bookverse.entity.Author;
 import com.swp391.bookverse.entity.Book;
 import com.swp391.bookverse.entity.User;
+import com.swp391.bookverse.enums.NotificationType;
 import com.swp391.bookverse.exception.AppException;
 import com.swp391.bookverse.exception.ErrorCode;
 import com.swp391.bookverse.mapper.AuthorMapper;
@@ -40,6 +42,7 @@ public class AuthorService {
     AuthorRepository authorRepository;
     AuthorMapper authorMapper;
     BookRepository bookRepository;
+    NotificationService notificationService;
 
     /**
      * Create a new author based on the provided request
@@ -86,6 +89,13 @@ public class AuthorService {
         author.setBio(bio);
         author.setImage(imagePath);
         author.setActive(active);
+
+        // create notification for new author creation to all staffs
+        NotificationBroadCastCreationRequest notificationBroadCastCreationRequestRequest = NotificationBroadCastCreationRequest.builder()
+                .type(NotificationType.FOR_STAFFS)
+                .content("A new author named '" + name + "' has been added to the system.")
+                .build();
+        notificationService.createBroadcastNotification(notificationBroadCastCreationRequestRequest);
 
         return authorRepository.save(author);
     }
@@ -231,6 +241,13 @@ public class AuthorService {
         if (active != null) {
             existingAuthor.setActive(active);
         }
+
+        // create notification for author update to all admins, staffs
+        NotificationBroadCastCreationRequest notificationBroadCastCreationRequestRequest = NotificationBroadCastCreationRequest.builder()
+                .type(NotificationType.FOR_STAFFS)
+                .content("The author named '" + existingAuthor.getName() + "' has been updated.")
+                .build();
+        notificationService.createBroadcastNotification(notificationBroadCastCreationRequestRequest);
 
         Author updatedAuthor = authorRepository.save(existingAuthor);
         return authorMapper.toAuthorResponse(updatedAuthor);
