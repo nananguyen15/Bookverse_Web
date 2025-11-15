@@ -30,4 +30,5 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
     List<Notification> findAllByUserIdOrderByCreatedAtDesc(String userId);
 
     Page<Notification> findByUserIdOrderByCreatedAtAsc(String userId, Pageable firstFive);
+
 }

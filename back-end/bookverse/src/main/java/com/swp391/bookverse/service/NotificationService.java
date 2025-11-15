@@ -2,6 +2,7 @@ package com.swp391.bookverse.service;
 
 import com.swp391.bookverse.dto.request.NotificationBroadCastCreationRequest;
 import com.swp391.bookverse.dto.request.NotificationCreationRequest;
+import com.swp391.bookverse.dto.request.NotificationUpdateRequest;
 import com.swp391.bookverse.dto.response.NotificationResponse;
 import com.swp391.bookverse.dto.response.UserResponse;
 import com.swp391.bookverse.entity.Notification;
@@ -161,4 +162,42 @@ public class NotificationService {
     }
 
 
+    public NotificationResponse updateNotification(Long id, NotificationUpdateRequest request) {
+        Notification notification = notificationRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.NOTIFICATION_NOT_FOUND));
+
+        notification.setContent(request.getContent());
+        notification.setType(request.getType());
+
+        Notification updatedNotification = notificationRepository.save(notification);
+
+        return notificationMapper.toNotificationResponse(updatedNotification);
+    }
+
+    public void deleteMyNotification(Long id) {
+        String userId = getCurrentUserId();
+        Notification notification = notificationRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.NOTIFICATION_NOT_FOUND));
+
+        // Ensure the notification belongs to the current user
+        if (!notification.getUser().getId().equals(userId)) {
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+        }
+
+        notificationRepository.delete(notification);
+    }
+
+    public void adminDeleteNotification(Long id) {
+        Notification notification = notificationRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.NOTIFICATION_NOT_FOUND));
+
+        notificationRepository.delete(notification);
+    }
+
+    public List<NotificationResponse> getAllNotifications() {
+        List<Notification> notifications = notificationRepository.findAll();
+        return notifications.stream()
+                .map(notificationMapper::toNotificationResponse)
+                .toList();
+    }
 }
