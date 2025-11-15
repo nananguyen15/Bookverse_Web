@@ -1,9 +1,12 @@
 package com.swp391.bookverse.service;
 
+import com.swp391.bookverse.dto.request.NotificationBroadCastCreationRequest;
+import com.swp391.bookverse.dto.request.NotificationCreationRequest;
 import com.swp391.bookverse.dto.request.OrderCreationRequest;
 import com.swp391.bookverse.dto.request.OrderUpdateRequest;
 import com.swp391.bookverse.dto.response.OrderResponse;
 import com.swp391.bookverse.entity.*;
+import com.swp391.bookverse.enums.NotificationType;
 import com.swp391.bookverse.enums.OrderStatus;
 import com.swp391.bookverse.exception.AppException;
 import com.swp391.bookverse.exception.ErrorCode;
@@ -30,6 +33,7 @@ public class OrderService {
     BookRepository bookRepository;
     CartRepository cartRepository;
     OrderMapper orderMapper;
+    NotificationService notificationService;
 
     /**
      * Create order from current user's cart
@@ -103,6 +107,13 @@ public class OrderService {
 
         // Update other users' carts with affected books
         updateOtherUsersCarts(affectedBookIds, user.getId());
+
+        // send notification to all staffs about new order
+        NotificationBroadCastCreationRequest notificationRequest = NotificationBroadCastCreationRequest.builder()
+                .type(NotificationType.FOR_STAFFS)
+                .content("New order placed by " + user.getUsername() + ". Order ID: " + savedOrder.getId())
+                .build();
+        notificationService.createBroadcastNotification(notificationRequest);
 
         return orderMapper.toOrderResponse(savedOrder);
     }
@@ -185,6 +196,15 @@ public class OrderService {
         }
 
         Order updatedOrder = orderRepository.save(order);
+
+        // send notification to current cútomer about order status update
+        NotificationCreationRequest notificationRequest = NotificationCreationRequest.builder()
+                .targetUserId(order.getUser().getId())
+                .type(NotificationType.FOR_CUSTOMERS_PERSONAL)
+                .content("Your order (ID: " + order.getId() + ") status has been updated to " + order.getStatus())
+                .build();
+        notificationService.createPersonalNotification(notificationRequest);
+
         return orderMapper.toOrderResponse(updatedOrder);
     }
 
@@ -225,6 +245,14 @@ public class OrderService {
         order.setStatus(OrderStatus.CANCELLED);
 
         Order updatedOrder = orderRepository.save(order);
+
+        // send notification to all staffs about order cancellation
+        NotificationBroadCastCreationRequest notificationRequest = NotificationBroadCastCreationRequest.builder()
+                .type(NotificationType.FOR_STAFFS)
+                .content("Order ID: " + order.getId() + " has been cancelled by the customer " + user.getUsername())
+                .build();
+        notificationService.createBroadcastNotification(notificationRequest);
+
         return orderMapper.toOrderResponse(updatedOrder);
     }
 
@@ -278,6 +306,14 @@ public class OrderService {
         order.setAddress(newAddress);
 
         Order updatedOrder = orderRepository.save(order);
+
+        // send notification to all staffs about order address change
+        NotificationBroadCastCreationRequest notificationRequest = NotificationBroadCastCreationRequest.builder()
+                .type(NotificationType.FOR_STAFFS)
+                .content("Order ID: " + order.getId() + " address has been changed by the customer " + user.getUsername())
+                .build();
+        notificationService.createBroadcastNotification(notificationRequest);
+
         return orderMapper.toOrderResponse(updatedOrder);
     }
 }

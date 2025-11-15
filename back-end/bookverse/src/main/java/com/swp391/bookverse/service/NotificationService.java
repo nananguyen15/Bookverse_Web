@@ -153,15 +153,6 @@ public class NotificationService {
         notificationRepository.save(notification);
     }
 
-    private List<User> getUsersByNotificationType(NotificationType type) {
-        return switch (type) {
-            case FOR_CUSTOMERS -> userRepository.findAllByRolesContaining(Role.CUSTOMER);
-            case FOR_STAFFS -> userRepository.findAllByRolesContaining(Role.STAFF);
-            case FOR_ADMINS -> userRepository.findAllByRolesContaining(Role.ADMIN);
-            default -> throw new AppException(ErrorCode.INVALID_REQUEST);
-        };
-    }
-
     private String getCurrentUserId() {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         return userRepository.findByUsername(username)
