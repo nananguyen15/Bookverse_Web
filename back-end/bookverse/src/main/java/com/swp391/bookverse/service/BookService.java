@@ -432,6 +432,15 @@ public class BookService {
 
         activeBooks.sort((b1, b2) -> b2.getPublishedDate().compareTo(b1.getPublishedDate()));
 
+        // filtering: get only book that has sub-category active = true and sup-category active = true
+            activeBooks = activeBooks.stream()
+            .filter(book -> {
+                SubCategory subCategory = book.getCategory();
+                SupCategory supCategory = subCategory.getSupCategory();
+                return subCategory.getActive() && supCategory.getActive();
+            })
+            .collect(Collectors.toList());
+
         APIResponse<List<BookResponse>> response = new APIResponse<>();
         List<BookResponse> bookResponses = activeBooks.stream()
             .map(this::mapToBookResponse)
@@ -452,6 +461,17 @@ public class BookService {
             throw new AppException(ErrorCode.NO_BOOKS_STORED);
         }
 
+        // filtering: get only book that has sub-category active = true and sup-category active = true
+        bookResponses = bookResponses.stream()
+            .filter(bookResponse -> {
+                Book book = bookRepository.findById(bookResponse.getId())
+                    .orElseThrow(() -> new AppException(ErrorCode.BOOK_NOT_FOUND));
+                SubCategory subCategory = book.getCategory();
+                SupCategory supCategory = subCategory.getSupCategory();
+                return subCategory.getActive() && supCategory.getActive();
+            })
+            .collect(Collectors.toList());
+
         APIResponse<List<BookResponse>> response = new APIResponse<>();
         response.setResult(bookResponses);
         return response;
@@ -467,6 +487,17 @@ public class BookService {
         if (bookResponses.isEmpty()) {
             throw new AppException(ErrorCode.NO_BOOKS_STORED);
         }
+
+        // filtering: get only book that has sub-category active = true and sup-category active = true
+        bookResponses = bookResponses.stream()
+            .filter(bookResponse -> {
+                Book book = bookRepository.findById(bookResponse.getId())
+                    .orElseThrow(() -> new AppException(ErrorCode.BOOK_NOT_FOUND));
+                SubCategory subCategory = book.getCategory();
+                SupCategory supCategory = subCategory.getSupCategory();
+                return subCategory.getActive() && supCategory.getActive();
+            })
+            .collect(Collectors.toList());
 
         APIResponse<List<BookResponse>> response = new APIResponse<>();
         response.setResult(bookResponses);
@@ -484,6 +515,17 @@ public class BookService {
             throw new AppException(ErrorCode.NO_BOOKS_STORED);
         }
 
+        // filtering: get only book that has sub-category active = true and sup-category active = true
+        bookResponses = bookResponses.stream()
+            .filter(bookResponse -> {
+                Book book = bookRepository.findById(bookResponse.getId())
+                    .orElseThrow(() -> new AppException(ErrorCode.BOOK_NOT_FOUND));
+                SubCategory subCategory = book.getCategory();
+                SupCategory supCategory = subCategory.getSupCategory();
+                return subCategory.getActive() && supCategory.getActive();
+            })
+            .collect(Collectors.toList());
+
         APIResponse<List<BookResponse>> response = new APIResponse<>();
         response.setResult(bookResponses);
         return response;
@@ -499,6 +541,17 @@ public class BookService {
         if (bookResponses.isEmpty()) {
             throw new AppException(ErrorCode.NO_BOOKS_STORED);
         }
+
+        // filtering: get only book that has sub-category active = true and sup-category active = true
+        bookResponses = bookResponses.stream()
+            .filter(bookResponse -> {
+                Book book = bookRepository.findById(bookResponse.getId())
+                    .orElseThrow(() -> new AppException(ErrorCode.BOOK_NOT_FOUND));
+                SubCategory subCategory = book.getCategory();
+                SupCategory supCategory = subCategory.getSupCategory();
+                return subCategory.getActive() && supCategory.getActive();
+            })
+            .collect(Collectors.toList());
 
         APIResponse<List<BookResponse>> response = new APIResponse<>();
         response.setResult(bookResponses);
