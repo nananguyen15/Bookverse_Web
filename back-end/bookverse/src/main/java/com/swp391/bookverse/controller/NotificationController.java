@@ -147,7 +147,7 @@ public class NotificationController {
     }
 
     @DeleteMapping("/myNotifications/delete/{id}")
-    @PreAuthorize("hasAnyAuthority('SCOPE_CUSTOMER')")
+    @PreAuthorize("hasAnyAuthority('SCOPE_CUSTOMER', 'SCOPE_STAFF', 'SCOPE_ADMIN')")
     public APIResponse<Void> deleteMyNotification(@PathVariable Long id) {
         notificationService.deleteMyNotification(id);
         return APIResponse.<Void>builder()
