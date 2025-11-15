@@ -30,44 +30,15 @@ public class NotificationController {
 
     NotificationService notificationService;
 
-//    @GetMapping
-//    public APIResponse<Page<NotificationResponse>> getMyNotifications(Pageable pageable) {
-//        return APIResponse.<Page<NotificationResponse>>builder()
-//                .result(notificationService.getMyNotifications(pageable))
-//                .build();
-//    }
-//
-//    @GetMapping("/unread-count")
-//    public APIResponse<Long> getUnreadCount() {
-//        return APIResponse.<Long>builder()
-//                .result(notificationService.getUnreadCount())
-//                .build();
-//    }
-//
-//    @PatchMapping("/{id}/read")
-//    public APIResponse<Void> markAsRead(@PathVariable Long id) {
-//        notificationService.markAsRead(id);
-//        return APIResponse.<Void>builder()
-//                .message("Notification marked as read")
-//                .build();
-//    }
-//
-//    @PatchMapping("/mark-all-read")
-//    public APIResponse<Void> markAllAsRead() {
-//        notificationService.markAllAsRead();
-//        return APIResponse.<Void>builder()
-//                .message("All notifications marked as read")
-//                .build();
-//    }
-//
-//    @PostMapping("/broadcast")
-//    @PreAuthorize("hasRole('ADMIN')")
-//    public APIResponse<Void> createBroadcastNotification(@Valid @RequestBody NotificationCreationRequest request) {
-//        notificationService.createBroadcastNotification(request);
-//        return APIResponse.<Void>builder()
-//                .message("Broadcast notification created successfully")
-//                .build();
-//    }
+    @GetMapping
+    @PreAuthorize("hasAuthority('SCOPE_ADMIN')")
+    public APIResponse<List<NotificationResponse>> getAllNotifications() {
+        return APIResponse.<List<NotificationResponse>>builder()
+                .code(200)
+                .result(notificationService.getAllNotifications())
+                .message("Fetched all notifications successfully")
+                .build();
+    }
 
     /**
      * Create a personal notification for a specific user.

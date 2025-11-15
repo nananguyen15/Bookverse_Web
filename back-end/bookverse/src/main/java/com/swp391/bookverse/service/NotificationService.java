@@ -193,4 +193,11 @@ public class NotificationService {
 
         notificationRepository.delete(notification);
     }
+
+    public List<NotificationResponse> getAllNotifications() {
+        List<Notification> notifications = notificationRepository.findAll();
+        return notifications.stream()
+                .map(notificationMapper::toNotificationResponse)
+                .toList();
+    }
 }
