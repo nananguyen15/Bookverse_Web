@@ -4,6 +4,7 @@ import com.swp391.bookverse.dto.request.NotificationBroadCastCreationRequest;
 import com.swp391.bookverse.dto.request.NotificationCreationRequest;
 import com.swp391.bookverse.dto.request.NotificationUpdateRequest;
 import com.swp391.bookverse.dto.response.NotificationResponse;
+import com.swp391.bookverse.dto.response.NotificationResponseWithID;
 import com.swp391.bookverse.dto.response.UserResponse;
 import com.swp391.bookverse.entity.Notification;
 import com.swp391.bookverse.entity.User;
@@ -194,10 +195,30 @@ public class NotificationService {
         notificationRepository.delete(notification);
     }
 
-    public List<NotificationResponse> getAllNotifications() {
+    public List<NotificationResponseWithID> getAllNotifications() {
         List<Notification> notifications = notificationRepository.findAll();
-        return notifications.stream()
+        List<NotificationResponse> notificationResponses = notifications.stream()
                 .map(notificationMapper::toNotificationResponse)
                 .toList();
+        // Map to NotificationResponseWithID including userId
+        List<NotificationResponseWithID> responseWithIDs = notifications.stream()
+                .map(notification -> {
+                    NotificationResponseWithID responseWithID = new NotificationResponseWithID();
+                    responseWithID.setId(notification.getId());
+                    responseWithID.setContent(notification.getContent());
+                    responseWithID.setType(notification.getType());
+                    responseWithID.setRead(notification.isRead());
+                    responseWithID.setCreatedAt(notification.getCreatedAt());
+                    responseWithID.setUserId(notification.getUser().getId());
+                    return responseWithID;
+                })
+                .toList();
+        return responseWithIDs;
+
+    }
+
+    public void markOneAsRead(Long id) {
+        String userId = getCurrentUserId();
+        notificationRepository.markAsReadByIdAndUserId(id, userId);
     }
 }
