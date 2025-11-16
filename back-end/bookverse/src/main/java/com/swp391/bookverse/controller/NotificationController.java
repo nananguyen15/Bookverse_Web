@@ -108,6 +108,16 @@ public class NotificationController {
                 .build();
     }
 
+    @PutMapping("/myNotifications/mark-one-read/{id}")
+    @PreAuthorize("hasAnyAuthority('SCOPE_ADMIN', 'SCOPE_STAFF', 'SCOPE_CUSTOMER')")
+    public APIResponse<Void> markOneAsRead(@PathVariable Long id) {
+        notificationService.markOneAsRead(id);
+        return APIResponse.<Void>builder()
+                .code(200)
+                .message("Notification marked as read")
+                .build();
+    }
+
     @PutMapping("/update/{id}")
     @PreAuthorize("hasAnyAuthority('SCOPE_ADMIN')")
     public APIResponse<NotificationResponse> updateNotification(@PathVariable Long id, @RequestBody NotificationUpdateRequest request) {

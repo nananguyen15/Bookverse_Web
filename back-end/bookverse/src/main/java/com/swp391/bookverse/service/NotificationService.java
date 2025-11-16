@@ -216,4 +216,9 @@ public class NotificationService {
         return responseWithIDs;
 
     }
+
+    public void markOneAsRead(Long id) {
+        String userId = getCurrentUserId();
+        notificationRepository.markAsReadByIdAndUserId(id, userId);
+    }
 }
