@@ -5,6 +5,7 @@ import com.swp391.bookverse.dto.request.NotificationBroadCastCreationRequest;
 import com.swp391.bookverse.dto.request.NotificationCreationRequest;
 import com.swp391.bookverse.dto.request.NotificationUpdateRequest;
 import com.swp391.bookverse.dto.response.NotificationResponse;
+import com.swp391.bookverse.dto.response.NotificationResponseWithID;
 import com.swp391.bookverse.dto.response.UserResponse;
 import com.swp391.bookverse.service.NotificationService;
 import jakarta.validation.Valid;
@@ -32,8 +33,8 @@ public class NotificationController {
 
     @GetMapping
     @PreAuthorize("hasAuthority('SCOPE_ADMIN')")
-    public APIResponse<List<NotificationResponse>> getAllNotifications() {
-        return APIResponse.<List<NotificationResponse>>builder()
+    public APIResponse<List<NotificationResponseWithID>> getAllNotifications() {
+        return APIResponse.<List<NotificationResponseWithID>>builder()
                 .code(200)
                 .result(notificationService.getAllNotifications())
                 .message("Fetched all notifications successfully")
