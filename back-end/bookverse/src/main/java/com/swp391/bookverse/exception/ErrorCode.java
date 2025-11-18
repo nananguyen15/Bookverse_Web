@@ -95,6 +95,9 @@ public enum ErrorCode {
     ORDER_CANNOT_BE_UPDATED(1405, "Order cannot be updated for some reasons"),
     ORDER_UPDATE_STATUS_DUPLICATE(1406, "New status must be different from current status"),
     ORDER_CANCELLED(1407, "Order has been cancelled"),
+    ORDER_UPDATE_STATUS_MISSING(1408, "Order status is required for update"),
+    ORDER_NEED_REASON(1409, "Reason is required for cancelling order"),
+    ORDER_INVALID_STATUS_TRANSITION(1410, "Invalid order status transition"),
 
     // custom error codes for payment entity
     PAYMENT_ALREADY_EXISTS(1501, "Payment already exists for this order"),
