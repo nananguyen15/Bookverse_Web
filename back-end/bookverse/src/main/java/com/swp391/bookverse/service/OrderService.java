@@ -191,6 +191,37 @@ public class OrderService {
             throw new AppException(ErrorCode.ORDER_UPDATE_STATUS_DUPLICATE);
         }
 
+        // check if the new status is the next logical status
+        // PENDING_PAYMENT/PENDING -> CONFIRMED - > PROCESSING -> DELIVERING -> DELIVERED
+        // Only allow updating to CANCELLED from PENDING_PAYMENT/PENDING/CONFIRMED/PROCESSING (before shipping)
+        // Only allow updating to RETURNED from DELIVERED
+        if (request.getStatus() != null) {
+            boolean validTransition = false; // flag to check valid status transition
+            switch (order.getStatus()) {
+                case PENDING_PAYMENT, PENDING:
+                    validTransition = (request.getStatus() == OrderStatus.CONFIRMED || request.getStatus() == OrderStatus.CANCELLED);
+                    break;
+                case CONFIRMED:
+                    validTransition = (request.getStatus() == OrderStatus.PROCESSING || request.getStatus() == OrderStatus.CANCELLED);
+                    break;
+                case PROCESSING:
+                    validTransition = (request.getStatus() == OrderStatus.DELIVERING || request.getStatus() == OrderStatus.CANCELLED);
+                    break;
+                case DELIVERING:
+                    validTransition = (request.getStatus() == OrderStatus.DELIVERED);
+                    break;
+                case DELIVERED:
+                    validTransition = (request.getStatus() == OrderStatus.RETURNED);
+                    break;
+                default:
+                    validTransition = false;
+            }
+            if (!validTransition) {
+                throw new AppException(ErrorCode.ORDER_INVALID_STATUS_TRANSITION);
+            }
+        }
+
+        // update status
         if (request.getStatus() != null) {
             order.setStatus(request.getStatus());
         }
