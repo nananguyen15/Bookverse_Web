@@ -8,6 +8,7 @@ import com.swp391.bookverse.service.CartService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -39,6 +40,7 @@ public class CartController {
     }
 
     @GetMapping("/myCart")
+    @PreAuthorize("hasAuthority('SCOPE_CUSTOMER')")
     public APIResponse<CartResponse> getMyCart() {
         APIResponse<CartResponse> response = new APIResponse<>();
         response.setResult(cartService.getMyCart());
@@ -46,6 +48,7 @@ public class CartController {
     }
 
     @PostMapping("/myCart/add-1-to-cart")
+    @PreAuthorize("hasAuthority('SCOPE_CUSTOMER')")
     public APIResponse<CartResponse> addToCart(@RequestBody AddToCartRequest request) {
         APIResponse<CartResponse> response = new APIResponse<>();
         CartResponse cartResponse = cartService.addOneToCart(request);

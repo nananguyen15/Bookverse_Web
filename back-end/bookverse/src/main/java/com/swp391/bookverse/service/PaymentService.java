@@ -11,6 +11,7 @@ import com.swp391.bookverse.enums.PaymentMethod;
 import com.swp391.bookverse.enums.PaymentStatus;
 import com.swp391.bookverse.exception.AppException;
 import com.swp391.bookverse.exception.ErrorCode;
+import com.swp391.bookverse.mapper.PaymentMapper;
 import com.swp391.bookverse.repository.OrderRepository;
 import com.swp391.bookverse.repository.PaymentRepository;
 import com.swp391.bookverse.repository.UserRepository;
@@ -33,6 +34,7 @@ public class PaymentService {
     PaymentRepository paymentRepository;
     OrderRepository orderRepository;
     UserRepository userRepository;
+    PaymentMapper paymentMapper;
 
     /**
      * Create payment record for an order. Only the current user can create payment for their own order.
@@ -79,12 +81,12 @@ public class PaymentService {
                 .createdAt(LocalDateTime.now())
                 .build();
 
-        // If COD, mark as success immediately
-        if (request.getMethod() == PaymentMethod.COD) {
-            payment.setStatus(PaymentStatus.SUCCESS);
-            payment.setPaidAt(LocalDateTime.now());
-            order.setStatus(OrderStatus.PENDING);
-        }
+//        // If COD, mark as success immediately
+//        if (request.getMethod() == PaymentMethod.COD) {
+//            payment.setStatus(PaymentStatus.SUCCESS);
+//            payment.setPaidAt(LocalDateTime.now());
+//            order.setStatus(OrderStatus.PENDING);
+//        }
 
         Payment savedPayment = paymentRepository.save(payment);
         orderRepository.save(order);
@@ -228,8 +230,33 @@ public class PaymentService {
         payment.setPaidAt(LocalDateTime.now());
         Payment updatedPayment = paymentRepository.save(payment);
 
-        //
 
+        return PaymentResponse.builder()
+                .id(updatedPayment.getId())
+                .orderId(updatedPayment.getOrder().getId())
+                .method(updatedPayment.getMethod())
+                .status(updatedPayment.getStatus())
+                .amount(updatedPayment.getAmount())
+                .paidAt(updatedPayment.getPaidAt())
+                .createdAt(updatedPayment.getCreatedAt())
+                .build();
+    }
+
+    /**
+     * mark payment as refunded. only payment status REFUNDING can be marked as REFUNDED.
+     */
+    public PaymentResponse markPaymentAsRefunded(Long paymentId) {
+        Payment payment = paymentRepository.findById(paymentId)
+                .orElseThrow(() -> new AppException(ErrorCode.PAYMENT_NOT_FOUND));
+
+        // check if payment status is REFUNDING
+        if (payment.getStatus() != PaymentStatus.REFUNDING) {
+            throw new AppException(ErrorCode.INVALID_PAYMENT_STATUS_TRANSFER);
+        }
+
+        // mark as REFUNDED
+        payment.setStatus(PaymentStatus.REFUNDED);
+        Payment updatedPayment = paymentRepository.save(payment);
         return PaymentResponse.builder()
                 .id(updatedPayment.getId())
                 .orderId(updatedPayment.getOrder().getId())

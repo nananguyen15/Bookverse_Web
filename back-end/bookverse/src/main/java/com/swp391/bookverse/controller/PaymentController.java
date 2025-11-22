@@ -68,6 +68,15 @@ public class PaymentController {
         return response;
     }
 
+    @PutMapping("/status-refunded/{paymentId}")
+    @PreAuthorize("hasAuthority('SCOPE_ADMIN') or hasAuthority('SCOPE_STAFF')")
+    public APIResponse<PaymentResponse> markPaymentAsRefunded(@PathVariable Long paymentId) {
+        PaymentResponse paymentResponse = paymentService.markPaymentAsRefunded(paymentId);
+        APIResponse<PaymentResponse> response = new APIResponse<>();
+        response.setResult(paymentResponse);
+        return response;
+    }
+
     @PostMapping("/create-vnpay-url")
     public ResponseEntity<String> createPayment(@RequestBody VNPayURLCreationRequest request) throws UnsupportedEncodingException {
 
