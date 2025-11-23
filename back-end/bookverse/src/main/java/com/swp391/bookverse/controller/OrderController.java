@@ -1,6 +1,7 @@
 package com.swp391.bookverse.controller;
 
 import com.swp391.bookverse.dto.APIResponse;
+import com.swp391.bookverse.dto.request.OrderCancelRequest;
 import com.swp391.bookverse.dto.request.OrderCreationRequest;
 import com.swp391.bookverse.dto.request.OrderUpdateRequest;
 import com.swp391.bookverse.dto.response.OrderResponse;
@@ -53,6 +54,7 @@ public class OrderController {
     }
 
     @GetMapping("/myOrders")
+    @PreAuthorize("hasAuthority('SCOPE_CUSTOMER')")
     public APIResponse<List<OrderResponse>> getMyOrders() {
         return APIResponse.<List<OrderResponse>>builder()
                 .code(200)
@@ -86,15 +88,16 @@ public class OrderController {
     }
 
     @PutMapping("/myOrders/cancel/{id}")
-    public APIResponse<OrderResponse> CancelMyOrder(
-            @PathVariable Long id) {
+    @PreAuthorize("hasAuthority('SCOPE_CUSTOMER')")
+    public APIResponse<OrderResponse> CancelMyOrder(@RequestBody OrderCancelRequest request , @PathVariable Long id) {
         return APIResponse.<OrderResponse>builder()
                 .code(200)
-                .result(orderService.cancelMyOrder(id))
+                .result(orderService.cancelMyOrder(request, id))
                 .build();
     }
 
     @PutMapping("/myOrders/change-address/{id}")
+    @PreAuthorize("hasAuthority('SCOPE_CUSTOMER')")
     public APIResponse<OrderResponse> changeAddressMyOrder(
             @PathVariable Long id,
             @RequestBody OrderCreationRequest request) {

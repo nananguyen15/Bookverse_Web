@@ -98,10 +98,12 @@ public enum ErrorCode {
     ORDER_UPDATE_STATUS_MISSING(1408, "Order status is required for update"),
     ORDER_NEED_REASON(1409, "Reason is required for cancelling order"),
     ORDER_INVALID_STATUS_TRANSITION(1410, "Invalid order status transition"),
+    ORDER_CANNOT_CHANGE_ADDRESS(1411, "Cannot change address (only PENDING orders can change address)"),
 
     // custom error codes for payment entity
     PAYMENT_ALREADY_EXISTS(1501, "Payment already exists for this order"),
     PAYMENT_NOT_FOUND(1502, "Payment not found"),
+    INVALID_PAYMENT_STATUS_TRANSFER(1503, "Invalid payment status transition (REFUNDING -> REFUNDED only)"),
 
     // custom error codes for notification entity
     NOTIFICATION_NOT_FOUND(1601, "Notification not found"),

@@ -1,13 +1,12 @@
 package com.swp391.bookverse.service;
 
-import com.swp391.bookverse.dto.request.NotificationBroadCastCreationRequest;
-import com.swp391.bookverse.dto.request.NotificationCreationRequest;
-import com.swp391.bookverse.dto.request.OrderCreationRequest;
-import com.swp391.bookverse.dto.request.OrderUpdateRequest;
+import com.swp391.bookverse.dto.request.*;
 import com.swp391.bookverse.dto.response.OrderResponse;
+import com.swp391.bookverse.dto.response.PaymentResponse;
 import com.swp391.bookverse.entity.*;
 import com.swp391.bookverse.enums.NotificationType;
 import com.swp391.bookverse.enums.OrderStatus;
+import com.swp391.bookverse.enums.PaymentStatus;
 import com.swp391.bookverse.exception.AppException;
 import com.swp391.bookverse.exception.ErrorCode;
 import com.swp391.bookverse.mapper.OrderMapper;
@@ -15,6 +14,7 @@ import com.swp391.bookverse.repository.*;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,13 +33,12 @@ public class OrderService {
     BookRepository bookRepository;
     CartRepository cartRepository;
     OrderMapper orderMapper;
+    PaymentRepository paymentRepository;
     NotificationService notificationService;
 
     /**
      * Create order from current user's cart
      * When order is created, the cart and its items are cleared (just like that)
-     * Also reduce stock quantity of ordered books.
-     * If other users have the same books in their carts, check and update their carts accordingly.
      *
      * @param request
      * @return OrderResponse
@@ -69,7 +68,6 @@ public class OrderService {
                 .build();
 
         double totalAmount = 0.0;
-        List<Long> affectedBookIds = new ArrayList<>();
 
         // Transfer cart items to order items
         for (CartItem cartItem : cart.getCartItems()) {
@@ -90,10 +88,6 @@ public class OrderService {
 
             order.getOrderItems().add(orderItem);
             totalAmount += book.getPrice() * cartItem.getQuantity();
-
-            // Reduce stock quantity
-            book.setStockQuantity(book.getStockQuantity() - cartItem.getQuantity());
-            affectedBookIds.add(book.getId());
         }
 
         order.setTotalAmount(totalAmount);
@@ -105,9 +99,6 @@ public class OrderService {
         cart.getCartItems().clear();
         cartRepository.save(cart);
 
-        // Update other users' carts with affected books
-        updateOtherUsersCarts(affectedBookIds, user.getId());
-
         // send notification to all staffs about new order
         NotificationBroadCastCreationRequest notificationRequest = NotificationBroadCastCreationRequest.builder()
                 .type(NotificationType.FOR_STAFFS)
@@ -115,44 +106,15 @@ public class OrderService {
                 .build();
         notificationService.createBroadcastNotification(notificationRequest);
 
+        // Return order response DTO after saving
         return orderMapper.toOrderResponse(savedOrder);
     }
 
     /**
-     * Update or remove items from other users' carts if stock is insufficient
+     * Get order by id
+     * @param id
+     * @return OrderResponse
      */
-    void updateOtherUsersCarts(List<Long> bookIds, String currentUserId) {
-        // Find all active carts except current user
-        List<Cart> otherCarts = cartRepository.findAllActiveCartsExcludingUser(currentUserId);
-
-        for (Cart cart : otherCarts) {
-            boolean cartModified = false;
-
-            for (CartItem item : new ArrayList<>(cart.getCartItems())) {
-                if (bookIds.contains(item.getBook().getId())) {
-                    Book book = item.getBook();
-
-                    // If requested quantity exceeds available stock
-                    if (item.getQuantity() > book.getStockQuantity()) {
-                        if (book.getStockQuantity() == 0) {
-                            // Remove item if no stock
-                            cart.getCartItems().remove(item);
-                        } else {
-                            // Adjust quantity to available stock
-                            item.setQuantity(book.getStockQuantity());
-                        }
-                        cartModified = true;
-                    }
-                }
-            }
-
-            // Save cart if modified
-            if (cartModified) {
-                cartRepository.save(cart);
-            }
-        }
-    }
-
     public OrderResponse getOrderById(Long id) {
         Order order = orderRepository.findByIdWithItems(id)
                 .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
@@ -181,6 +143,12 @@ public class OrderService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Update order status by id
+     * @param id
+     * @param request
+     * @return updated OrderResponse
+     */
     @Transactional
     public OrderResponse updateOrder(Long id, OrderUpdateRequest request) {
         Order order = orderRepository.findById(id)
@@ -191,28 +159,45 @@ public class OrderService {
             throw new AppException(ErrorCode.ORDER_UPDATE_STATUS_DUPLICATE);
         }
 
-        // check if the new status is the next logical status
+        // handle transition under valid status changes
         // PENDING_PAYMENT/PENDING -> CONFIRMED - > PROCESSING -> DELIVERING -> DELIVERED
-        // Only allow updating to CANCELLED from PENDING_PAYMENT/PENDING/CONFIRMED/PROCESSING (before shipping)
-        // Only allow updating to RETURNED from DELIVERED
         if (request.getStatus() != null) {
             boolean validTransition = false; // flag to check valid status transition
             switch (order.getStatus()) {
                 case PENDING_PAYMENT, PENDING:
-                    validTransition = (request.getStatus() == OrderStatus.CONFIRMED || request.getStatus() == OrderStatus.CANCELLED);
+                    validTransition = (request.getStatus() == OrderStatus.CONFIRMED);
                     break;
                 case CONFIRMED:
-                    validTransition = (request.getStatus() == OrderStatus.PROCESSING || request.getStatus() == OrderStatus.CANCELLED);
+                    validTransition = (request.getStatus() == OrderStatus.PROCESSING);
                     break;
                 case PROCESSING:
-                    validTransition = (request.getStatus() == OrderStatus.DELIVERING || request.getStatus() == OrderStatus.CANCELLED);
+                    validTransition = (request.getStatus() == OrderStatus.DELIVERING);
+                    // update stock quantities when order is moved to DELIVERING
+                    if (validTransition) {
+                        for (OrderItem item : order.getOrderItems()) {
+                            Book book = item.getBook();
+                            if (book.getStockQuantity() < item.getQuantity()) {
+                                throw new AppException(ErrorCode.INSUFFICIENT_STOCK);
+                            }
+                            book.setStockQuantity(book.getStockQuantity() - item.getQuantity());
+                            bookRepository.save(book);
+                        }
+                    }
                     break;
                 case DELIVERING:
                     validTransition = (request.getStatus() == OrderStatus.DELIVERED);
+                    // change its payment status to SUCCESS if it's a COD order when order is DELIVERED
+                    if (validTransition) {
+                        Payment payment = paymentRepository.findByOrderId(order.getId());
+                        if (payment != null && payment.getMethod() == com.swp391.bookverse.enums.PaymentMethod.COD) {
+                            payment.setStatus(PaymentStatus.SUCCESS);
+                            paymentRepository.save(payment);
+                        }
+                    }
                     break;
-                case DELIVERED:
-                    validTransition = (request.getStatus() == OrderStatus.RETURNED);
-                    break;
+//                case DELIVERED:
+//                    validTransition = (request.getStatus() == OrderStatus.RETURNED);
+//                    break;
                 default:
                     validTransition = false;
             }
@@ -240,13 +225,14 @@ public class OrderService {
     }
 
     /**
-     * Cancel current user's order. Only allowed if order status is PENDING.
+     * Cancel current user's order.
+     * Only allow updating to CANCELLED from PENDING_PAYMENT/PENDING/CONFIRMED/PROCESSING (before shipping)
      * Restore stock quantities when order is cancelled.
      * @param id
      * @return updated OrderResponse
      */
     @Transactional
-    public OrderResponse cancelMyOrder(Long id) {
+    public OrderResponse cancelMyOrder(OrderCancelRequest request, Long id) {
         // Get current user
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userRepository.findByUsername(username)
@@ -261,26 +247,39 @@ public class OrderService {
             throw new AppException(ErrorCode.UNAUTHORIZED);
         }
 
-        // check if the order status is PENDING and only allow customer to update status to CANCELLED
-        if (order.getStatus() != OrderStatus.PENDING) {
-            throw new AppException(ErrorCode.ORDER_CANNOT_BE_UPDATED);
-        }
-
-        // Restore stock quantities
-        for (OrderItem item : order.getOrderItems()) {
-            Book book = item.getBook();
-            book.setStockQuantity(book.getStockQuantity() + item.getQuantity());
-            bookRepository.save(book);
+        // check if the order status is in PENDING_PAYMENT/PENDING/CONFIRMED/PROCESSING
+        if (order.getStatus() != OrderStatus.PENDING && order.getStatus() != OrderStatus.CONFIRMED && order.getStatus() != OrderStatus.PROCESSING) {
+            throw new AppException(ErrorCode.ORDER_CANNOT_BE_CANCELLED);
         }
 
         order.setStatus(OrderStatus.CANCELLED);
 
         Order updatedOrder = orderRepository.save(order);
 
+        // chek if the order has payment status = SUCCESS
+        // if so, notify staffs and admin to process refund
+        // set the status of payment to REFUNDING
+        Payment payment = paymentRepository.findByOrderId(order.getId());
+        if (payment != null && payment.getStatus() == PaymentStatus.SUCCESS) {
+            payment.setStatus(PaymentStatus.REFUNDING);
+            paymentRepository.save(payment);
+        }
+
+
+        // send notification to all staffs about order cancellation
+        // consider if the order has payment status = SUCCESS. If so, notify staffs and admins to process refund
+        String contentNotification = "";
+        if (payment != null && payment.getStatus() == PaymentStatus.REFUNDING) {
+            contentNotification = "Order ID: " + order.getId() + " has been cancelled by the customer " + user.getUsername() +
+                    ". The order had a successful payment, please process the refund.";
+        } else {
+            contentNotification = "Order ID: " + order.getId() + " has been cancelled by the customer " + user.getUsername() + ".";
+        }
+
         // send notification to all staffs about order cancellation
         NotificationBroadCastCreationRequest notificationRequest = NotificationBroadCastCreationRequest.builder()
                 .type(NotificationType.FOR_STAFFS)
-                .content("Order ID: " + order.getId() + " has been cancelled by the customer " + user.getUsername())
+                .content(contentNotification)
                 .build();
         notificationService.createBroadcastNotification(notificationRequest);
 
@@ -331,7 +330,7 @@ public class OrderService {
 
         // check if the order status is PENDING
         if (order.getStatus() != OrderStatus.PENDING) {
-            throw new AppException(ErrorCode.ORDER_CANNOT_BE_UPDATED);
+            throw new AppException(ErrorCode.ORDER_CANNOT_CHANGE_ADDRESS);
         }
 
         order.setAddress(newAddress);

@@ -14,5 +14,4 @@ import lombok.experimental.FieldDefaults;
 @FieldDefaults(level = AccessLevel.PRIVATE) // Set default access level for fields to private
 public class OrderUpdateRequest {
     OrderStatus status;
-    String cancelReason;
 }
