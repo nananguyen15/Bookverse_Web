@@ -7,23 +7,25 @@ import {
   FaToggleOn,
   FaToggleOff,
 } from "react-icons/fa";
-import { categoriesApi } from "../../api";
+import { categoriesApi, promotionApi } from "../../api";
 import type { SupCategory } from "../../types";
+import type { PromotionResponse } from "../../types/api/promotion.types";
 
-interface Promotion {
-  id: string;
-  name: string;
-  description: string;
-  applyTo: string[]; // Array of category IDs or ["all"]
-  discountValue: number; // Always percentage
+interface PromotionFormData {
+  content: string;
+  percentage: number;
+  startDate: string;
+  endDate: string;
   active: boolean;
+  subCategoryIds: number[];
 }
 
 export function Promotion() {
-  const [promotions, setPromotions] = useState<Promotion[]>([]);
+  const [promotions, setPromotions] = useState<PromotionResponse[]>([]);
   const [categories, setCategories] = useState<SupCategory[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const [sortBy, setSortBy] = useState<"name">("name");
+  const [sortBy, setSortBy] = useState<"content">("content");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -32,17 +34,18 @@ export function Promotion() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [selectedPromotion, setSelectedPromotion] = useState<Promotion | null>(
+  const [selectedPromotion, setSelectedPromotion] = useState<PromotionResponse | null>(
     null
   );
 
   // Form states
-  const [formData, setFormData] = useState<Partial<Promotion>>({
-    name: "",
-    description: "",
-    applyTo: ["all"],
-    discountValue: 0,
+  const [formData, setFormData] = useState<PromotionFormData>({
+    content: "",
+    percentage: 0,
+    startDate: new Date().toISOString().split('T')[0],
+    endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
     active: true,
+    subCategoryIds: [],
   });
 
   // Load promotions and categories
@@ -53,32 +56,24 @@ export function Promotion() {
 
   const loadCategories = async () => {
     try {
-      const data = await categoriesApi.sup.getActive();
+      const data = await categoriesApi.sup.getAll();
       setCategories(data);
     } catch (error) {
       console.error("Failed to fetch categories:", error);
     }
   };
 
-  const loadPromotions = () => {
-    const promotionsData = JSON.parse(
-      localStorage.getItem("promotions") || "[]"
-    );
-    
-    // Migrate old promotions to new format (applyTo as array)
-    const migratedPromotions = promotionsData.map((promo: { applyTo?: string | string[]; [key: string]: unknown }) => ({
-      ...promo,
-      applyTo: Array.isArray(promo.applyTo) 
-        ? promo.applyTo 
-        : [promo.applyTo || "all"]
-    }));
-    
-    setPromotions(migratedPromotions);
-  };
-
-  const savePromotions = (updatedPromotions: Promotion[]) => {
-    localStorage.setItem("promotions", JSON.stringify(updatedPromotions));
-    setPromotions(updatedPromotions);
+  const loadPromotions = async () => {
+    try {
+      setLoading(true);
+      const data = await promotionApi.getAll();
+      setPromotions(data);
+    } catch (error) {
+      console.error("Failed to fetch promotions:", error);
+      alert("Failed to load promotions");
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Filtered and sorted promotions
@@ -88,17 +83,15 @@ export function Promotion() {
     // Search filter
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
-      filtered = filtered.filter(
-        (p) =>
-          p.name.toLowerCase().includes(term) ||
-          p.description.toLowerCase().includes(term)
+      filtered = filtered.filter((p) =>
+        p.content.toLowerCase().includes(term)
       );
     }
 
     // Sort
     filtered.sort((a, b) => {
-      const aVal = a.name.toLowerCase();
-      const bVal = b.name.toLowerCase();
+      const aVal = a.content.toLowerCase();
+      const bVal = b.content.toLowerCase();
 
       if (sortOrder === "asc") {
         return aVal > bVal ? 1 : -1;
@@ -121,191 +114,160 @@ export function Promotion() {
     setCurrentPage(1);
   }, [searchTerm, itemsPerPage]);
 
-  const handleAddPromotion = () => {
-    if (!formData.name) {
-      alert("Please fill in all required fields");
+  const handleAddPromotion = async () => {
+    if (!formData.content.trim()) {
+      alert("Please enter promotion description");
       return;
     }
 
-    if (formData.discountValue! <= 0) {
-      alert("Discount value must be greater than 0");
+    if (formData.percentage <= 0) {
+      alert("Discount percentage must be greater than 0");
       return;
     }
 
-    if (formData.discountValue! > 100) {
-      alert("Percentage discount cannot exceed 100%");
+    if (formData.percentage > 100) {
+      alert("Discount percentage cannot exceed 100%");
       return;
     }
 
-    // Generate sequential ID
-    const maxId = promotions.length > 0 
-      ? Math.max(...promotions.map(p => parseInt(p.id) || 0))
-      : 0;
+    if (!formData.startDate || !formData.endDate) {
+      alert("Please select start and end dates");
+      return;
+    }
 
-    const newPromotion: Promotion = {
-      id: (maxId + 1).toString(),
-      name: formData.name!,
-      description: formData.description || "",
-      applyTo: formData.applyTo || ["all"],
-      discountValue: formData.discountValue!,
-      active: formData.active ?? true,
-    };
+    if (new Date(formData.startDate) >= new Date(formData.endDate)) {
+      alert("End date must be after start date");
+      return;
+    }
 
-    const updatedPromotions = [...promotions, newPromotion];
-    savePromotions(updatedPromotions);
-
-    // Create notification
-    const applyToText = newPromotion.applyTo.includes("all")
-      ? "all products"
-      : `${newPromotion.applyTo.length} ${
-          newPromotion.applyTo.length === 1 ? "category" : "categories"
-        }`;
-
-    createNotification(
-      `New Promotion: ${newPromotion.name}`,
-      `${newPromotion.name} - ${newPromotion.discountValue}% off on ${applyToText}.`,
-      "promotion"
-    );
-
-    setShowAddModal(false);
-    resetForm();
+    try {
+      await promotionApi.create(formData);
+      alert("Promotion created successfully!");
+      setShowAddModal(false);
+      resetForm();
+      await loadPromotions();
+    } catch (error) {
+      console.error("Failed to create promotion:", error);
+      alert("Failed to create promotion");
+    }
   };
 
-  const handleEditPromotion = () => {
-    if (!selectedPromotion || !formData.name) {
-      alert("Please fill in all required fields");
+  const handleEditPromotion = async () => {
+    if (!selectedPromotion || !formData.content.trim()) {
+      alert("Please enter promotion description");
       return;
     }
 
-    if (formData.discountValue! <= 0) {
-      alert("Discount value must be greater than 0");
+    if (formData.percentage <= 0) {
+      alert("Discount percentage must be greater than 0");
       return;
     }
 
-    if (formData.discountValue! > 100) {
-      alert("Percentage discount cannot exceed 100%");
+    if (formData.percentage > 100) {
+      alert("Discount percentage cannot exceed 100%");
       return;
     }
 
-    const updatedPromotions = promotions.map((p) =>
-      p.id === selectedPromotion.id
-        ? {
-            ...p,
-            name: formData.name!,
-            description: formData.description || "",
-            applyTo: formData.applyTo || ["all"],
-            discountValue: formData.discountValue!,
-            active: formData.active ?? true,
-          }
-        : p
-    );
+    if (!formData.startDate || !formData.endDate) {
+      alert("Please select start and end dates");
+      return;
+    }
 
-    savePromotions(updatedPromotions);
-    setShowEditModal(false);
-    setSelectedPromotion(null);
-    resetForm();
+    if (new Date(formData.startDate) >= new Date(formData.endDate)) {
+      alert("End date must be after start date");
+      return;
+    }
+
+    try {
+      await promotionApi.update(selectedPromotion.id, formData);
+      alert("Promotion updated successfully!");
+      setShowEditModal(false);
+      setSelectedPromotion(null);
+      resetForm();
+      await loadPromotions();
+    } catch (error) {
+      console.error("Failed to update promotion:", error);
+      alert("Failed to update promotion");
+    }
   };
 
-  const handleDeletePromotion = () => {
+  const handleDeletePromotion = async () => {
     if (!selectedPromotion) return;
 
-    const updatedPromotions = promotions.filter(
-      (p) => p.id !== selectedPromotion.id
-    );
-    savePromotions(updatedPromotions);
-    setShowDeleteModal(false);
-    setSelectedPromotion(null);
+    // API doesn't have delete, so we deactivate instead
+    try {
+      await promotionApi.setInactive(selectedPromotion.id);
+      alert("Promotion deactivated successfully!");
+      setShowDeleteModal(false);
+      setSelectedPromotion(null);
+      await loadPromotions();
+    } catch (error) {
+      console.error("Failed to deactivate promotion:", error);
+      alert("Failed to deactivate promotion");
+    }
   };
 
-  const handleToggleActive = (promotion: Promotion) => {
-    const updatedPromotions = promotions.map((p) =>
-      p.id === promotion.id ? { ...p, active: !p.active } : p
-    );
-    savePromotions(updatedPromotions);
+  const handleToggleActive = async (promotion: PromotionResponse) => {
+    try {
+      if (promotion.active) {
+        await promotionApi.setInactive(promotion.id);
+      } else {
+        await promotionApi.setActive(promotion.id);
+      }
+      await loadPromotions();
+    } catch (error) {
+      console.error("Failed to toggle promotion status:", error);
+      alert("Failed to update promotion status");
+    }
   };
 
-  const createNotification = (
-    title: string,
-    description: string,
-    type: string
-  ) => {
-    const notifications = JSON.parse(
-      localStorage.getItem("adminNotifications") || "[]"
-    );
-    notifications.unshift({
-      id: Date.now().toString(),
-      title,
-      description,
-      createdAt: new Date().toISOString(),
-      type,
-    });
-    localStorage.setItem("adminNotifications", JSON.stringify(notifications));
+
+
+  const openEditModal = async (promotion: PromotionResponse) => {
+    try {
+      // Load subcategories for this promotion (may return 400 if none assigned)
+      let subCategoryIds: number[] = [];
+      try {
+        const subCategories = await promotionApi.getPromotionSubCategories(promotion.id);
+        subCategoryIds = subCategories.map(sc => sc.id);
+      } catch {
+        // Promotion doesn't have sub-categories yet
+        subCategoryIds = [];
+      }
+
+      setSelectedPromotion(promotion);
+      setFormData({
+        content: promotion.content,
+        percentage: promotion.percentage,
+        startDate: promotion.startDate,
+        endDate: promotion.endDate,
+        active: promotion.active,
+        subCategoryIds,
+      });
+      setShowEditModal(true);
+    } catch (error) {
+      console.error("Failed to load promotion details:", error);
+      alert("Failed to load promotion details");
+    }
   };
 
-  const openEditModal = (promotion: Promotion) => {
-    setSelectedPromotion(promotion);
-    setFormData({
-      name: promotion.name,
-      description: promotion.description,
-      applyTo: promotion.applyTo,
-      discountValue: promotion.discountValue,
-      active: promotion.active,
-    });
-    setShowEditModal(true);
-  };
-
-  const openDeleteModal = (promotion: Promotion) => {
+  const openDeleteModal = (promotion: PromotionResponse) => {
     setSelectedPromotion(promotion);
     setShowDeleteModal(true);
   };
 
   const resetForm = () => {
     setFormData({
-      name: "",
-      description: "",
-      applyTo: ["all"],
-      discountValue: 0,
+      content: "",
+      percentage: 0,
+      startDate: new Date().toISOString().split('T')[0],
+      endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       active: true,
+      subCategoryIds: [],
     });
   };
 
-  const getCategoryName = (categoryId: string) => {
-    if (categoryId === "all") return "All Products";
 
-    // Check if it's a main category
-    const mainCat = categories.find((c) => c.id.toString() === categoryId);
-    if (mainCat) return mainCat.name;
-
-    // Check if it's a subcategory
-    for (const mainCat of categories) {
-      if (mainCat.subCategories && Array.isArray(mainCat.subCategories)) {
-        const subCat = mainCat.subCategories.find(
-          (sc) => sc.id.toString() === categoryId
-        );
-        if (subCat) return `${mainCat.name} > ${subCat.name}`;
-      }
-    }
-
-    return "Unknown Category";
-  };
-
-  const getCategoryNames = (categoryIds: string[]) => {
-    // Safety check for old data format
-    if (!Array.isArray(categoryIds)) {
-      return categoryIds === "all" ? "All Products" : String(categoryIds);
-    }
-    
-    if (categoryIds.includes("all")) return "All Products";
-    return categoryIds.map((id) => getCategoryName(id)).join(", ");
-  };
-
-  const getDiscountDisplay = (promotion: Promotion) => {
-    return `${promotion.discountValue}%`;
-  };
-
-  const isPromotionActive = (promotion: Promotion) => {
-    return promotion.active;
-  };
 
   return (
     <div className="min-h-screen p-6 bg-beige-50">
@@ -359,7 +321,7 @@ export function Promotion() {
             className="px-3 py-1 text-sm border rounded-lg border-beige-300 focus:outline-none focus:ring-2 focus:ring-beige-500"
             aria-label="Sort by"
           >
-            <option value="name">Name</option>
+            <option value="content">Description</option>
           </select>
           <button
             onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
@@ -380,16 +342,13 @@ export function Promotion() {
                   #
                 </th>
                 <th className="px-4 py-3 text-sm font-semibold text-left text-beige-900">
-                  Name
-                </th>
-                <th className="px-4 py-3 text-sm font-semibold text-left text-beige-900">
-                  Apply To
-                </th>
-                <th className="px-4 py-3 text-sm font-semibold text-left text-beige-900">
                   Description
                 </th>
                 <th className="px-4 py-3 text-sm font-semibold text-left text-beige-900">
                   Discount
+                </th>
+                <th className="px-4 py-3 text-sm font-semibold text-left text-beige-900">
+                  Period
                 </th>
                 <th className="px-4 py-3 text-sm font-semibold text-left text-beige-900">
                   Status
@@ -400,10 +359,16 @@ export function Promotion() {
               </tr>
             </thead>
             <tbody className="divide-y divide-beige-200">
-              {paginatedPromotions.length === 0 ? (
+              {loading ? (
+                <tr>
+                  <td colSpan={6} className="px-4 py-8 text-center text-beige-500">
+                    Loading promotions...
+                  </td>
+                </tr>
+              ) : paginatedPromotions.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={7}
+                    colSpan={6}
                     className="px-4 py-8 text-center text-beige-500"
                   >
                     No promotions found
@@ -415,20 +380,21 @@ export function Promotion() {
                     <td className="px-4 py-3 text-sm text-beige-900">
                       {(currentPage - 1) * itemsPerPage + index + 1}
                     </td>
-                    <td className="px-4 py-3 text-sm font-medium text-beige-900">
-                      {promotion.name}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-beige-900">
-                      {getCategoryNames(promotion.applyTo)}
-                    </td>
-                    <td className="max-w-xs px-4 py-3 text-sm truncate text-beige-900">
-                      {promotion.description || "N/A"}
+                    <td className="max-w-md px-4 py-3 text-sm text-beige-900">
+                      {promotion.content}
                     </td>
                     <td className="px-4 py-3 text-sm font-semibold text-beige-900">
-                      {getDiscountDisplay(promotion)}
+                      {promotion.percentage}%
+                    </td>
+                    <td className="px-4 py-3 text-sm text-beige-900">
+                      <div className="text-xs">
+                        <div>{new Date(promotion.startDate).toLocaleDateString()}</div>
+                        <div className="text-beige-500">to</div>
+                        <div>{new Date(promotion.endDate).toLocaleDateString()}</div>
+                      </div>
                     </td>
                     <td className="px-4 py-3">
-                      {isPromotionActive(promotion) ? (
+                      {promotion.active ? (
                         <span className="px-2 py-1 text-xs font-medium text-green-800 bg-green-100 rounded-full">
                           Active
                         </span>
@@ -533,158 +499,119 @@ export function Promotion() {
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div className="md:col-span-2">
                   <label className="block mb-1 text-sm font-medium text-beige-700">
-                    Promotion Name *
+                    Promotion Description *
                   </label>
-                  <input
-                    type="text"
-                    value={formData.name}
+                  <textarea
+                    value={formData.content}
                     onChange={(e) =>
-                      setFormData({ ...formData, name: e.target.value })
+                      setFormData({ ...formData, content: e.target.value })
                     }
                     className="w-full px-3 py-2 border rounded-lg border-beige-300 focus:outline-none focus:ring-2 focus:ring-beige-500"
-                    placeholder="e.g., Summer Sale 2024"
+                    rows={3}
+                    placeholder="e.g., Summer Sale - Get 20% off on all fiction books"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block mb-1 text-sm font-medium text-beige-700">
+                    Discount Percentage (%) *
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="1"
+                    value={formData.percentage}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        percentage: parseInt(e.target.value) || 0,
+                      })
+                    }
+                    title="Discount percentage"
+                    placeholder="Enter discount percentage (0-100)"
+                    className="w-full px-3 py-2 border rounded-lg border-beige-300 focus:outline-none focus:ring-2 focus:ring-beige-500"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block mb-1 text-sm font-medium text-beige-700">
+                    Start Date *
+                  </label>
+                  <input
+                    type="date"
+                    value={formData.startDate}
+                    onChange={(e) =>
+                      setFormData({ ...formData, startDate: e.target.value })
+                    }
+                    title="Select start date for promotion"
+                    placeholder="YYYY-MM-DD"
+                    className="w-full px-3 py-2 border rounded-lg border-beige-300 focus:outline-none focus:ring-2 focus:ring-beige-500"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block mb-1 text-sm font-medium text-beige-700">
+                    End Date *
+                  </label>
+                  <input
+                    type="date"
+                    value={formData.endDate}
+                    onChange={(e) =>
+                      setFormData({ ...formData, endDate: e.target.value })
+                    }
+                    title="Select end date for promotion"
+                    placeholder="YYYY-MM-DD"
+                    className="w-full px-3 py-2 border rounded-lg border-beige-300 focus:outline-none focus:ring-2 focus:ring-beige-500"
                     required
                   />
                 </div>
                 <div className="md:col-span-2">
                   <label className="block mb-1 text-sm font-medium text-beige-700">
-                    Description
-                  </label>
-                  <textarea
-                    value={formData.description}
-                    onChange={(e) =>
-                      setFormData({ ...formData, description: e.target.value })
-                    }
-                    className="w-full px-3 py-2 border rounded-lg border-beige-300 focus:outline-none focus:ring-2 focus:ring-beige-500"
-                    rows={3}
-                    placeholder="Describe this promotion..."
-                  />
-                </div>
-                <div className="md:col-span-2">
-                  <label className="block mb-1 text-sm font-medium text-beige-700">
-                    Apply To *
+                    Apply To Sub-Categories
                   </label>
                   <div className="p-3 space-y-2 overflow-y-auto border rounded-lg max-h-64 border-beige-300">
-                    <label className="flex items-center gap-2 p-2 rounded hover:bg-beige-50">
-                      <input
-                        type="checkbox"
-                        checked={formData.applyTo?.includes("all")}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setFormData({ ...formData, applyTo: ["all"] });
-                          } else {
-                            setFormData({ ...formData, applyTo: [] });
-                          }
-                        }}
-                        className="rounded border-beige-300 text-beige-600 focus:ring-beige-500"
-                      />
-                      <span className="text-sm font-semibold text-beige-900">
-                        All Products
-                      </span>
-                    </label>
-
-                    {!formData.applyTo?.includes("all") &&
-                      categories.map((mainCat) => (
-                        <div key={mainCat.id} className="ml-4 space-y-1">
-                          <label className="flex items-center gap-2 p-2 rounded hover:bg-beige-50">
+                    {categories.map((mainCat) => (
+                      <div key={mainCat.id} className="space-y-1">
+                        <div className="text-xs font-semibold uppercase text-beige-600">
+                          {mainCat.name}
+                        </div>
+                        {mainCat.subCategories && mainCat.subCategories.map((subCat) => (
+                          <label
+                            key={subCat.id}
+                            className="flex items-center gap-2 p-2 ml-4 rounded hover:bg-beige-50"
+                          >
                             <input
                               type="checkbox"
-                              checked={formData.applyTo?.includes(
-                                mainCat.id.toString()
-                              )}
+                              checked={formData.subCategoryIds.includes(subCat.id)}
                               onChange={(e) => {
-                                const currentApplyTo = formData.applyTo || [];
                                 if (e.target.checked) {
                                   setFormData({
                                     ...formData,
-                                    applyTo: [
-                                      ...currentApplyTo.filter(
-                                        (id) => id !== "all"
-                                      ),
-                                      mainCat.id.toString(),
-                                    ],
+                                    subCategoryIds: [...formData.subCategoryIds, subCat.id],
                                   });
                                 } else {
                                   setFormData({
                                     ...formData,
-                                    applyTo: currentApplyTo.filter(
-                                      (id) => id !== mainCat.id.toString()
+                                    subCategoryIds: formData.subCategoryIds.filter(
+                                      (id) => id !== subCat.id
                                     ),
                                   });
                                 }
                               }}
                               className="rounded border-beige-300 text-beige-600 focus:ring-beige-500"
                             />
-                            <span className="text-sm font-medium text-beige-900">
-                              {mainCat.name}
+                            <span className="text-sm text-beige-700">
+                              {subCat.name}
                             </span>
                           </label>
-
-                          {mainCat.subCategories &&
-                            mainCat.subCategories.map((subCat) => (
-                              <label
-                                key={subCat.id}
-                                className="flex items-center gap-2 p-2 ml-6 rounded hover:bg-beige-50"
-                              >
-                                <input
-                                  type="checkbox"
-                                  checked={formData.applyTo?.includes(
-                                    subCat.id.toString()
-                                  )}
-                                  onChange={(e) => {
-                                    const currentApplyTo =
-                                      formData.applyTo || [];
-                                    if (e.target.checked) {
-                                      setFormData({
-                                        ...formData,
-                                        applyTo: [
-                                          ...currentApplyTo.filter(
-                                            (id) => id !== "all"
-                                          ),
-                                          subCat.id.toString(),
-                                        ],
-                                      });
-                                    } else {
-                                      setFormData({
-                                        ...formData,
-                                        applyTo: currentApplyTo.filter(
-                                          (id) => id !== subCat.id.toString()
-                                        ),
-                                      });
-                                    }
-                                  }}
-                                  className="rounded border-beige-300 text-beige-600 focus:ring-beige-500"
-                                />
-                                <span className="text-sm text-beige-700">
-                                  ↳ {subCat.name}
-                                </span>
-                              </label>
-                            ))}
-                        </div>
-                      ))}
+                        ))}
+                      </div>
+                    ))}
                   </div>
-                </div>
-                <div>
-                  <label className="block mb-1 text-sm font-medium text-beige-700">
-                    Discount Value (%) *
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    max="100"
-                    step="0.01"
-                    value={formData.discountValue}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        discountValue: parseFloat(e.target.value) || 0,
-                      })
-                    }
-                    title="Discount percentage"
-                    placeholder="Enter discount percentage"
-                    className="w-full px-3 py-2 border rounded-lg border-beige-300 focus:outline-none focus:ring-2 focus:ring-beige-500"
-                    required
-                  />
+                  <p className="mt-1 text-xs text-beige-500">
+                    Select sub-categories to apply this promotion. Leave empty to apply to all products.
+                  </p>
                 </div>
                 <div className="md:col-span-2">
                   <label className="flex items-center gap-2">
@@ -735,160 +662,119 @@ export function Promotion() {
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div className="md:col-span-2">
                   <label className="block mb-1 text-sm font-medium text-beige-700">
-                    Promotion Name *
+                    Promotion Description *
+                  </label>
+                  <textarea
+                    value={formData.content}
+                    onChange={(e) =>
+                      setFormData({ ...formData, content: e.target.value })
+                    }
+                    className="w-full px-3 py-2 border rounded-lg border-beige-300 focus:outline-none focus:ring-2 focus:ring-beige-500"
+                    rows={3}
+                    placeholder="e.g., Summer Sale - Get 20% off on all fiction books"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block mb-1 text-sm font-medium text-beige-700">
+                    Discount Percentage (%) *
                   </label>
                   <input
-                    type="text"
-                    value={formData.name}
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="1"
+                    value={formData.percentage}
                     onChange={(e) =>
-                      setFormData({ ...formData, name: e.target.value })
+                      setFormData({
+                        ...formData,
+                        percentage: parseInt(e.target.value) || 0,
+                      })
                     }
-                    title="Promotion name"
-                    placeholder="Enter promotion name"
+                    title="Discount percentage"
+                    placeholder="Enter discount percentage (0-100)"
+                    className="w-full px-3 py-2 border rounded-lg border-beige-300 focus:outline-none focus:ring-2 focus:ring-beige-500"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block mb-1 text-sm font-medium text-beige-700">
+                    Start Date *
+                  </label>
+                  <input
+                    type="date"
+                    value={formData.startDate}
+                    onChange={(e) =>
+                      setFormData({ ...formData, startDate: e.target.value })
+                    }
+                    title="Select start date for promotion"
+                    placeholder="YYYY-MM-DD"
+                    className="w-full px-3 py-2 border rounded-lg border-beige-300 focus:outline-none focus:ring-2 focus:ring-beige-500"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block mb-1 text-sm font-medium text-beige-700">
+                    End Date *
+                  </label>
+                  <input
+                    type="date"
+                    value={formData.endDate}
+                    onChange={(e) =>
+                      setFormData({ ...formData, endDate: e.target.value })
+                    }
+                    title="Select end date for promotion"
+                    placeholder="YYYY-MM-DD"
                     className="w-full px-3 py-2 border rounded-lg border-beige-300 focus:outline-none focus:ring-2 focus:ring-beige-500"
                     required
                   />
                 </div>
                 <div className="md:col-span-2">
                   <label className="block mb-1 text-sm font-medium text-beige-700">
-                    Description
-                  </label>
-                  <textarea
-                    value={formData.description}
-                    onChange={(e) =>
-                      setFormData({ ...formData, description: e.target.value })
-                    }
-                    title="Promotion description"
-                    placeholder="Enter promotion description (optional)"
-                    className="w-full px-3 py-2 border rounded-lg border-beige-300 focus:outline-none focus:ring-2 focus:ring-beige-500"
-                    rows={3}
-                  />
-                </div>
-                <div className="md:col-span-2">
-                  <label className="block mb-1 text-sm font-medium text-beige-700">
-                    Apply To *
+                    Apply To Sub-Categories
                   </label>
                   <div className="p-3 space-y-2 overflow-y-auto border rounded-lg max-h-64 border-beige-300">
-                    <label className="flex items-center gap-2 p-2 rounded hover:bg-beige-50">
-                      <input
-                        type="checkbox"
-                        checked={formData.applyTo?.includes("all")}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setFormData({ ...formData, applyTo: ["all"] });
-                          } else {
-                            setFormData({ ...formData, applyTo: [] });
-                          }
-                        }}
-                        className="rounded border-beige-300 text-beige-600 focus:ring-beige-500"
-                      />
-                      <span className="text-sm font-semibold text-beige-900">
-                        All Products
-                      </span>
-                    </label>
-
-                    {!formData.applyTo?.includes("all") &&
-                      categories.map((mainCat) => (
-                        <div key={mainCat.id} className="ml-4 space-y-1">
-                          <label className="flex items-center gap-2 p-2 rounded hover:bg-beige-50">
+                    {categories.map((mainCat) => (
+                      <div key={mainCat.id} className="space-y-1">
+                        <div className="text-xs font-semibold uppercase text-beige-600">
+                          {mainCat.name}
+                        </div>
+                        {mainCat.subCategories && mainCat.subCategories.map((subCat) => (
+                          <label
+                            key={subCat.id}
+                            className="flex items-center gap-2 p-2 ml-4 rounded hover:bg-beige-50"
+                          >
                             <input
                               type="checkbox"
-                              checked={formData.applyTo?.includes(
-                                mainCat.id.toString()
-                              )}
+                              checked={formData.subCategoryIds.includes(subCat.id)}
                               onChange={(e) => {
-                                const currentApplyTo = formData.applyTo || [];
                                 if (e.target.checked) {
                                   setFormData({
                                     ...formData,
-                                    applyTo: [
-                                      ...currentApplyTo.filter(
-                                        (id) => id !== "all"
-                                      ),
-                                      mainCat.id.toString(),
-                                    ],
+                                    subCategoryIds: [...formData.subCategoryIds, subCat.id],
                                   });
                                 } else {
                                   setFormData({
                                     ...formData,
-                                    applyTo: currentApplyTo.filter(
-                                      (id) => id !== mainCat.id.toString()
+                                    subCategoryIds: formData.subCategoryIds.filter(
+                                      (id) => id !== subCat.id
                                     ),
                                   });
                                 }
                               }}
                               className="rounded border-beige-300 text-beige-600 focus:ring-beige-500"
                             />
-                            <span className="text-sm font-medium text-beige-900">
-                              {mainCat.name}
+                            <span className="text-sm text-beige-700">
+                              {subCat.name}
                             </span>
                           </label>
-
-                          {mainCat.subCategories &&
-                            mainCat.subCategories.map((subCat) => (
-                              <label
-                                key={subCat.id}
-                                className="flex items-center gap-2 p-2 ml-6 rounded hover:bg-beige-50"
-                              >
-                                <input
-                                  type="checkbox"
-                                  checked={formData.applyTo?.includes(
-                                    subCat.id.toString()
-                                  )}
-                                  onChange={(e) => {
-                                    const currentApplyTo =
-                                      formData.applyTo || [];
-                                    if (e.target.checked) {
-                                      setFormData({
-                                        ...formData,
-                                        applyTo: [
-                                          ...currentApplyTo.filter(
-                                            (id) => id !== "all"
-                                          ),
-                                          subCat.id.toString(),
-                                        ],
-                                      });
-                                    } else {
-                                      setFormData({
-                                        ...formData,
-                                        applyTo: currentApplyTo.filter(
-                                          (id) => id !== subCat.id.toString()
-                                        ),
-                                      });
-                                    }
-                                  }}
-                                  className="rounded border-beige-300 text-beige-600 focus:ring-beige-500"
-                                />
-                                <span className="text-sm text-beige-700">
-                                  ↳ {subCat.name}
-                                </span>
-                              </label>
-                            ))}
-                        </div>
-                      ))}
+                        ))}
+                      </div>
+                    ))}
                   </div>
-                </div>
-                <div>
-                  <label className="block mb-1 text-sm font-medium text-beige-700">
-                    Discount Value (%) *
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    max="100"
-                    step="0.01"
-                    value={formData.discountValue}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        discountValue: parseFloat(e.target.value) || 0,
-                      })
-                    }
-                    title="Discount percentage"
-                    placeholder="Enter discount percentage"
-                    className="w-full px-3 py-2 border rounded-lg border-beige-300 focus:outline-none focus:ring-2 focus:ring-beige-500"
-                    required
-                  />
+                  <p className="mt-1 text-xs text-beige-500">
+                    Select sub-categories to apply this promotion. Leave empty to apply to all products.
+                  </p>
                 </div>
                 <div className="md:col-span-2">
                   <label className="flex items-center gap-2">
@@ -938,9 +824,10 @@ export function Promotion() {
             </div>
             <div className="p-6">
               <p className="mb-4 text-beige-700">
-                Are you sure you want to delete the promotion{" "}
-                <strong>{selectedPromotion.name}</strong>? This action cannot be
-                undone.
+                Are you sure you want to deactivate this promotion? This will set its status to inactive.
+              </p>
+              <p className="p-3 mb-4 border rounded-lg bg-beige-50 border-beige-200">
+                <strong>{selectedPromotion.content}</strong>
               </p>
             </div>
             <div className="flex justify-end gap-3 p-6 border-t border-beige-200">

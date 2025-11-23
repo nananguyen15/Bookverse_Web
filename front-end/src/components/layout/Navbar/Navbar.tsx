@@ -8,7 +8,7 @@ import { NotificationDropdown } from "./NotificationDropdown";
 import { useCart } from "../../../contexts/CartContext";
 
 export function Navbar() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const { cartItems, showNotification } = useCart();
 
   const links: [string, string][] = [
@@ -51,17 +51,20 @@ export function Navbar() {
         {isAuthenticated ? (
           <>
             <NotificationDropdown />
-            <Link
-              to="/cart"
-              className="relative text-beige-700 hover:text-beige-900"
-            >
-              <FaShoppingCart className={`w-6 h-6 transition-transform ${showNotification ? 'animate-bounce' : ''}`} />
-              {cartItems.length > 0 && (
-                <span className={`absolute -top-2 -right-2 flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-red-500 rounded-full transition-transform ${showNotification ? 'scale-110' : 'scale-100'}`}>
-                  {cartItems.length}
-                </span>
-              )}
-            </Link>
+            {/* Hide cart icon for admin and staff */}
+            {user?.role?.toLowerCase() !== "admin" && user?.role?.toLowerCase() !== "staff" && (
+              <Link
+                to="/cart"
+                className="relative text-beige-700 hover:text-beige-900"
+              >
+                <FaShoppingCart className={`w-6 h-6 transition-transform ${showNotification ? 'animate-bounce' : ''}`} />
+                {cartItems.length > 0 && (
+                  <span className={`absolute -top-2 -right-2 flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-red-500 rounded-full transition-transform ${showNotification ? 'scale-110' : 'scale-100'}`}>
+                    {cartItems.length}
+                  </span>
+                )}
+              </Link>
+            )}
             <UserDropdown />
           </>
         ) : (

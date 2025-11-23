@@ -54,7 +54,7 @@ export function BookForm({
 
       {/* Author and Publisher */}
       <div className="grid grid-cols-2 gap-4">
-        <FormField label="Author" required>
+        <FormField label="Author">
           <SearchableSelect
             value={formData.authorId}
             onChange={(value) => handleChange("authorId", value)}
@@ -63,11 +63,10 @@ export function BookForm({
               ...authors.map((a) => ({ value: a.id, label: a.name })),
             ]}
             placeholder="Search author..."
-            required
           />
         </FormField>
 
-        <FormField label="Publisher" required>
+        <FormField label="Publisher">
           <SearchableSelect
             value={formData.publisherId}
             onChange={(value) => handleChange("publisherId", value)}
@@ -76,13 +75,12 @@ export function BookForm({
               ...publishers.map((p) => ({ value: p.id, label: p.name })),
             ]}
             placeholder="Search publisher..."
-            required
           />
         </FormField>
       </div>
 
       {/* Category */}
-      <FormField label="Sub Category" required>
+      <FormField label="Sub Category">
         <SearchableSelect
           value={formData.categoryId}
           onChange={(value) => handleChange("categoryId", value)}
@@ -91,7 +89,6 @@ export function BookForm({
             ...categories.map((c) => ({ value: c.id, label: c.name })),
           ]}
           placeholder="Search category..."
-          required
         />
       </FormField>
 
@@ -107,24 +104,22 @@ export function BookForm({
 
       {/* Price and Stock */}
       <div className="grid grid-cols-2 gap-4">
-        <FormField label="Price ($)" required>
+        <FormField label="Price ($)">
           <InputField
             type="number"
             value={formData.price}
             onChange={(value) => handleChange("price", Number(value))}
             min={0}
             step={0.01}
-            required
           />
         </FormField>
 
-        <FormField label="Stock Quantity" required>
+        <FormField label="Stock Quantity">
           <InputField
             type="number"
             value={formData.stockQuantity}
             onChange={(value) => handleChange("stockQuantity", Number(value))}
             min={0}
-            required
           />
         </FormField>
       </div>
@@ -147,7 +142,6 @@ export function BookForm({
         label="Book Cover Image"
         type="cover"
         folder="book"
-        required
       />
     </div>
   );

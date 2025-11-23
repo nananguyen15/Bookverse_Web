@@ -18,29 +18,33 @@ import { CartProvider } from "./contexts/CartContext";
 import { Cart } from "./components/Cart/Cart";
 import { Payment } from "./components/Cart/Payment";
 import { Order } from "./components/Cart/Order";
-import { OrderConfirmation } from "./components/Cart/OrderConfirmation";
+import { OrderConfirmed } from "./components/Cart/OrderConfirmed";
+import { CustomerOnlyRoute } from "./components/Auth/CustomerOnlyRoute";
+import { AdminOnlyRoute } from "./components/Auth/AdminOnlyRoute";
+import { StaffOnlyRoute } from "./components/Auth/StaffOnlyRoute";
 import { MyAccount } from "./components/CustomerProfile/MyAccount";
 import { CustomerProfile } from "./components/CustomerProfile/CustomerProfile";
 import { Profile } from "./components/CustomerProfile/Profile";
 import { Address } from "./components/CustomerProfile/Address";
 import { ChangePassword } from "./components/CustomerProfile/ChangePassword";
 import { OrderHistory } from "./components/CustomerProfile/OrderHistory";
-import { ReviewHistory } from "./components/CustomerProfile/ReviewHistory";
+import { MyReviews } from "./components/CustomerProfile/MyReviews";
 import { Notifications } from "./components/CustomerProfile/Notifications";
-import { AdminLayout } from "./components/Admin/AdminLayout";
 import { StatisticDashboard } from "./components/Admin/StatisticDashboard";
-import { BookManagement } from "./components/Admin/BookManagement";
 import { AdminAccount } from "./components/Admin/AdminAccount";
-import { CateManagement } from "./components/Admin/CateManagement";
-import { CustomerManagement } from "./components/Admin/CustomerManagement";
-import { StaffManagement } from "./components/Admin/StaffManagement";
-import { OrderManagement } from "./components/Admin/OrderManagement";
-import { ManageReview } from "./components/Admin/ManageReview";
 import { NotificationManagement } from "./components/Admin/NotificationManagement";
-import { AuthorManagement } from "./components/Admin/AuthorManagement";
-import { PublisherManagement } from "./components/Admin/PublisherManagement";
-import { SupCategoryManagement } from "./components/Admin/SupCategoryManagement";
-import { SubCategoryManagement } from "./components/Admin/SubCategoryManagement";
+
+// New Management Components
+import { CustomerManagementNew } from "./components/Admin/CustomerManagementNew";
+import { StaffManagementNew } from "./components/Admin/StaffManagementNew";
+import { BookManagementNew } from "./components/Admin/BookManagementNew";
+import { AuthorManagementNew } from "./components/Admin/AuthorManagementNew";
+import { PublisherManagementNew } from "./components/Admin/PublisherManagementNew";
+import { SupCategoryManagementNew } from "./components/Admin/SupCategoryManagementNew";
+import { SubCategoryManagementNew } from "./components/Admin/SubCategoryManagementNew";
+import { OrderManagementNew } from "./components/Admin/OrderManagementNew";
+import { ManageReviewNew } from "./components/Admin/ManageReviewNew";
+import { PromotionManagementNew } from "./components/Admin/PromotionManagementNew";
 import { StaffLayout } from "./components/Staff/StaffLayout";
 import { StaffAccount } from "./components/Staff/StaffAccount";
 import { StaffProfile } from "./components/Staff/StaffProfile";
@@ -49,9 +53,7 @@ import { BookManagement as StaffBookManagement } from "./components/Shared/BookM
 import { CateManagement as StaffCateManagement } from "./components/Shared/CateManagement";
 import { OrderManagement as StaffOrderManagement } from "./components/Shared/OrderManagement";
 import { ManageReview as StaffManageReview } from "./components/Shared/ManageReview";
-import { NotificationManagement as StaffNotificationManagement } from "./components/Shared/NotificationManagement";
-import { VNPayReturn } from "./components/Payment/VNPayReturn";
-import { PromotionManagement } from "./components/Admin/PromotionManagement";
+import { CompletePayment } from "./components/Payment/CompletePayment";
 
 function App() {
   return (
@@ -71,14 +73,14 @@ function App() {
             <Route path="/verify-email" element={<VerifyEmail />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/:type/:id/:slug?" element={<ProductDetail />} />
-            <Route path="/cart" element={<Cart />} />
-            <Route path="/order" element={<Payment />} />
-            <Route path="/payment/vnpay-return" element={<VNPayReturn />} />
-            <Route
-              path="/order-confirmed/:orderId"
-              element={<OrderConfirmation />}
-            />
-            <Route path="/order/:orderId" element={<Order />} />
+
+            {/* Customer-only routes */}
+            <Route path="/cart" element={<CustomerOnlyRoute><Cart /></CustomerOnlyRoute>} />
+            <Route path="/order" element={<CustomerOnlyRoute><Payment /></CustomerOnlyRoute>} />
+            <Route path="/order-confirmed" element={<CustomerOnlyRoute><OrderConfirmed /></CustomerOnlyRoute>} />
+            <Route path="/order-confirmed/:orderId" element={<CustomerOnlyRoute><OrderConfirmed /></CustomerOnlyRoute>} />
+            <Route path="/complete-payment/:orderId" element={<CustomerOnlyRoute><CompletePayment /></CustomerOnlyRoute>} />
+            <Route path="/order/:orderId" element={<CustomerOnlyRoute><Order /></CustomerOnlyRoute>} />
 
             <Route path="/profile" element={<CustomerProfile />}>
               <Route index element={<Navigate to="my-account" replace />} />
@@ -89,12 +91,12 @@ function App() {
                 <Route path="change-password" element={<ChangePassword />} />
               </Route>
               <Route path="orders" element={<OrderHistory />} />
-              <Route path="reviews" element={<ReviewHistory />} />
+              <Route path="reviews" element={<MyReviews />} />
               <Route path="notifications" element={<Notifications />} />
             </Route>
 
             {/* Staff Routes */}
-            <Route path="/staff" element={<StaffLayout />}>
+            <Route path="/staff" element={<StaffOnlyRoute><StaffLayout /></StaffOnlyRoute>}>
               <Route index element={<Navigate to="my-account" replace />} />
               <Route path="my-account" element={<StaffAccount />}>
                 <Route index element={<StaffProfile />} />
@@ -105,36 +107,31 @@ function App() {
                 />
               </Route>
               <Route path="books" element={<StaffBookManagement />} />
+              <Route path="authors" element={<AuthorManagementNew noLayout={true} />} />
+              <Route path="publishers" element={<PublisherManagementNew noLayout={true} />} />
               <Route path="categories" element={<StaffCateManagement />} />
+              <Route path="sup-categories" element={<SupCategoryManagementNew />} />
+              <Route path="sub-categories" element={<SubCategoryManagementNew />} />
               <Route path="orders" element={<StaffOrderManagement />} />
               <Route path="reviews" element={<StaffManageReview />} />
-              <Route
-                path="notifications"
-                element={<StaffNotificationManagement />}
-              />
+              <Route path="notifications" element={<NotificationManagement noLayout={true} />} />
             </Route>
 
             {/* Admin Routes */}
-            <Route path="/admin" element={<AdminLayout />}>
-              <Route index element={<StatisticDashboard />} />
-              <Route path="statistics" element={<StatisticDashboard />} />
-              <Route path="books" element={<BookManagement />} />
-              <Route path="categories" element={<CateManagement />} />
-              <Route path="authors" element={<AuthorManagement />} />
-              <Route path="publishers" element={<PublisherManagement />} />
-              <Route path="sup-categories" element={<SupCategoryManagement />} />
-              <Route path="sub-categories" element={<SubCategoryManagement />} />
-              <Route path="customers" element={<CustomerManagement />} />
-              <Route path="staff" element={<StaffManagement />} />
-              <Route path="orders" element={<OrderManagement />} />
-              <Route path="reviews" element={<ManageReview />} />
-              <Route path="promotions" element={<PromotionManagement />} />
-              <Route
-                path="notifications"
-                element={<NotificationManagement />}
-              />
-              <Route path="my-account" element={<AdminAccount />} />
-            </Route>
+            <Route path="/admin" element={<AdminOnlyRoute><StatisticDashboard /></AdminOnlyRoute>} />
+            <Route path="/admin/statistics" element={<AdminOnlyRoute><StatisticDashboard /></AdminOnlyRoute>} />
+            <Route path="/admin/customers" element={<AdminOnlyRoute><CustomerManagementNew /></AdminOnlyRoute>} />
+            <Route path="/admin/staff" element={<AdminOnlyRoute><StaffManagementNew /></AdminOnlyRoute>} />
+            <Route path="/admin/books" element={<AdminOnlyRoute><BookManagementNew /></AdminOnlyRoute>} />
+            <Route path="/admin/authors" element={<AdminOnlyRoute><AuthorManagementNew /></AdminOnlyRoute>} />
+            <Route path="/admin/publishers" element={<AdminOnlyRoute><PublisherManagementNew /></AdminOnlyRoute>} />
+            <Route path="/admin/sup-categories" element={<AdminOnlyRoute><SupCategoryManagementNew /></AdminOnlyRoute>} />
+            <Route path="/admin/sub-categories" element={<AdminOnlyRoute><SubCategoryManagementNew /></AdminOnlyRoute>} />
+            <Route path="/admin/orders" element={<AdminOnlyRoute><OrderManagementNew /></AdminOnlyRoute>} />
+            <Route path="/admin/reviews" element={<AdminOnlyRoute><ManageReviewNew /></AdminOnlyRoute>} />
+            <Route path="/admin/promotions" element={<AdminOnlyRoute><PromotionManagementNew /></AdminOnlyRoute>} />
+            <Route path="/admin/notifications" element={<AdminOnlyRoute><NotificationManagement /></AdminOnlyRoute>} />
+            <Route path="/admin/my-account" element={<AdminOnlyRoute><AdminAccount /></AdminOnlyRoute>} />
           </Routes>
         </CartProvider>
       </AuthProvider>

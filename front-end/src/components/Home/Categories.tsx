@@ -40,11 +40,11 @@ export function Categories() {
   const handleCategoryClick = (supCat: SupCategory) => {
     // Get all sub-category IDs for this sup category
     const subCatIds = subCategories[supCat.id]?.map((sub) => sub.id) || [];
-    
+
     // WORKAROUND: Only use sub-category IDs to avoid ID conflicts
     // Don't include sup category ID because it may conflict with sub-category IDs
     const categoryIds = subCatIds.join(",");
-    
+
     // Navigate to /books with category filter
     navigate(`/books?categories=${categoryIds}`);
   };
@@ -52,7 +52,7 @@ export function Categories() {
   if (loading) {
     return (
       <div className="px-16 py-8 bg-beige-50">
-        <p className="text-center text-brown-600">Đang tải danh mục...</p>
+        <p className="text-center text-brown-600">Loading categories...</p>
       </div>
     );
   }

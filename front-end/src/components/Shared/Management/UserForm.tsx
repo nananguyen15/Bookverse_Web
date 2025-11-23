@@ -74,13 +74,38 @@ export function UserForm({
       return;
     }
 
-    // Save URL to form data (no file upload needed)
-    setPreviewUrl(urlInput);
-    onUpdate({ ...formData, image: urlInput });
-    if (onImageUpload) {
-      onImageUpload(null); // Clear file since using URL
+    // Validate image URL format
+    const trimmedUrl = urlInput.trim();
+
+    // Check if it's a valid URL or relative path
+    const isValidUrl = /^(https?:\/\/|\/)/i.test(trimmedUrl);
+    if (!isValidUrl) {
+      alert("Please enter a valid URL (starting with http://, https://, or /)");
+      return;
     }
-    setUrlInput("");
+
+    // Check if URL ends with image extension
+    const imageExtensions = /\.(jpg|jpeg|png|gif|webp|svg|bmp)(\?.*)?$/i;
+    if (!imageExtensions.test(trimmedUrl)) {
+      alert("URL must point to an image file (.jpg, .png, .gif, .webp, .svg, etc.)");
+      return;
+    }
+
+    // Test if image can be loaded
+    const testImage = new Image();
+    testImage.onload = () => {
+      // Image loaded successfully
+      setPreviewUrl(trimmedUrl);
+      onUpdate({ ...formData, image: trimmedUrl });
+      if (onImageUpload) {
+        onImageUpload(null); // Clear file since using URL
+      }
+      setUrlInput("");
+    };
+    testImage.onerror = () => {
+      alert("Failed to load image from this URL. Please check the URL and try again.");
+    };
+    testImage.src = trimmedUrl;
   };
 
   const handleClear = () => {
@@ -106,8 +131,8 @@ export function UserForm({
               type="button"
               onClick={() => setUploadMode("file")}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors ${uploadMode === "file"
-                  ? "bg-blue-500 text-white border-blue-500"
-                  : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                ? "bg-blue-500 text-white border-blue-500"
+                : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
                 }`}
             >
               <FaUpload className="text-sm" />
@@ -117,8 +142,8 @@ export function UserForm({
               type="button"
               onClick={() => setUploadMode("url")}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors ${uploadMode === "url"
-                  ? "bg-blue-500 text-white border-blue-500"
-                  : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                ? "bg-blue-500 text-white border-blue-500"
+                : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
                 }`}
             >
               <FaLink className="text-sm" />

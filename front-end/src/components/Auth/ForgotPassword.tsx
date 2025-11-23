@@ -151,22 +151,39 @@ export function ForgotPassword() {
 
     setIsLoading(true);
     try {
-      // Move to password step - actual verification happens when user submits new password
-      console.log("✓ OTP entered, proceeding to password reset");
+      // Verify OTP with backend immediately
+      console.log("🔐 Verifying OTP with backend...", {
+        userId,
+        email,
+        code: otp,
+        tokenType: "RESET_PASSWORD"
+      });
+
+      await authApi.verifyOTP({
+        userId,
+        email,
+        code: otp,
+        tokenType: "RESET_PASSWORD",
+      });
+
+      console.log("✅ OTP verified successfully, proceeding to password step");
+      alert(`OTP verified successfully! You can now set your new password.`);
       setStep("password");
     } catch (error: unknown) {
       console.error("❌ Verify OTP failed:", error);
       const err = error as { response?: { data?: { message?: string } } };
       if (err.response?.data?.message) {
         const message = err.response.data.message;
-        if (message.includes("expired")) {
+        if (message.includes("expired") || message.includes("Expired")) {
           setError("OTP has expired. Please request a new one.");
         } else if (
-          message.includes("Invalid OTP") ||
-          message.includes("code")
+          message.includes("Invalid") ||
+          message.includes("OTP") ||
+          message.includes("code") ||
+          message.includes("incorrect")
         ) {
-          setError("Invalid OTP code. Please try again.");
-        } else {
+          setError("Invalid OTP code. Please check your email and try again.");
+        } else {x
           setError(message);
         }
       } else {
@@ -201,6 +218,13 @@ export function ForgotPassword() {
     setIsLoading(true);
     try {
       // Verify OTP and reset password in one API call
+      console.log("🔄 Attempting password reset with:", {
+        userId,
+        email,
+        code: otp,
+        tokenType: "RESET_PASSWORD"
+      });
+
       await authApi.verifyAndResetPassword({
         userId,
         email,
@@ -209,6 +233,7 @@ export function ForgotPassword() {
         newPassword,
       });
 
+      console.log("✅ Password reset successful");
       alert(
         "Password reset successfully! Please log in with your new password."
       );
@@ -216,26 +241,37 @@ export function ForgotPassword() {
     } catch (error: unknown) {
       console.error("❌ Reset password failed:", error);
       const err = error as {
-        response?: { data?: { message?: string }; status?: number };
+        response?: { data?: { message?: string; code?: number }; status?: number };
       };
+
+      console.error("❌ Reset password error details:", {
+        message: err.response?.data?.message,
+        code: err.response?.data?.code,
+        status: err.response?.status
+      });
+
       if (err.response?.data?.message) {
         const message = err.response.data.message;
-        if (message.includes("expired")) {
+        if (message.includes("expired") || message.includes("Expired")) {
           setError(
-            "OTP has expired. Please start over and request a new code."
+            "Your OTP has expired. Please click 'Back' and request a new code."
           );
         } else if (
-          message.includes("Invalid OTP") ||
-          message.includes("code")
+          message.includes("Invalid") ||
+          message.includes("OTP") ||
+          message.includes("code") ||
+          message.includes("incorrect") ||
+          message.includes("wrong") ||
+          message.includes("not match")
         ) {
-          setError("Invalid OTP code. Please check and try again.");
-        } else if (message.includes("password")) {
+          setError("The OTP you entered is incorrect. Please check your email and enter the correct 6-digit code.");
+        } else if (message.includes("password") || message.includes("Password")) {
           setError(message);
         } else {
           setError(message);
         }
       } else {
-        setError("Failed to reset password. Please try again.");
+        setError("Failed to reset password. Please try again or request a new OTP.");
       }
     } finally {
       setIsLoading(false);

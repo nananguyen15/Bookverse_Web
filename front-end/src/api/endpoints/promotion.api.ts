@@ -6,6 +6,7 @@ import type {
   CreatePromotionRequest,
   UpdatePromotionRequest,
 } from "../../types/api/promotion.types";
+import type { SubCategory } from "../../types/api/category.types";
 
 const PROMOTION_ENDPOINT = "/promotions";
 
@@ -55,12 +56,24 @@ export const promotionApi = {
    * Get promotion with sub-categories
    * @param id Promotion ID
    */
-  getSubCategories: async (
+  getWithSubCategories: async (
     id: number
   ): Promise<PromotionWithSubCategoriesResponse> => {
     const response = await apiClient.get<
       ApiResponse<PromotionWithSubCategoriesResponse>
     >(`${PROMOTION_ENDPOINT}/${id}/sub-categories`);
+    return response.data.result;
+  },
+
+  /**
+   * Get sub-categories of a promotion
+   * @param id Promotion ID
+   * @returns Array of sub-categories
+   */
+  getPromotionSubCategories: async (id: number): Promise<SubCategory[]> => {
+    const response = await apiClient.get<ApiResponse<SubCategory[]>>(
+      `${PROMOTION_ENDPOINT}/${id}/sub-categories`
+    );
     return response.data.result;
   },
 

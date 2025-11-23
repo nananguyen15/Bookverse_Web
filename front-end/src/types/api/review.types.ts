@@ -1,18 +1,24 @@
 // Review API Types
 
 /**
- * Review Response: rating will be updated later
+ * Review Response from backend
  */
 export type ReviewResponse = {
-  id?: number;
-  bookId?: number;
-  bookTitle?: string;
-  userId?: string;
-  userName?: string;
-  // rating: number; // 1-5 stars
+  id: number;
+  userId: string;
+  bookId: number;
+  bookTitle?: string; // Optional, may be populated by client
   comment?: string;
-  createdAt?: string;
-  updatedAt?: string;
+  createdAt: string;
+};
+
+/**
+ * Book with Reviews Response (from GET /api/reviews)
+ */
+export type BookReviewsResponse = {
+  bookId: number;
+  bookTitle: string;
+  reviews: ReviewResponse[];
 };
 
 /**
@@ -29,16 +35,13 @@ export type CreateReviewRequest = {
  */
 export type UpdateReviewRequest = {
   bookId: number;
-  // rating?: number; // 1-5
   comment?: string;
 };
 
 /**
- * Book Reviews Summary
+ * Delete Review Request (for Admin/Staff)
  */
-export type BookReviewsSummary = {
-  bookId: number;
-  // averageRating: number;
-  totalReviews: number;
-  reviews: ReviewResponse[];
+export type DeleteReviewByAdminRequest = {
+  userId: string;
+  reviewId: number;
 };

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { AuthLayout } from "./AuthLayout";
 import { useAuth } from "../../contexts/AuthContext";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
@@ -7,6 +7,7 @@ import { authApi } from "../../api/endpoints/auth.api";
 
 export function SignIn() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { login, isAuthenticated, userRole, logout } = useAuth();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -16,7 +17,12 @@ export function SignIn() {
 
   // Check if user is already logged in
   useEffect(() => {
-    if (isAuthenticated && userRole) {
+    // Skip redirect if user is in order/payment flow (check by URL)
+    const isOrderFlow = location.pathname.includes('/order') ||
+      location.pathname.includes('/payment') ||
+      location.pathname.includes('/complete-payment');
+
+    if (isAuthenticated && userRole && !isOrderFlow) {
       console.log("⚠️ User already logged in as:", userRole);
       console.log("Redirecting to dashboard...");
 
@@ -29,7 +35,7 @@ export function SignIn() {
         navigate("/", { replace: true });
       }
     }
-  }, [isAuthenticated, userRole, navigate]);
+  }, [isAuthenticated, userRole, navigate, location]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -89,6 +95,7 @@ export function SignIn() {
         : "customer";
 
       console.log("User role:", userRole);
+      console.log("User roles array:", userInfo.roles);
 
       // Save user info to localStorage for AuthContext
       const users = JSON.parse(localStorage.getItem("users") || "[]");
@@ -100,6 +107,7 @@ export function SignIn() {
         username: userInfo.username,
         email: userInfo.email,
         role: userRole,
+        roles: userInfo.roles || [userRole.toUpperCase()],
         fullName: userInfo.name,
         avatarUrl: userInfo.image,
       };
@@ -127,12 +135,15 @@ export function SignIn() {
       console.error("❌ Login failed:", err);
       console.error("❌ Error response:", err.response?.data);
 
-      if (err.response?.status === 400) {
-        // Backend returns 400 for user not found or invalid credentials
-        const message = err.response?.data?.message || "Invalid username or password.";
-        setError(message);
-      } else if (err.response?.status === 401) {
-        setError("Invalid username or password.");
+      if (err.response?.status === 400 || err.response?.status === 401) {
+        // Backend returns 400/401 for authentication failures
+        const message = err.response?.data?.message || "";
+
+        if (message.includes("Unauthorized")) {
+          setError("❌ Login Failed: Invalid username or password.\n\nIf you are a STAFF member:\n• Verify your password is correct\n• Check that your account is ACTIVE\n• Confirm your role is set correctly\n• Contact admin if the issue persists");
+        } else {
+          setError(message || "Invalid username or password.");
+        }
       } else if (err.response?.data?.message) {
         setError(err.response.data.message);
       } else {
@@ -172,7 +183,9 @@ export function SignIn() {
 
         <form onSubmit={handleLogin}>
           {error && (
-            <p className="mb-4 text-sm text-center text-red-500">{error}</p>
+            <div className="p-3 mb-4 text-sm border border-red-200 rounded-lg bg-red-50">
+              <p className="text-red-700 whitespace-pre-line">{error}</p>
+            </div>
           )}
           <div className="mb-4">
             <label className="block mb-1 text-sm font-medium text-beige-800">

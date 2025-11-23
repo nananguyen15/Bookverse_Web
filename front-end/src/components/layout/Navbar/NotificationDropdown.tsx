@@ -2,29 +2,61 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { IoMdNotifications } from "react-icons/io";
 import { FaEnvelopeOpen, FaBell } from "react-icons/fa";
-
-interface Notification {
-  id: number;
-  title: string;
-  message: string;
-  date: string;
-  read: boolean;
-}
+import { notificationApi } from "../../../api";
+import type { Notification } from "../../../api/endpoints/notification.api";
 
 export function NotificationDropdown() {
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
 
+  // Load unread count on component mount and refresh periodically
   useEffect(() => {
-    // Load notifications from localStorage
-    const storedNotifications = JSON.parse(
-      localStorage.getItem("userNotifications") || "[]"
-    );
-    setNotifications(storedNotifications);
-  }, [isOpen]); // Reload when dropdown opens
+    const loadUnreadCount = async () => {
+      try {
+        const count = await notificationApi.getUnreadCount();
+        setUnreadCount(count);
+      } catch (error) {
+        console.error("Error loading unread count:", error);
+      }
+    };
 
-  const unreadCount = notifications.filter((n) => !n.read).length;
-  const recentNotifications = notifications.slice(0, 5);
+    loadUnreadCount();
+
+    // Refresh every 30 seconds to keep badge in sync
+    const interval = setInterval(loadUnreadCount, 30000);
+
+    // Refresh when window gains focus (user comes back from another tab/page)
+    const handleFocus = () => loadUnreadCount();
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, []);
+
+  // Load notifications when dropdown opens
+  useEffect(() => {
+    const loadNotifications = async () => {
+      if (!isOpen) return;
+      try {
+        setLoading(true);
+        const data = await notificationApi.getFirst5();
+        setNotifications(data);
+        // Refresh unread count when opening dropdown
+        const count = await notificationApi.getUnreadCount();
+        setUnreadCount(count);
+      } catch (error) {
+        console.error("Error loading notifications:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadNotifications();
+  }, [isOpen]);
+  const recentNotifications = notifications;
 
   return (
     <div className="relative">
@@ -34,7 +66,7 @@ export function NotificationDropdown() {
       >
         <IoMdNotifications className="w-7 h-7" />
         {unreadCount > 0 && (
-          <span className="absolute top-0 right-0 flex items-center justify-center w-5 h-5 text-xs text-white bg-red-500 rounded-full">
+          <span className="absolute -top-1 -right-1 flex items-center justify-center w-4 h-4 text-[10px] font-semibold text-white bg-red-500 rounded-full">
             {unreadCount > 9 ? "9+" : unreadCount}
           </span>
         )}
@@ -49,42 +81,48 @@ export function NotificationDropdown() {
             <h3 className="font-semibold text-beige-900">Notifications</h3>
           </div>
           <div className="max-h-96 overflow-y-auto">
-            {recentNotifications.length > 0 ? (
+            {loading ? (
+              <p className="px-4 py-8 text-sm text-center text-beige-500">
+                Loading...
+              </p>
+            ) : recentNotifications.length > 0 ? (
               recentNotifications.map((notification) => (
                 <Link
                   key={notification.id}
                   to="/profile/notifications"
-                  className={`block px-4 py-3 text-sm hover:bg-beige-50 border-b border-beige-100 ${
-                    !notification.read ? "bg-beige-50" : "bg-white"
-                  }`}
+                  className={`block px-4 py-3 text-sm hover:bg-beige-50 border-b border-beige-100 ${!notification.read ? "bg-beige-50" : "bg-white"
+                    }`}
                   onClick={() => setIsOpen(false)}
                 >
                   <div className="flex items-start">
                     <div
-                      className={`mr-3 mt-1 ${
-                        !notification.read ? "text-beige-700" : "text-beige-400"
-                      }`}
+                      className={`mr-3 mt-1 ${!notification.read ? "text-beige-700" : "text-beige-400"
+                        }`}
                     >
                       {!notification.read ? <FaBell /> : <FaEnvelopeOpen />}
                     </div>
                     <div className="flex-1">
                       <p
-                        className={`truncate ${
-                          !notification.read
-                            ? "font-semibold text-beige-900"
-                            : "text-beige-700"
-                        }`}
+                        className={`line-clamp-2 ${!notification.read
+                          ? "font-semibold text-beige-900"
+                          : "text-beige-700"
+                          }`}
                       >
-                        {notification.title}
+                        {notification.content}
                       </p>
                       <p
-                        className={`text-xs ${
-                          !notification.read
-                            ? "text-beige-600"
-                            : "text-beige-500"
-                        }`}
+                        className={`text-xs mt-1 ${!notification.read
+                          ? "text-beige-600"
+                          : "text-beige-500"
+                          }`}
                       >
-                        {notification.date}
+                        {new Date(notification.createdAt).toLocaleString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
                       </p>
                     </div>
                   </div>

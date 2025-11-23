@@ -56,14 +56,20 @@ export const authApi = {
   signIn: async (data: SignInRequest): Promise<AuthenticationResponse> => {
     console.log("🔐 SignIn request payload:", data);
     console.log("🔐 Request URL:", `${AUTH_ENDPOINT}/token`);
-    
-    const response = await apiClient.post<ApiResponse<AuthenticationResponse>>(
-      `${AUTH_ENDPOINT}/token`,
-      data
-    );
-    
-    console.log("✅ SignIn response:", response.data);
-    return response.data.result;
+
+    try {
+      const response = await apiClient.post<
+        ApiResponse<AuthenticationResponse>
+      >(`${AUTH_ENDPOINT}/token`, data);
+
+      console.log("✅ SignIn response:", response.data);
+      return response.data.result;
+    } catch (error) {
+      console.error("❌ Login failed:", error);
+      const err = error as { response?: { data?: unknown } };
+      console.error("❌ Error response:", err.response?.data);
+      throw error;
+    }
   },
 
   // Get current user info (requires authentication)
@@ -122,7 +128,14 @@ export const authApi = {
     tokenType: string;
     newPassword: string;
   }): Promise<void> => {
-    // Backend has dedicated endpoint that verifies OTP and resets password in one call
+    console.log("📤 Sending verify-reset-password request:", {
+      userId: data.userId,
+      email: data.email,
+      code: data.code,
+      tokenType: data.tokenType,
+      passwordLength: data.newPassword.length,
+    });
+
     const response = await apiClient.post<ApiResponse<void>>(
       `${OTP_ENDPOINT}/verify-reset-password`,
       {
@@ -133,6 +146,8 @@ export const authApi = {
         newPassword: data.newPassword,
       }
     );
+
+    console.log("📥 verify-reset-password response:", response.data);
     return response.data.result;
   },
 };

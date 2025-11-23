@@ -9,3 +9,5 @@ export * from "./api/auth.types";
 export * from "./api/order.types";
 export * from "./api/cart.types";
 export * from "./api/review.types";
+export * from "./api/payment.types";
+export * from "./api/promotion.types";

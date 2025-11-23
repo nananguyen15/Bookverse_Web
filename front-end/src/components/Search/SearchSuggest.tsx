@@ -1,10 +1,18 @@
 import React, { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useDebounce } from "../../hooks/useDebounce";
 import { IoMdSearch } from "react-icons/io";
+import { booksApi } from "../../api";
 
-type Suggestion = { id: string; label: string; type: "book" | "series" };
+type Suggestion = {
+  id: string;
+  label: string;
+  type: "book" | "series";
+  authorName?: string;
+};
 
 export default function SearchSuggest() {
+  const navigate = useNavigate();
   const [q, setQ] = useState("");
   const debouncedQ = useDebounce(q, 300);
   const [items, setItems] = useState<Suggestion[]>([]);
@@ -15,12 +23,8 @@ export default function SearchSuggest() {
   const abortRef = useRef<AbortController | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
 
-  // TODO: Fetch từ API thay vì mock data
-  // Use useMemo to prevent recreating array on every render
-  const allData = React.useMemo<Suggestion[]>(() => [], []);
-
   useEffect(() => {
-    if (!debouncedQ) {
+    if (!debouncedQ || debouncedQ.trim().length < 2) {
       setItems([]);
       setOpen(false);
       setLoading(false);
@@ -39,22 +43,76 @@ export default function SearchSuggest() {
     abortRef.current = ac;
     setLoading(true);
 
-    // Simulate API call with local data
-    setTimeout(() => {
-      if (ac.signal.aborted) return;
-      const filtered = allData
-        .filter((item) =>
-          item.label.toLowerCase().includes(debouncedQ.toLowerCase())
-        )
-        .slice(0, 10); // limit to 10
-      cache.current.set(debouncedQ, filtered);
-      setItems(filtered);
-      setOpen(true);
-      setLoading(false);
-    }, 200); // simulate delay
+    // Fetch from Books API
+    const fetchResults = async () => {
+      try {
+        const books = await booksApi.getAll();
+        console.log(`Total books from API: ${books.length}`);
+
+        if (ac.signal.aborted) return;
+
+        // Normalize search query: lowercase and remove dots, spaces, special chars
+        const normalizeString = (str: string) =>
+          str.toLowerCase().replace(/[.\s-]/g, '');
+
+        const normalizedQuery = normalizeString(debouncedQ);
+        console.log(`Normalized query: "${normalizedQuery}"`);
+
+        // Filter books by search query - check title, author name, and author bio
+        const filtered = books
+          .filter((book) => {
+            const normalizedTitle = normalizeString(book.title || '');
+            const normalizedAuthorName = normalizeString(book.author?.name || '');
+            const normalizedAuthorBio = normalizeString(book.author?.bio || '');
+
+            const titleMatch = normalizedTitle.includes(normalizedQuery);
+            const authorNameMatch = normalizedAuthorName.includes(normalizedQuery);
+            const authorBioMatch = normalizedAuthorBio.includes(normalizedQuery);
+
+            // Debug first book that matches
+            if (titleMatch || authorNameMatch || authorBioMatch) {
+              console.log(`Match found: "${book.title}"`, {
+                authorObject: book.author,
+                authorName: book.author?.name,
+                bookId: book.id,
+                bookIdType: typeof book.id
+              });
+            }
+
+            return titleMatch || authorNameMatch || authorBioMatch;
+          })
+          .slice(0, 10) // limit to 10
+          .map((book) => {
+            // Ensure id is string - handle both string and object cases
+            const bookId = typeof book.id === 'string' ? book.id : String(book.id);
+
+            return {
+              id: bookId,
+              label: book.title,
+              type: "book" as const,
+              authorName: book.author?.name || "Unknown Author",
+            };
+          });
+
+        console.log(`Search for "${debouncedQ}" found ${filtered.length} results`, filtered);
+
+        cache.current.set(debouncedQ, filtered);
+        setItems(filtered);
+        setOpen(true);
+        setLoading(false);
+      } catch (error) {
+        if (ac.signal.aborted) return;
+        console.error("Search error:", error);
+        setItems([]);
+        setOpen(true);
+        setLoading(false);
+      }
+    };
+
+    fetchResults();
 
     return () => ac.abort();
-  }, [debouncedQ, allData]);
+  }, [debouncedQ]);
 
   function onKeyDown(e: React.KeyboardEvent) {
     if (!open) return;
@@ -74,10 +132,11 @@ export default function SearchSuggest() {
   }
 
   function selectItem(item: Suggestion) {
-    setQ(item.label);
+    console.log("Selected item:", item);
+    setQ("");
     setOpen(false);
-    // Navigate to item page
-    window.location.href = `/${item.type}/${item.id}`;
+    // Navigate to book detail page - use singular "book" to match ProductDetail component
+    navigate(`/book/${item.id}`);
   }
 
   return (
@@ -117,7 +176,7 @@ export default function SearchSuggest() {
         <ul
           id="suggest-list"
           role="listbox"
-          className="absolute z-10 w-full mt-1 rounded shadow"
+          className="absolute z-50 w-full mt-2 bg-white border rounded-lg shadow-lg border-beige-200 max-h-96 overflow-y-auto"
           aria-label="suggest-list"
         >
           {items.map((it, idx) => (
@@ -129,16 +188,30 @@ export default function SearchSuggest() {
               onMouseDown={(e) => e.preventDefault()} // keep focus on input
               onClick={() => selectItem(it)}
               onMouseEnter={() => setHighlight(idx)}
-              className={`px-3 py-2 cursor-pointer ${highlight === idx ? "bg-blue-100" : "hover:bg-gray-50"
+              className={`px-4 py-3 cursor-pointer border-b border-beige-100 last:border-b-0 transition-colors ${highlight === idx
+                ? "bg-beige-100 text-beige-900"
+                : "bg-white hover:bg-beige-50 text-beige-800"
                 }`}
             >
-              {it.label} ({it.type})
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1 min-w-0">
+                  <div className="font-medium truncate">{it.label}</div>
+                  {it.authorName && (
+                    <div className="text-xs text-beige-500 mt-0.5 truncate">
+                      by {it.authorName}
+                    </div>
+                  )}
+                </div>
+                <span className="text-xs text-beige-500 capitalize px-2 py-0.5 bg-beige-100 rounded shrink-0">
+                  {it.type}
+                </span>
+              </div>
             </li>
           ))}
         </ul>
       )}
       {open && !loading && items.length === 0 && (
-        <div className="absolute z-10 w-full px-3 py-2 mt-1 text-gray-500 border rounded">
+        <div className="absolute z-50 w-full px-4 py-3 mt-2 text-center bg-white border rounded-lg shadow-lg text-beige-500 border-beige-200">
           No results
         </div>
       )}

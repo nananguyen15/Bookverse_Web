@@ -117,38 +117,59 @@ export function StaffProfile() {
       )}
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-        <div className="flex items-center space-x-6">
-          <div className="relative">
-            {avatarPreview ? (
-              <img
-                src={avatarPreview}
-                alt="Avatar preview"
-                className="object-cover w-24 h-24 border-4 rounded-full border-beige-200"
-              />
-            ) : (
-              <FaUserCircle className="w-24 h-24 text-beige-300" />
-            )}
-            <input
-              type="file"
-              id="avatar"
-              {...register("avatar")}
-              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-              onChange={handleAvatarChange}
-              accept="image/*"
-            />
-          </div>
-          <label
-            htmlFor="avatar"
-            className="px-4 py-2 text-sm font-medium bg-white border rounded-md shadow-sm cursor-pointer text-beige-700 border-beige-300 hover:bg-beige-50"
-          >
-            Change Avatar
+        {/* Avatar Section */}
+        <div className="pb-6 border-b border-beige-200">
+          <label className="block mb-4 text-sm font-medium text-beige-800">
+            Profile Picture
           </label>
+
+          <div className="flex justify-center">
+            <div className="flex items-center space-x-6">
+              <div className="relative">
+                {avatarPreview ? (
+                  <img
+                    src={avatarPreview}
+                    alt="Avatar preview"
+                    className="object-cover w-32 h-32 border-4 rounded-full border-beige-200"
+                  />
+                ) : (
+                  <FaUserCircle className="w-32 h-32 text-beige-300" />
+                )}
+                <input
+                  type="file"
+                  id="avatar"
+                  {...register("avatar")}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  onChange={handleAvatarChange}
+                  accept="image/*"
+                />
+              </div>
+              <div>
+                <label
+                  htmlFor="avatar"
+                  className="px-4 py-2 text-sm font-medium bg-white border rounded-md shadow-sm cursor-pointer text-beige-700 border-beige-300 hover:bg-beige-50"
+                >
+                  Change Avatar
+                </label>
+                <p className="mt-2 text-xs text-beige-500">
+                  Max file size: 10MB. Accepted formats: JPG, PNG, GIF
+                </p>
+              </div>
+            </div>
+          </div>
+          {errors.avatar && (
+            <p className="mt-2 text-sm text-center text-red-600">
+              {errors.avatar.message as string}
+            </p>
+          )}
         </div>
-        {errors.avatar && (
-          <p className="mt-2 text-sm text-red-600">
-            {errors.avatar.message as string}
-          </p>
-        )}
+
+        {/* Personal Details Section */}
+        <div>
+          <h3 className="mb-4 text-lg font-semibold text-beige-900">
+            Personal Details
+          </h3>
+        </div>
 
         <div>
           <label

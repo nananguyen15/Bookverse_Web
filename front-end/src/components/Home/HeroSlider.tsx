@@ -156,7 +156,7 @@ export default function HeroSlider({
   // };
 
   return (
-    <div className="w-full bg-gradient-to-b from-beige-50 to-beige-100">
+    <div className="w-full bg-linear-to-b from-beige-50 to-beige-100">
       <div className="px-16 py-6 lg:py-14">
         <div className="grid items-center grid-cols-1 gap-8 lg:grid-cols-12">
           {/* Left */}
@@ -219,9 +219,8 @@ export default function HeroSlider({
                         return (
                           <div
                             key={uniqueKey}
-                            className={`text-center flex ${
-                              isCenter ? "flex-col-reverse" : "flex-col"
-                            }`}
+                            className={`text-center flex ${isCenter ? "flex-col-reverse" : "flex-col"
+                              }`}
                             style={{ width: "200px" }} // Fixed width để cards đồng đều
                           >
                             <Link to={bookLink}>
@@ -229,11 +228,10 @@ export default function HeroSlider({
                                 className={`relative w-[180px] h-[300px] mx-auto mb-3`}
                               >
                                 <div
-                                  className={`w-full h-full overflow-hidden ${
-                                    isCenter
+                                  className={`w-full h-full overflow-hidden ${isCenter
                                       ? "rounded-b-[100px]"
                                       : "rounded-t-[100px]"
-                                  }`}
+                                    }`}
                                 >
                                   <img
                                     src={book.image ?? ""}
@@ -246,11 +244,10 @@ export default function HeroSlider({
                             </Link>
 
                             <div
-                              className={`max-w-[200px] min-h-[100px] flex flex-col ${
-                                isCenter
+                              className={`max-w-[200px] min-h-[100px] flex flex-col ${isCenter
                                   ? "mx-auto mb-3 justify-end"
                                   : "mx-auto justify-start"
-                              }`}
+                                }`}
                             >
                               <Link to={bookLink}>
                                 <h5 className="text-[1.1rem] font-bold text-beige-900 mb-1 line-clamp-2 hover:text-beige-700 font-heading">
@@ -258,7 +255,7 @@ export default function HeroSlider({
                                 </h5>
                               </Link>
                               <p className="text-[0.95rem] text-beige-700 m-0 line-clamp-3">
-                                {book.description.slice(0, 80)}...
+                                {book.description ? `${book.description.slice(0, 80)}...` : 'No description available'}
                               </p>
                             </div>
                           </div>
@@ -283,11 +280,10 @@ export default function HeroSlider({
                       key={index}
                       onClick={() => scrollToSlide(index)}
                       aria-label={`Go to slide ${index + 1}`}
-                      className={`h-3 w-3 rounded-full border transition-all ${
-                        active
+                      className={`h-3 w-3 rounded-full border transition-all ${active
                           ? "bg-beige-700 border-beige-700"
                           : "bg-transparent border-beige-700/30"
-                      }`}
+                        }`}
                     />
                   );
                 })}

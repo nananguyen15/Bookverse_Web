@@ -5,10 +5,10 @@ import { useAuth } from "../../contexts/AuthContext";
 import { usersApi } from "../../api";
 
 const sidenavLinks = [
-  { to: "/profile/my-account", label: "My Account" },
-  { to: "/profile/orders", label: "My Orders" },
-  { to: "/profile/reviews", label: "My Reviews" },
-  { to: "/profile/notifications", label: "Notifications" },
+  { to: "/profile/my-account", label: "My Account", roles: ["customer", "staff", "admin"] },
+  { to: "/profile/orders", label: "My Orders", roles: ["customer"] },
+  { to: "/profile/reviews", label: "My Reviews", roles: ["customer"] },
+  { to: "/profile/notifications", label: "Notifications", roles: ["customer", "staff", "admin"] },
 ];
 
 export function ProfileSidenav() {
@@ -79,21 +79,22 @@ export function ProfileSidenav() {
         </div>
       </div>
       <nav className="p-4 space-y-1">
-        {sidenavLinks.map((link) => (
-          <NavLink
-            key={link.to}
-            to={link.to}
-            className={({ isActive }) =>
-              `block px-4 py-3 rounded-md transition-colors font-medium ${
-                isActive
+        {sidenavLinks
+          .filter((link) => !user?.role || link.roles.includes(user.role.toLowerCase()))
+          .map((link) => (
+            <NavLink
+              key={link.to}
+              to={link.to}
+              className={({ isActive }) =>
+                `block px-4 py-3 rounded-md transition-colors font-medium ${isActive
                   ? "bg-beige-700 text-white"
                   : "text-beige-800 hover:bg-beige-100"
-              }`
-            }
-          >
-            {link.label}
-          </NavLink>
-        ))}
+                }`
+              }
+            >
+              {link.label}
+            </NavLink>
+          ))}
       </nav>
     </div>
   );

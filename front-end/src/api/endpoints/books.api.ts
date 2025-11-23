@@ -101,18 +101,23 @@ export const booksApi = {
   create: async (data: any): Promise<Book> => {
     const formData = new FormData();
 
-    // Add all text fields
-    if (data.title) formData.append("title", data.title);
-    if (data.description) formData.append("description", data.description);
-    if (data.price !== undefined) formData.append("price", String(data.price));
-    if (data.authorId) formData.append("authorId", String(data.authorId));
-    if (data.publisherId)
+    // Add only fields with actual values (not 0, not empty)
+    if (data.title && data.title.trim())
+      formData.append("title", data.title.trim());
+    if (data.description && data.description.trim())
+      formData.append("description", data.description.trim());
+    if (data.price && data.price > 0)
+      formData.append("price", String(data.price));
+    if (data.authorId && data.authorId > 0)
+      formData.append("authorId", String(data.authorId));
+    if (data.publisherId && data.publisherId > 0)
       formData.append("publisherId", String(data.publisherId));
-    if (data.categoryId) formData.append("categoryId", String(data.categoryId));
-    if (data.stockQuantity !== undefined)
+    if (data.categoryId && data.categoryId > 0)
+      formData.append("categoryId", String(data.categoryId));
+    if (data.stockQuantity !== undefined && data.stockQuantity >= 0)
       formData.append("stockQuantity", String(data.stockQuantity));
-    if (data.publishedDate)
-      formData.append("publishedDate", data.publishedDate);
+    if (data.publishedDate && data.publishedDate.trim())
+      formData.append("publishedDate", data.publishedDate.trim());
     if (data.active !== undefined)
       formData.append("active", String(data.active));
 
@@ -120,9 +125,9 @@ export const booksApi = {
     if (data.imageFile) {
       formData.append("image", data.imageFile);
       console.log("📤 Uploading book image file:", data.imageFile.name);
-    } else if (data.image) {
-      formData.append("imageUrl", data.image);
-      console.log("📤 Setting book image URL:", data.image);
+    } else if (data.imageUrl) {
+      formData.append("imageUrl", data.imageUrl);
+      console.log("📤 Setting book image URL:", data.imageUrl);
     }
 
     const response = await apiClient.post<ApiResponse<Book>>(
@@ -177,6 +182,14 @@ export const booksApi = {
   deactivate: async (id: number): Promise<Book> => {
     const response = await apiClient.put<ApiResponse<Book>>(
       `${BOOKS_ENDPOINT}/inactive/${id}`
+    );
+    return response.data.result;
+  },
+
+  // GET top selling books
+  getTopSelling: async (): Promise<Book[]> => {
+    const response = await apiClient.get<ApiResponse<Book[]>>(
+      `${BOOKS_ENDPOINT}/active/top-selling`
     );
     return response.data.result;
   },

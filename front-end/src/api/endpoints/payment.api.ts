@@ -2,8 +2,9 @@ import apiClient from "../client";
 import type { ApiResponse } from "../../types/api/common.types";
 import type {
   VNPayReturnParams,
-  CreatePaymentRequest,
-  CreatePaymentResponse,
+  CreatePaymentRecordRequest,
+  CreateVNPayUrlRequest,
+  PaymentResponse,
   PaymentRecord,
 } from "../../types/api/payment.types";
 
@@ -11,16 +12,48 @@ const PAYMENT_ENDPOINT = "/payments";
 
 export const paymentApi = {
   /**
-   * Create payment URL for VNPay
-   * @param data Payment creation request
-   * @returns Payment URL to redirect to VNPay
+   * Create payment record for an order
+   * POST /api/payments/create-payment-record
+   * @param data Payment record creation request
+   * @returns Payment response
    */
-  createPayment: async (
-    data: CreatePaymentRequest
-  ): Promise<CreatePaymentResponse> => {
-    const response = await apiClient.get<ApiResponse<CreatePaymentResponse>>(
-      `${PAYMENT_ENDPOINT}/create`,
-      { params: data }
+  createPaymentRecord: async (
+    data: CreatePaymentRecordRequest
+  ): Promise<PaymentResponse> => {
+    const response = await apiClient.post<ApiResponse<PaymentResponse>>(
+      `${PAYMENT_ENDPOINT}/create-payment-record`,
+      data
+    );
+    return response.data.result;
+  },
+
+  /**
+   * Create VNPay payment URL
+   * POST /api/payments/create-vnpay-url
+   * @param data VNPay URL creation request (chỉ gửi amount)
+   * @returns Payment URL string to redirect to VNPay
+   */
+  createVNPayUrl: async (data: CreateVNPayUrlRequest): Promise<string> => {
+    const response = await apiClient.post<
+      ApiResponse<{ status: string; message: string; URL: string }>
+    >(`${PAYMENT_ENDPOINT}/create-vnpay-url`, data);
+    console.log("Full API response:", response.data);
+    console.log("Result object:", response.data.result);
+    console.log("URL from result:", response.data.result.URL);
+
+    // Backend returns {status, message, URL} object, extract the URL
+    return response.data.result.URL;
+  },
+
+  /**
+   * Mark payment as done (SUCCESS)
+   * PUT /api/payments/payment-done/{paymentId}
+   * @param paymentId Payment ID
+   * @returns Updated payment response
+   */
+  markPaymentDone: async (paymentId: number): Promise<PaymentResponse> => {
+    const response = await apiClient.put<ApiResponse<PaymentResponse>>(
+      `${PAYMENT_ENDPOINT}/payment-done/${paymentId}`
     );
     return response.data.result;
   },

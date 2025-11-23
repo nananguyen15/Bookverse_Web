@@ -164,37 +164,70 @@ export function Payment() {
     // Handle payment method
     if (paymentMethod === "vnpay") {
       try {
-        // Save order info temporarily for after payment confirmation
-        const pendingOrderData = {
+        // VNPAY FLOW:
+        // Step 1: Create order (status: PENDING)
+        const newOrder = await orderApi.createOrder({
           address: fullAddress,
-          paymentMethod: "vnpay",
-        };
-        localStorage.setItem("pendingOrder", JSON.stringify(pendingOrderData));
-        
-        const orderId = `BV-${Date.now()}`;
-        const result = await paymentApi.createPayment({
-          amount: Math.round(cartDetails.total * 100), // Convert to smallest currency unit
-          orderInfo: `BookVerse Order ${orderId} - ${cartDetails.selectedCount} items`,
         });
 
-        // Backend returns 'URL' field (uppercase)
-        if (result && result.URL) {
-          window.location.href = result.URL;
-        } else {
-          console.error("Invalid payment response:", result);
-          alert("Payment URL not received. Please try again.");
+        console.log('✅ Step 1: Order created:', newOrder);
+        console.log('📋 Order ID:', newOrder.id);
+        console.log('📊 Order Status:', newOrder.status, '(should be PENDING)');
+
+        // Step 2: Create payment record (method: VNPAY)
+        const payment = await paymentApi.createPaymentRecord({
+          orderId: newOrder.id,
+          method: "VNPAY",
+        });
+
+        console.log('✅ Step 2: Payment record created:', payment);
+        console.log('🆔 Payment ID:', payment.id);
+        console.log('💳 Payment Method:', payment.method);
+        console.log('💰 Payment Status:', payment.status, '(should be PENDING)');
+
+        // Step 3: Create VNPay payment URL (backend will handle callback and retrieve paymentId)
+        const paymentUrl = await paymentApi.createVNPayUrl({
+          amount: newOrder.totalAmount,
+        });
+
+        console.log('✅ Step 3: VNPay URL received:', paymentUrl);
+
+        if (!paymentUrl || typeof paymentUrl !== 'string') {
+          console.error('❌ Invalid payment URL:', paymentUrl);
+          throw new Error('Invalid payment URL received from server');
         }
+
+        // Clear cart before redirecting to payment
+        clearCart();
+
+        // Step 5: Redirect to VNPay payment page
+        // After payment, VNPay will redirect to: http://localhost:5173/order-confirmed
+        console.log('🔄 Redirecting to VNPay...');
+        window.location.href = paymentUrl;
       } catch (error) {
-        console.error("Failed to create payment:", error);
+        console.error("❌ Failed to create VNPay payment:", error);
         alert("Could not create VNPay payment. Please try again.");
       }
     } else {
-      // COD payment - create order immediately
+      // COD FLOW:
+      // Step 1: Create order (status: PENDING)
       try {
         const newOrder = await orderApi.createOrder({
           address: fullAddress,
         });
-        
+
+        console.log('✅ COD Order created:', newOrder);
+        console.log('📋 Order Status:', newOrder.status, '(should be PENDING)');
+
+        // Step 2: Create payment record (method: COD)
+        const payment = await paymentApi.createPaymentRecord({
+          orderId: newOrder.id,
+          method: "COD",
+        });
+
+        console.log('✅ Payment record created:', payment);
+        console.log('💳 Payment Method:', payment.method, '(should be COD)');
+
         clearCart();
         navigate(`/order-confirmed/${newOrder.id}`);
       } catch (error) {

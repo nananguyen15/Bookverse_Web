@@ -11,15 +11,23 @@ export type VNPayReturnParams = {
   vnp_OrderInfo: string; // Order information
   vnp_ResponseCode: string; // Response code (00 = success)
   vnp_TransactionNo: string; // VNPay transaction number
+  vnp_TxnRef?: string; // Transaction reference
+  vnp_SecureHash?: string; // Secure hash for verification
 };
 
 /**
- * Payment Creation Request
+ * Payment Creation Request (for creating payment record)
  */
-export type CreatePaymentRequest = {
+export type CreatePaymentRecordRequest = {
+  orderId: number;
+  method: "COD" | "VNPAY";
+};
+
+/**
+ * VNPay URL Creation Request
+ */
+export type CreateVNPayUrlRequest = {
   amount: number; // Amount in VND
-  orderInfo: string; // Order description
-  returnUrl?: string; // Return URL after payment
 };
 
 /**
@@ -39,17 +47,27 @@ export type CreatePaymentResponse = {
 export type PaymentStatus = "SUCCESS" | "FAILED" | "PENDING";
 
 /**
- * Payment Record (for displaying payment info)
+ * Payment Response (from backend)
  */
-export type PaymentRecord = {
-  id?: string;
-  amount: number;
-  bankCode: string;
-  bankTranNo: string;
-  payDate: string;
-  orderInfo: string;
-  responseCode: string;
-  transactionNo: string;
+export type PaymentResponse = {
+  id: number;
+  orderId: number;
+  method: "COD" | "VNPAY";
   status: PaymentStatus;
-  createdAt?: string;
+  amount: number;
+  paidAt: string; // ISO date string
+  createdAt: string; // ISO date string
+};
+
+/**
+ * Payment Record (for displaying payment info from VNPay callback)
+ * Backend /api/payments/vnpay-return returns PaymentResponse, not a separate record type
+ */
+export type PaymentRecord = PaymentResponse & {
+  bankCode?: string;
+  bankTranNo?: string;
+  payDate?: string;
+  orderInfo?: string;
+  responseCode?: string;
+  transactionNo?: string;
 };

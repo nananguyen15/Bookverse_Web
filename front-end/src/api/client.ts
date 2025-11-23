@@ -82,6 +82,10 @@ apiClient.interceptors.response.use(
     if (error.response) {
       // Handle 401 Unauthorized - Clear expired token
       if (error.response.status === 401) {
+        console.error("🔒 401 Unauthorized - Token expired or invalid");
+        console.error("Current URL:", window.location.pathname);
+        console.error("Error:", error.response.data);
+        
         // Clear both possible token keys
         localStorage.removeItem("token");
         localStorage.removeItem("authToken");
@@ -91,12 +95,18 @@ apiClient.interceptors.response.use(
         const isPublicPage =
           currentPath === "/" ||
           currentPath.startsWith("/books") ||
+          currentPath.startsWith("/book/") ||
           currentPath.startsWith("/category") ||
           currentPath.startsWith("/about") ||
-          currentPath.startsWith("/search");
+          currentPath.startsWith("/qa") ||
+          currentPath.startsWith("/faq") ||
+          currentPath.startsWith("/search") ||
+          currentPath.startsWith("/signin") ||
+          currentPath.startsWith("/signup");
 
-        if (!isPublicPage && !currentPath.startsWith("/auth")) {
-          window.location.href = "/auth/signin";
+        if (!isPublicPage) {
+          console.log("🔄 Redirecting to signin...");
+          window.location.href = "/signin";
         }
       }
       // Handle 403 Forbidden

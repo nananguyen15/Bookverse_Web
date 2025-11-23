@@ -4,6 +4,7 @@ import type {
   OrderResponse,
   CreateOrderRequest,
   UpdateOrderRequest,
+  ChangeAddressRequest,
   OrderStatus,
 } from "../../types";
 
@@ -67,6 +68,18 @@ export const orderApi = {
   cancelMyOrder: async (id: number): Promise<OrderResponse> => {
     const response = await apiClient.put<ApiResponse<OrderResponse>>(
       `${ORDERS_ENDPOINT}/myOrders/cancel/${id}`
+    );
+    return response.data.result;
+  },
+
+  // PUT /api/orders/myOrders/change-address/{id} - Change order address
+  changeMyOrderAddress: async (
+    id: number,
+    data: ChangeAddressRequest
+  ): Promise<OrderResponse> => {
+    const response = await apiClient.put<ApiResponse<OrderResponse>>(
+      `${ORDERS_ENDPOINT}/myOrders/change-address/${id}`,
+      data
     );
     return response.data.result;
   },

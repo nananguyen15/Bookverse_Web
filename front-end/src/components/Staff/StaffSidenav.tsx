@@ -7,11 +7,12 @@ import { usersApi } from "../../api";
 const staffNavLinks = [
   { to: "/staff/my-account", label: "My Account" },
   { to: "/staff/books", label: "Manage Books" },
-  { to: "/staff/series", label: "Manage Series" },
+  { to: "/staff/authors", label: "Manage Authors" },
+  { to: "/staff/publishers", label: "Manage Publishers" },
   { to: "/staff/categories", label: "Manage Categories" },
   { to: "/staff/orders", label: "Manage Orders" },
   { to: "/staff/reviews", label: "Manage Reviews" },
-  { to: "/staff/notifications", label: "Notifications" },
+  { to: "/staff/notifications", label: "Notification Management" },
 ];
 
 export function StaffSidenav() {
@@ -88,10 +89,9 @@ export function StaffSidenav() {
             key={link.to}
             to={link.to}
             className={({ isActive }) =>
-              `block px-4 py-3 rounded-md transition-colors font-medium ${
-                isActive
-                  ? "bg-beige-700 text-white"
-                  : "text-beige-800 hover:bg-beige-100"
+              `block px-4 py-3 rounded-md transition-colors font-medium ${isActive
+                ? "bg-beige-700 text-white"
+                : "text-beige-800 hover:bg-beige-100"
               }`
             }
           >
