@@ -1,11 +1,13 @@
 package com.swp391.bookverse.service;
 
+import com.swp391.bookverse.dto.request.NotificationBroadCastCreationRequest;
 import com.swp391.bookverse.dto.request.SubCategoryCreationRequest;
 import com.swp391.bookverse.dto.response.BookResponse;
 import com.swp391.bookverse.dto.response.SubCategoryResponse;
 import com.swp391.bookverse.entity.Book;
 import com.swp391.bookverse.entity.SubCategory;
 import com.swp391.bookverse.entity.SupCategory;
+import com.swp391.bookverse.enums.NotificationType;
 import com.swp391.bookverse.exception.AppException;
 import com.swp391.bookverse.exception.ErrorCode;
 import com.swp391.bookverse.mapper.SubCategoryMapper;
@@ -30,6 +32,7 @@ public class SubCategoryService {
     SubCategoryRepository subCategoryRepository;
     SupCategoryRepository supCategoryRepository;
     BookRepository bookRepository;
+    NotificationService notificationService;
 
     public SubCategoryResponse createSubCategory(SubCategoryCreationRequest request) {
         // check if sub-category exists
@@ -40,6 +43,28 @@ public class SubCategoryService {
         // map request to entity and save
         SubCategory subCategory = mapToSubCategoryEntity(request);
         subCategoryRepository.save(subCategory);
+
+        // send notification to admins about new sub-category creation
+        NotificationBroadCastCreationRequest notificationRequest = NotificationBroadCastCreationRequest.builder()
+                .type(NotificationType.FOR_ADMINS)
+                .content("New sub-category '" + subCategory.getName() + "' has been created.")
+                .build();
+        notificationService.createBroadcastNotification(notificationRequest);
+
+        // send nofitifcation to staffs about new sub-category creation
+        notificationRequest = NotificationBroadCastCreationRequest.builder()
+                .type(NotificationType.FOR_STAFFS)
+                .content("New sub-category '" + subCategory.getName() + "' has been created.")
+                .build();
+        notificationService.createBroadcastNotification(notificationRequest);
+
+        // send notification to customers about new sub-category creation
+        notificationRequest = NotificationBroadCastCreationRequest.builder()
+                .type(NotificationType.FOR_CUSTOMERS)
+                .content("Check out our new sub-category: '" + subCategory.getName() + "'. Explore exciting books now!")
+                .build();
+        notificationService.createBroadcastNotification(notificationRequest);
+
         return mapToSubCategoryResponse(subCategory);
     }
 
@@ -101,6 +126,21 @@ public class SubCategoryService {
         }
 
         subCategoryRepository.save(subCategory);
+
+        // send notification to admins about sub-category update
+        NotificationBroadCastCreationRequest notificationRequest = NotificationBroadCastCreationRequest.builder()
+                .type(NotificationType.FOR_ADMINS)
+                .content("Sub-category '" + subCategory.getName() + "' has been updated.")
+                .build();
+        notificationService.createBroadcastNotification(notificationRequest);
+
+        // send nofitifcation to staffs about sub-category update
+        notificationRequest = NotificationBroadCastCreationRequest.builder()
+                .type(NotificationType.FOR_STAFFS)
+                .content("Sub-category '" + subCategory.getName() + "' has been updated.")
+                .build();
+        notificationService.createBroadcastNotification(notificationRequest);
+
         return mapToSubCategoryResponse(subCategory);
     }
 
@@ -173,6 +213,21 @@ public class SubCategoryService {
                 .orElseThrow(() -> new AppException(ErrorCode.SUBCATEGORY_NOT_FOUND));
         subCategory.setActive(true);
         subCategoryRepository.save(subCategory);
+
+        // send notification to admins about sub-category activation
+        NotificationBroadCastCreationRequest notificationRequest = NotificationBroadCastCreationRequest.builder()
+                .type(NotificationType.FOR_ADMINS)
+                .content("Sub-category '" + subCategory.getName() + "' has been activated.")
+                .build();
+        notificationService.createBroadcastNotification(notificationRequest);
+
+        // send nofitifcation to staffs about sub-category activation
+        notificationRequest = NotificationBroadCastCreationRequest.builder()
+                .type(NotificationType.FOR_STAFFS)
+                .content("Sub-category '" + subCategory.getName() + "' has been activated.")
+                .build();
+        notificationService.createBroadcastNotification(notificationRequest);
+
         return mapToSubCategoryResponse(subCategory);
     }
 
@@ -181,6 +236,21 @@ public class SubCategoryService {
                 .orElseThrow(() -> new AppException(ErrorCode.SUBCATEGORY_NOT_FOUND));
         subCategory.setActive(false);
         subCategoryRepository.save(subCategory);
+
+        // send notification to admins about sub-category deactivation
+        NotificationBroadCastCreationRequest notificationRequest = NotificationBroadCastCreationRequest.builder()
+                .type(NotificationType.FOR_ADMINS)
+                .content("Sub-category '" + subCategory.getName() + "' has been deactivated.")
+                .build();
+        notificationService.createBroadcastNotification(notificationRequest);
+
+        // send nofitifcation to staffs about sub-category deactivation
+        notificationRequest = NotificationBroadCastCreationRequest.builder()
+                .type(NotificationType.FOR_STAFFS)
+                .content("Sub-category '" + subCategory.getName() + "' has been deactivated.")
+                .build();
+        notificationService.createBroadcastNotification(notificationRequest);
+
         return mapToSubCategoryResponse(subCategory);
     }
 }

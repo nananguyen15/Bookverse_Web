@@ -1,11 +1,14 @@
 package com.swp391.bookverse.service;
 
 
+import com.swp391.bookverse.dto.request.NotificationBroadCastCreationRequest;
+import com.swp391.bookverse.dto.request.NotificationCreationRequest;
 import com.swp391.bookverse.dto.request.SupCategoryCreationRequest;
 import com.swp391.bookverse.dto.response.SubCategoryResponse;
 import com.swp391.bookverse.dto.response.SupCategoryResponse;
 import com.swp391.bookverse.entity.SubCategory;
 import com.swp391.bookverse.entity.SupCategory;
+import com.swp391.bookverse.enums.NotificationType;
 import com.swp391.bookverse.exception.AppException;
 import com.swp391.bookverse.exception.ErrorCode;
 import com.swp391.bookverse.mapper.SupCategoryMapper;
@@ -28,6 +31,7 @@ public class SupCategoryService {
     SupCategoryRepository supCategoryRepository;
     SupCategoryMapper supCategoryMapper;
     SubCategoryRepository subCategoryRepository;
+    NotificationService notificationService;
 
     public SupCategoryResponse createSupCategory(SupCategoryCreationRequest request) {
         // check if sup category name already exists
@@ -41,6 +45,21 @@ public class SupCategoryService {
             supCategory.setActive(true);
         }
         SupCategory savedSupCategory = supCategoryRepository.save(supCategory);
+
+        // send notification about new sup category for admins
+        NotificationBroadCastCreationRequest notificationRequest = new NotificationBroadCastCreationRequest().builder()
+                .type(NotificationType.FOR_ADMINS)
+                .content("A new sup category '" + savedSupCategory.getName() + "' has been created.")
+                .build();
+        notificationService.createBroadcastNotification(notificationRequest);
+
+        // send notification about new sup category for staffs
+        NotificationBroadCastCreationRequest staffNotificationRequest = new NotificationBroadCastCreationRequest().builder()
+                .type(NotificationType.FOR_STAFFS)
+                .content("A new sup category '" + savedSupCategory.getName() + "' has been created.")
+                .build();
+        notificationService.createBroadcastNotification(staffNotificationRequest);
+
         // map saved entity to response and return
         return supCategoryMapper.toSupCategoryResponse(savedSupCategory);
     }
@@ -96,6 +115,21 @@ public class SupCategoryService {
         if (request.getActive() != null) {
             supCategory.setActive(request.getActive());
         }
+
+        // send notification about sup category update for admins
+        NotificationBroadCastCreationRequest notificationRequest = new NotificationBroadCastCreationRequest().builder()
+                .type(NotificationType.FOR_ADMINS)
+                .content("The sup category '" + supCategory.getName() + "' has been updated.")
+                .build();
+        notificationService.createBroadcastNotification(notificationRequest);
+
+        // send notification about sup category update for staffs
+        NotificationBroadCastCreationRequest staffNotificationRequest = new NotificationBroadCastCreationRequest().builder()
+                .type(NotificationType.FOR_STAFFS)
+                .content("The sup category '" + supCategory.getName() + "' has been updated.")
+                .build();
+        notificationService.createBroadcastNotification(staffNotificationRequest);
+
         // save updated sup category to repository
         SupCategory updatedSupCategory = supCategoryRepository.save(supCategory);
         return supCategoryMapper.toSupCategoryResponse(updatedSupCategory);
@@ -142,6 +176,21 @@ public class SupCategoryService {
         supCategory.setActive(true);
         // save activated sup category to repository
         SupCategory activatedSupCategory = supCategoryRepository.save(supCategory);
+
+        // send notification about sup category activation for admins
+        NotificationBroadCastCreationRequest notificationRequest = new NotificationBroadCastCreationRequest().builder()
+                .type(NotificationType.FOR_ADMINS)
+                .content("The sup category '" + activatedSupCategory.getName() + "' active.")
+                .build();
+        notificationService.createBroadcastNotification(notificationRequest);
+
+        // send notification about sup category activation for staffs
+        NotificationBroadCastCreationRequest staffNotificationRequest = new NotificationBroadCastCreationRequest().builder()
+                .type(NotificationType.FOR_STAFFS)
+                .content("The sup category '" + activatedSupCategory.getName() + "' active.")
+                .build();
+        notificationService.createBroadcastNotification(staffNotificationRequest);
+
         return supCategoryMapper.toSupCategoryResponse(activatedSupCategory);
     }
 
@@ -151,6 +200,21 @@ public class SupCategoryService {
                 .orElseThrow(() -> new AppException(ErrorCode.SUP_CATEGORY_NOT_FOUND));
         // deactivate sup category
         supCategory.setActive(false);
+
+        // send notification about sup category deactivation for admins
+        NotificationBroadCastCreationRequest notificationRequest = new NotificationBroadCastCreationRequest().builder()
+                .type(NotificationType.FOR_ADMINS)
+                .content("The sup category '" + supCategory.getName() + "' inactive.")
+                .build();
+        notificationService.createBroadcastNotification(notificationRequest);
+
+        // send notification about sup category deactivation for staffs
+        NotificationBroadCastCreationRequest staffNotificationRequest = new NotificationBroadCastCreationRequest().builder()
+                .type(NotificationType.FOR_STAFFS)
+                .content("The sup category '" + supCategory.getName() + "' inactive.")
+                .build();
+        notificationService.createBroadcastNotification(staffNotificationRequest);
+
         // save deactivated sup category to repository
         SupCategory deactivatedSupCategory = supCategoryRepository.save(supCategory);
         return supCategoryMapper.toSupCategoryResponse(deactivatedSupCategory);
