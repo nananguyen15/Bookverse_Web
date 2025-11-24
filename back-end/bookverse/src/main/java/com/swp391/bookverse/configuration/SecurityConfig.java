@@ -50,12 +50,12 @@ public class SecurityConfig {
     String[] PUBLIC_PUT_ENDPOINTS = {"api/users/myInfo", "api/users/change-my-password"};
 
     String[] ADMIN_GET_ENDPOINTS = {"api/users/**"};
-    String[] ADMIN_POST_ENDPOINTS = {"api/authors/**", "api/books/**", "api/publishers/**", "api/sup-categories/**", "/api/sub-categories/**", "api/promotions/**"};
-    String[] ADMIN_PUT_ENDPOINTS = {"api/authors/**" , "api/books/**", "api/publishers/**", "api/sup-categories/**", "/api/sub-categories/**","api/users/**", "api/promotions/**"};
+    String[] ADMIN_POST_ENDPOINTS = {/*"api/authors/**", "api/books/**", "api/publishers/**", "api/sup-categories/**", "/api/sub-categories/**",*/ "api/promotions/**"};
+    String[] ADMIN_PUT_ENDPOINTS = {/*"api/authors/**" , "api/books/**", "api/publishers/**", "api/sup-categories/**", "/api/sub-categories/**",*/"api/users/**", "api/promotions/**"};
     String[] ADMIN_DELETE_ENDPOINTS = {""};
 
     String[] STAFF_GET_ENDPOINTS = {""};
-    String[] STAFF_POST_ENDPOINTS = {""};
+    String[] STAFF_POST_ENDPOINTS = {"api/authors/**", "api/books/**", "api/publishers/**", "api/sup-categories/**", "/api/sub-categories/**"};
     String[] STAFF_PUT_ENDPOINTS = {"api/authors/**" , "api/books/**", "api/publishers/**", "api/sup-categories/**", "/api/sub-categories/**"};
     String[] STAFF_DELETE_ENDPOINTS = {""};
 
@@ -88,9 +88,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, PUBLIC_POST_ENDPOINTS).permitAll()
                         .requestMatchers(HttpMethod.PUT, PUBLIC_PUT_ENDPOINTS).permitAll()
 //                        .requestMatchers(HttpMethod.GET, ADMIN_GET_ENDPOINTS).hasAnyAuthority("SCOPE_ADMIN")
-                        .requestMatchers(HttpMethod.POST, ADMIN_POST_ENDPOINTS).hasAnyAuthority("SCOPE_ADMIN")
+                        .requestMatchers(HttpMethod.PUT, STAFF_PUT_ENDPOINTS).hasAnyAuthority("SCOPE_ADMIN", "SCOPE_STAFF")
+                        .requestMatchers(HttpMethod.POST, STAFF_POST_ENDPOINTS).hasAnyAuthority("SCOPE_ADMIN", "SCOPE_STAFF")
                         .requestMatchers(HttpMethod.PUT, ADMIN_PUT_ENDPOINTS).hasAnyAuthority("SCOPE_ADMIN")
-                        .requestMatchers(HttpMethod.PUT, STAFF_PUT_ENDPOINTS).hasAnyAuthority("SCOPE_STAFF")
+                        .requestMatchers(HttpMethod.POST, ADMIN_POST_ENDPOINTS).hasAnyAuthority("SCOPE_ADMIN")
                         .anyRequest().authenticated());
 
         // Configure ability to use form login and basic authentication

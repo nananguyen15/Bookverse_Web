@@ -1,11 +1,13 @@
 package com.swp391.bookverse.service;
 
 import com.swp391.bookverse.dto.APIResponse;
+import com.swp391.bookverse.dto.request.NotificationBroadCastCreationRequest;
 import com.swp391.bookverse.dto.request.PublisherCreationRequest;
 import com.swp391.bookverse.dto.request.PublisherUpdateRequest;
 import com.swp391.bookverse.dto.response.PublisherResponse;
 import com.swp391.bookverse.dto.response.PublisherActiveResponse;
 import com.swp391.bookverse.entity.Publisher;
+import com.swp391.bookverse.enums.NotificationType;
 import com.swp391.bookverse.exception.AppException;
 import com.swp391.bookverse.exception.ErrorCode;
 import com.swp391.bookverse.mapper.PublisherMapper;
@@ -26,6 +28,7 @@ import java.util.List;
 public class PublisherService {
     PublisherRepository publisherRepository;
     PublisherMapper publisherMapper;
+    NotificationService notificationService;
 
     public Publisher createPublisher(PublisherCreationRequest request) {
         // check if publisher with the same name already exists
@@ -34,6 +37,21 @@ public class PublisherService {
         }
         // map request to Publisher entity and save it to repository
         Publisher publisher = publisherMapper.toPublisher(request);
+
+        // send notification to all admins
+        NotificationBroadCastCreationRequest notificationRequest = NotificationBroadCastCreationRequest.builder()
+                .type(NotificationType.FOR_ADMINS)
+                .content("New publisher created: " + publisher.getName())
+                .build();
+        notificationService.createBroadcastNotification(notificationRequest);
+
+        // send notification to all staffs
+        notificationRequest = NotificationBroadCastCreationRequest.builder()
+                .type(NotificationType.FOR_STAFFS)
+                .content("New publisher created: " + publisher.getName())
+                .build();
+        notificationService.createBroadcastNotification(notificationRequest);
+
         return publisherRepository.save(publisher);
     }
 
@@ -71,6 +89,21 @@ public class PublisherService {
         publisherMapper.updatePublisher(request, publisher);
         // save the updated publisher entity and map it to PublisherResponse
         Publisher updatedPublisher = publisherRepository.save(publisher);
+
+        // send notification to all admins
+        NotificationBroadCastCreationRequest notificationRequest = NotificationBroadCastCreationRequest.builder()
+                .type(NotificationType.FOR_ADMINS)
+                .content("Publisher updated: " + updatedPublisher.getName())
+                .build();
+        notificationService.createBroadcastNotification(notificationRequest);
+
+        // send notification to all staffs
+        notificationRequest = NotificationBroadCastCreationRequest.builder()
+                .type(NotificationType.FOR_STAFFS)
+                .content("Publisher updated: " + updatedPublisher.getName())
+                .build();
+        notificationService.createBroadcastNotification(notificationRequest);
+
         return publisherMapper.toPublisherResponse(updatedPublisher);
     }
 
@@ -86,6 +119,20 @@ public class PublisherService {
         
         existingPublisher.setActive(isActive);
         publisherRepository.save(existingPublisher);
+
+        // send notification to all admins
+        NotificationBroadCastCreationRequest notificationRequest = NotificationBroadCastCreationRequest.builder()
+                .type(NotificationType.FOR_ADMINS)
+                .content("Publisher " + (isActive ? "active: " : "inactive: ") + existingPublisher.getName())
+                .build();
+        notificationService.createBroadcastNotification(notificationRequest);
+
+        // send notification to all staffs
+        notificationRequest = NotificationBroadCastCreationRequest.builder()
+                .type(NotificationType.FOR_STAFFS)
+                .content("Publisher " + (isActive ? "active: " : "inactive: ") + existingPublisher.getName())
+                .build();
+        notificationService.createBroadcastNotification(notificationRequest);
         
         return PublisherActiveResponse.builder()
                 .id(existingPublisher.getId())

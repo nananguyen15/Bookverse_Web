@@ -125,6 +125,13 @@ public class BookService {
             .build();
         notificationService.createBroadcastNotification(notificationRequest);
 
+        // Send notification about new book for admins
+        notificationRequest = NotificationBroadCastCreationRequest.builder()
+                .type(NotificationType.FOR_ADMINS)
+                .content("New book added: " + book.getTitle())
+                .build();
+        notificationService.createBroadcastNotification(notificationRequest);
+
         return response;
     }
 
@@ -355,6 +362,13 @@ public class BookService {
             .build();
         notificationService.createBroadcastNotification(notificationRequest);
 
+        // send notification about book update for admins
+        notificationRequest = NotificationBroadCastCreationRequest.builder()
+                .type(NotificationType.FOR_ADMINS)
+                .content("Book updated: " + existingBook.getTitle())
+                .build();
+        notificationService.createBroadcastNotification(notificationRequest);
+
         return mapToBookResponse(updatedBook);
     }
 
@@ -381,6 +395,13 @@ public class BookService {
             .type(NotificationType.FOR_STAFFS)
             .content("Book " + status + ": " + existingBook.getTitle())
             .build();
+        notificationService.createBroadcastNotification(notificationRequest);
+
+        // Send notification about book status change for admins
+        notificationRequest = NotificationBroadCastCreationRequest.builder()
+                .type(NotificationType.FOR_ADMINS)
+                .content("Book " + status + ": " + existingBook.getTitle())
+                .build();
         notificationService.createBroadcastNotification(notificationRequest);
 
         return response;
