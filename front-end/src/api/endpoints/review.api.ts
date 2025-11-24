@@ -107,7 +107,7 @@ export const reviewApi = {
    */
   isReviewed: async (bookId: number): Promise<boolean> => {
     const response = await apiClient.get<ApiResponse<boolean>>(
-      `/reviews/is-reviewed/${bookId}`
+      `${REVIEW_ENDPOINT}/is-reviewed/${bookId}`
     );
     return response.data.result;
   },

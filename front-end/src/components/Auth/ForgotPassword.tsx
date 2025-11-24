@@ -5,7 +5,7 @@ import { authApi } from "../../api/endpoints/auth.api";
 
 export function ForgotPassword() {
   const navigate = useNavigate();
-  const [step, setStep] = useState<"email" | "otp" | "password">("email");
+  const [step, setStep] = useState<"email" | "reset">("email");
   const [email, setEmail] = useState("");
   const [userId, setUserId] = useState("");
   const [otp, setOtp] = useState("");
@@ -68,7 +68,11 @@ export function ForgotPassword() {
   const handleBackToEmail = () => {
     setStep("email");
     setOtp("");
+    setNewPassword("");
+    setConfirmPassword("");
     setError("");
+    setOtpExpiryTime(0);
+    setResendCooldown(0);
   };
 
   const handleRequestOTP = async (e: React.FormEvent) => {
@@ -109,7 +113,7 @@ export function ForgotPassword() {
       setResendCooldown(45); // 45 seconds cooldown for resend
       setOtpExpiryTime(300); // 5 minutes = 300 seconds for OTP expiry
 
-      setStep("otp");
+      setStep("reset");
     } catch (error: unknown) {
       console.error("❌ Request OTP failed:", error);
       const err = error as {
@@ -135,68 +139,16 @@ export function ForgotPassword() {
     }
   };
 
-  const handleVerifyOTP = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
 
-    if (otp.length !== 6) {
-      setError("OTP must be 6 digits.");
-      return;
-    }
-
-    if (otpExpiryTime <= 0) {
-      setError("OTP has expired. Please request a new one.");
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      // Verify OTP with backend immediately
-      console.log("🔐 Verifying OTP with backend...", {
-        userId,
-        email,
-        code: otp,
-        tokenType: "RESET_PASSWORD"
-      });
-
-      await authApi.verifyOTP({
-        userId,
-        email,
-        code: otp,
-        tokenType: "RESET_PASSWORD",
-      });
-
-      console.log("✅ OTP verified successfully, proceeding to password step");
-      alert(`OTP verified successfully! You can now set your new password.`);
-      setStep("password");
-    } catch (error: unknown) {
-      console.error("❌ Verify OTP failed:", error);
-      const err = error as { response?: { data?: { message?: string } } };
-      if (err.response?.data?.message) {
-        const message = err.response.data.message;
-        if (message.includes("expired") || message.includes("Expired")) {
-          setError("OTP has expired. Please request a new one.");
-        } else if (
-          message.includes("Invalid") ||
-          message.includes("OTP") ||
-          message.includes("code") ||
-          message.includes("incorrect")
-        ) {
-          setError("Invalid OTP code. Please check your email and try again.");
-        } else {x
-          setError(message);
-        }
-      } else {
-        setError("Invalid OTP. Please try again.");
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+
+    if (otp.length !== 6) {
+      setError("Please enter a valid 6-digit verification code.");
+      return;
+    }
 
     if (!validatePassword(newPassword)) {
       setError(
@@ -211,7 +163,7 @@ export function ForgotPassword() {
     }
 
     if (otpExpiryTime <= 0) {
-      setError("OTP has expired. Please start over and request a new code.");
+      setError("OTP has expired. Please click 'Edit' to request a new verification code.");
       return;
     }
 
@@ -235,7 +187,7 @@ export function ForgotPassword() {
 
       console.log("✅ Password reset successful");
       alert(
-        "Password reset successfully! Please log in with your new password."
+        "Password updated successfully! Please log in with your new password."
       );
       navigate("/signin");
     } catch (error: unknown) {
@@ -254,7 +206,7 @@ export function ForgotPassword() {
         const message = err.response.data.message;
         if (message.includes("expired") || message.includes("Expired")) {
           setError(
-            "Your OTP has expired. Please click 'Back' and request a new code."
+            "Your verification code has expired. Please click 'Edit' to request a new code."
           );
         } else if (
           message.includes("Invalid") ||
@@ -264,14 +216,14 @@ export function ForgotPassword() {
           message.includes("wrong") ||
           message.includes("not match")
         ) {
-          setError("The OTP you entered is incorrect. Please check your email and enter the correct 6-digit code.");
+          setError("The verification code you entered is incorrect. Please check your email and enter the correct 6-digit code.");
         } else if (message.includes("password") || message.includes("Password")) {
           setError(message);
         } else {
           setError(message);
         }
       } else {
-        setError("Failed to reset password. Please try again or request a new OTP.");
+        setError("Failed to update password. Please try again or request a new verification code.");
       }
     } finally {
       setIsLoading(false);
@@ -354,8 +306,7 @@ export function ForgotPassword() {
         <p className="mb-8 text-beige-600">
           {step === "email" &&
             "Enter your email to receive a verification code."}
-          {step === "otp" && "Enter the 6-digit code sent to your email."}
-          {step === "password" && "Create a new password for your account."}
+          {step === "reset" && "Enter the verification code and set your new password."}
         </p>
 
         {error && (
@@ -387,10 +338,10 @@ export function ForgotPassword() {
           </form>
         )}
 
-        {step === "otp" && (
-          <form onSubmit={handleVerifyOTP}>
+        {step === "reset" && (
+          <form onSubmit={handleResetPassword}>
             {/* Display email with edit option */}
-            <div className="p-3 mb-4 border rounded-lg bg-beige-50 border-beige-200">
+            <div className="p-3 mb-6 border rounded-lg bg-beige-50 border-beige-200">
               <div className="flex items-center justify-between">
                 <div className="flex-1">
                   <p className="mb-1 text-xs text-beige-600">Verification code sent to:</p>
@@ -406,7 +357,7 @@ export function ForgotPassword() {
               </div>
             </div>
 
-            <div className="mb-6">
+            <div className="mb-5">
               <label className="block mb-1 text-sm font-medium text-beige-800">
                 Verification Code
               </label>
@@ -446,20 +397,8 @@ export function ForgotPassword() {
                 </button>
               </p>
             </div>
-            <button
-              type="submit"
-              disabled={isLoading || otpExpiryTime <= 0}
-              className="w-full py-3 font-semibold text-white transition-colors rounded-lg bg-beige-700 hover:bg-beige-800 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isLoading ? "Verifying..." : "Verify Code"}
-            </button>
-          </form>
-        )}
-
-        {step === "password" && (
-          <form onSubmit={handleResetPassword}>
             <div className="mb-4">
-              <label className="block mb-1 text-sm font-medium text-beige-800">
+              <label className="block mb-1.5 text-sm font-medium text-beige-800">
                 New Password
               </label>
               <div className="relative">
@@ -470,6 +409,7 @@ export function ForgotPassword() {
                   className={inputClass}
                   placeholder="Enter new password"
                   required
+                  disabled={isLoading}
                 />
                 <button
                   type="button"
@@ -515,12 +455,12 @@ export function ForgotPassword() {
                   )}
                 </button>
               </div>
-              <p className="mt-1 text-xs text-beige-600">
+              <p className="mt-1.5 text-xs text-beige-600">
                 8-16 characters with at least 1 uppercase, 1 lowercase, 1 digit, and underscore only
               </p>
             </div>
             <div className="mb-6">
-              <label className="block mb-1 text-sm font-medium text-beige-800">
+              <label className="block mb-1.5 text-sm font-medium text-beige-800">
                 Confirm Password
               </label>
               <div className="relative">
@@ -531,6 +471,7 @@ export function ForgotPassword() {
                   className={inputClass}
                   placeholder="Confirm new password"
                   required
+                  disabled={isLoading}
                 />
                 <button
                   type="button"
@@ -579,10 +520,10 @@ export function ForgotPassword() {
             </div>
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={isLoading || otpExpiryTime <= 0}
               className="w-full py-3 font-semibold text-white transition-colors rounded-lg bg-beige-700 hover:bg-beige-800 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isLoading ? "Resetting..." : "Reset Password"}
+              {isLoading ? "Updating Password..." : "Update Password"}
             </button>
           </form>
         )}

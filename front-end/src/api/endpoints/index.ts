@@ -6,7 +6,6 @@ export * from "./publishers.api";
 export * from "./auth.api";
 export * from "./users.api";
 export * from "./cart.api";
-export * from "./series.api";
 export * from "./payment.api";
 export * from "./promotion.api";
 export * from "./review.api";

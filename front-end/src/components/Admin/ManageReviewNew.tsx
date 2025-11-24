@@ -152,11 +152,17 @@ export function ManageReviewNew() {
       return;
     }
 
+    if (!deleteReason.trim()) {
+      alert("Please provide a deletion reason");
+      return;
+    }
+
     try {
-      // Send request with body containing userId and reviewId
+      // Send request with body containing userId, reviewId, and message (reason)
       await reviewApi.deleteByAdminStaff(selectedReview.bookId, {
         userId: selectedReview.userId,
         reviewId: selectedReview.id,
+        message: deleteReason.trim(),
       });
 
       // Reload reviews

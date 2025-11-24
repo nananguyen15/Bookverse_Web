@@ -1,4 +1,4 @@
-import { useState, useEffect, ReactNode } from "react";
+import { useState, useEffect, type ReactNode } from "react";
 import { NavLink, useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../../../contexts/AuthContext";
 import { usersApi } from "../../../api";
@@ -19,6 +19,7 @@ import {
   FaBars,
   FaTimes,
 } from "react-icons/fa";
+import { NotificationDropdown } from "../../layout/Navbar/NotificationDropdown";
 
 interface ManagementLayoutProps {
   children: ReactNode;
@@ -29,7 +30,7 @@ export function ManagementLayout({ children }: ManagementLayoutProps) {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [showAccountMenu, setShowAccountMenu] = useState(false);
-  const [hoverTimeout, setHoverTimeout] = useState<NodeJS.Timeout | null>(null);
+  const [hoverTimeout, setHoverTimeout] = useState<ReturnType<typeof setTimeout> | null>(null);
   const [userProfile, setUserProfile] = useState({
     username: "User",
     name: "User",
@@ -100,11 +101,14 @@ export function ManagementLayout({ children }: ManagementLayoutProps) {
         {/* Row 1: Brand */}
         <div className={`flex items-center p-6 border-b border-beige-700 ${sidebarOpen ? 'justify-between' : 'justify-center'}`}>
           {sidebarOpen && (
-            <Link to="/admin" className="flex items-center gap-2">
-              <span className="brand-text text-beige-50 text-2xl">
-                BookVerse
-              </span>
-            </Link>
+            <div className="flex items-center justify-between flex-1 mr-2">
+              <Link to="/admin" className="flex items-center gap-2">
+                <span className="brand-text text-beige-50 text-2xl">
+                  BookVerse
+                </span>
+              </Link>
+              <NotificationDropdown />
+            </div>
           )}
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -174,6 +178,13 @@ export function ManagementLayout({ children }: ManagementLayoutProps) {
                   )
                 }}
               >
+                <Link
+                  to="/admin/my-notifications"
+                  className="block px-4 py-3 text-beige-100 hover:bg-beige-700 transition-colors whitespace-nowrap"
+                  onClick={() => setShowAccountMenu(false)}
+                >
+                  My Notifications
+                </Link>
                 <Link
                   to="/admin/my-account"
                   className="block px-4 py-3 text-beige-100 hover:bg-beige-700 transition-colors whitespace-nowrap"

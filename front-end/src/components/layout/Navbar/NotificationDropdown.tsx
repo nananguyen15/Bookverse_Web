@@ -4,12 +4,29 @@ import { IoMdNotifications } from "react-icons/io";
 import { FaEnvelopeOpen, FaBell } from "react-icons/fa";
 import { notificationApi } from "../../../api";
 import type { Notification } from "../../../api/endpoints/notification.api";
+import { useAuth } from "../../../contexts/AuthContext";
 
 export function NotificationDropdown() {
+  const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+
+  // Determine notification route based on user role
+  const getNotificationRoute = () => {
+    if (!user || !user.roles) return "/profile/notifications";
+
+    if (user.roles.includes("ADMIN")) {
+      return "/admin/my-notifications";
+    } else if (user.roles.includes("STAFF")) {
+      return "/staff/my-notifications";
+    } else {
+      return "/profile/notifications";
+    }
+  };
+
+  const notificationRoute = getNotificationRoute();
 
   // Load unread count on component mount and refresh periodically
   useEffect(() => {
@@ -74,7 +91,7 @@ export function NotificationDropdown() {
 
       {isOpen && (
         <div
-          className="absolute right-0 z-50 w-80 mt-2 origin-top-right bg-white rounded-md shadow-lg border border-beige-200"
+          className="absolute left-0 z-[9999] w-80 mt-2 origin-top-left bg-white rounded-md shadow-xl border border-beige-200"
           onMouseLeave={() => setIsOpen(false)}
         >
           <div className="p-4 border-b border-beige-200">
@@ -89,7 +106,7 @@ export function NotificationDropdown() {
               recentNotifications.map((notification) => (
                 <Link
                   key={notification.id}
-                  to="/profile/notifications"
+                  to={notificationRoute}
                   className={`block px-4 py-3 text-sm hover:bg-beige-50 border-b border-beige-100 ${!notification.read ? "bg-beige-50" : "bg-white"
                     }`}
                   onClick={() => setIsOpen(false)}
@@ -136,7 +153,7 @@ export function NotificationDropdown() {
           </div>
           <div className="p-2 border-t border-beige-200">
             <Link
-              to="/profile/notifications"
+              to={notificationRoute}
               className="block w-full px-4 py-2 text-sm font-medium text-center rounded-md text-beige-700 hover:bg-beige-100"
               onClick={() => setIsOpen(false)}
             >

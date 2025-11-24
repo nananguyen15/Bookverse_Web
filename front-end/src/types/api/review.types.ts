@@ -6,6 +6,7 @@
 export type ReviewResponse = {
   id: number;
   userId: string;
+  userName?: string; // Optional, populated by getAllFlat
   bookId: number;
   bookTitle?: string; // Optional, may be populated by client
   comment?: string;
@@ -44,4 +45,5 @@ export type UpdateReviewRequest = {
 export type DeleteReviewByAdminRequest = {
   userId: string;
   reviewId: number;
+  message?: string; // Reason for deletion
 };

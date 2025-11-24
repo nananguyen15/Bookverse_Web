@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Outlet, NavLink, useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import { usersApi } from "../../api";
+import { NotificationDropdown } from "../layout/Navbar/NotificationDropdown";
 import {
   FaBook,
   FaTags,
@@ -65,9 +66,12 @@ export function StaffLayout() {
       {/* Sidebar */}
       <aside className="flex flex-col w-64 bg-beige-900 text-beige-50">
         <div className="p-6 border-b border-beige-700">
-          <Link to="/staff" className="text-2xl brand-text text-beige-50">
-            BookVerse
-          </Link>
+          <div className="flex items-center justify-between">
+            <Link to="/staff" className="text-2xl brand-text text-beige-50">
+              BookVerse
+            </Link>
+            <NotificationDropdown />
+          </div>
           <p className="mt-1 text-sm text-beige-300">Staff Panel</p>
         </div>
 
@@ -112,6 +116,13 @@ export function StaffLayout() {
 
           {showAccountMenu && (
             <div className="absolute bottom-full left-4 right-4 mb-2 bg-white rounded-lg shadow-lg overflow-hidden">
+              <NavLink
+                to="/staff/my-notifications"
+                className="block px-4 py-3 text-beige-900 hover:bg-beige-100 transition-colors"
+                onClick={() => setShowAccountMenu(false)}
+              >
+                My Notifications
+              </NavLink>
               <NavLink
                 to="/staff/my-account"
                 className="block px-4 py-3 text-beige-900 hover:bg-beige-100 transition-colors"

@@ -12,6 +12,7 @@ const staffNavLinks = [
   { to: "/staff/categories", label: "Manage Categories" },
   { to: "/staff/orders", label: "Manage Orders" },
   { to: "/staff/reviews", label: "Manage Reviews" },
+  { to: "/staff/my-notifications", label: "My Notifications" },
   { to: "/staff/notifications", label: "Notification Management" },
 ];
 

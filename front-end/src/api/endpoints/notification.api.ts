@@ -1,5 +1,6 @@
 import apiClient from "../client";
 import type { ApiResponse } from "../../types";
+import type { User } from "../../types/api/user.types";
 
 export type NotificationType =
   | "FOR_CUSTOMERS_PERSONAL"
@@ -60,8 +61,8 @@ export const notificationApi = {
   // Returns list of users who received the notification
   createBroadcast: async (
     data: CreateBroadcastNotificationRequest
-  ): Promise<unknown[]> => {
-    const response = await apiClient.post<ApiResponse<unknown[]>>(
+  ): Promise<User[]> => {
+    const response = await apiClient.post<ApiResponse<User[]>>(
       `${NOTIFICATION_ENDPOINT}/admin-create/broadcast`,
       data
     );
