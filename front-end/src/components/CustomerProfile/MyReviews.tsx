@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { FaComment, FaEdit, FaTrashAlt, FaStar } from "react-icons/fa";
+import { FaComment, FaEdit, FaTrashAlt, FaStar, FaEye } from "react-icons/fa";
 import { reviewApi, orderApi } from "../../api";
 import type { ReviewResponse } from "../../types";
 import { useAuth } from "../../contexts/AuthContext";
@@ -31,8 +31,8 @@ export function MyReviews() {
           orderApi.getMyOrders(),
         ]);
 
-        // Filter user's reviews
-        const userReviews = allReviews.filter((r) => r.userId === user?.username);
+        // Filter user's reviews by userName (not userId which is UUID)
+        const userReviews = allReviews.filter((r) => r.userName === user?.username);
 
         // Find delivered orders and extract books
         const deliveredOrders = orders.filter((order) => order.status === "DELIVERED");
@@ -83,8 +83,8 @@ export function MyReviews() {
         orderApi.getMyOrders(),
       ]);
 
-      // Filter user's reviews
-      const userReviews = allReviews.filter((r) => r.userId === user?.username);
+      // Filter user's reviews by userName (not userId which is UUID)
+      const userReviews = allReviews.filter((r) => r.userName === user?.username);
 
       // Find delivered orders and extract books
       const deliveredOrders = orders.filter((order) => order.status === "DELIVERED");
@@ -130,6 +130,21 @@ export function MyReviews() {
 
     // Navigate to book detail page with #review hash
     navigate(`/book/${book.bookId}/${slug}#review`);
+  };
+
+  const handleViewBook = (review: ReviewResponse) => {
+    const book = reviewableBooks.find((b) => b.bookId === review.bookId);
+    if (book) {
+      const slug = book.bookTitle
+        .toLowerCase()
+        .replace(/[^\w\s-]/g, "")
+        .replace(/\s+/g, "-")
+        .replace(/-+/g, "-")
+        .trim();
+
+      // Navigate to book detail page
+      navigate(`/book/${book.bookId}/${slug}`);
+    }
   };
 
   const handleEditReview = (review: ReviewResponse) => {
@@ -241,6 +256,13 @@ export function MyReviews() {
                     )}
                   </div>
                   <div className="flex gap-2 ml-4">
+                    <button
+                      onClick={() => handleViewBook(review)}
+                      className="p-2 transition-colors rounded text-blue-600 hover:text-blue-900 hover:bg-blue-50"
+                      title="View book details"
+                    >
+                      <FaEye size={18} />
+                    </button>
                     <button
                       onClick={() => handleEditReview(review)}
                       className="p-2 transition-colors rounded text-beige-600 hover:text-beige-900 hover:bg-beige-100"

@@ -50,7 +50,7 @@ export function Navbar() {
 
         {isAuthenticated ? (
           <div className="flex items-center gap-5">
-            <NotificationDropdown />
+            <NotificationDropdown alignRight={true} />
             {/* Hide cart icon for admin and staff */}
             {user?.role?.toLowerCase() !== "admin" && user?.role?.toLowerCase() !== "staff" && (
               <Link

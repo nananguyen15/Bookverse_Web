@@ -6,7 +6,11 @@ import { notificationApi } from "../../../api";
 import type { Notification } from "../../../api/endpoints/notification.api";
 import { useAuth } from "../../../contexts/AuthContext";
 
-export function NotificationDropdown() {
+type NotificationDropdownProps = {
+  alignRight?: boolean; // true = align right (for customer navbar), false = align left (for staff/admin)
+};
+
+export function NotificationDropdown({ alignRight = false }: NotificationDropdownProps) {
   const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -91,13 +95,21 @@ export function NotificationDropdown() {
 
       {isOpen && (
         <div
-          className="absolute right-0 top-full mt-2 z-[9999] w-80 origin-top-right bg-white rounded-lg shadow-xl border border-beige-200"
+          className={`absolute ${alignRight ? 'right-0 origin-top-right' : 'left-0 origin-top-left'} top-full mt-2 z-[9999] w-[450px] bg-white rounded-lg shadow-xl border border-beige-200`}
           onMouseLeave={() => setIsOpen(false)}
         >
-          <div className="p-4 border-b border-beige-200">
-            <h3 className="font-semibold text-beige-900">Notifications</h3>
+          <div className="p-4 border-b border-beige-200 bg-beige-50">
+            <div className="flex items-center justify-between">
+              <h3 className="font-semibold text-beige-900 flex items-center gap-2">
+                <FaBell className="text-brown-900" />
+                Notifications
+              </h3>
+              <span className="text-xs text-beige-600">
+                Total: {recentNotifications.length} notifications
+              </span>
+            </div>
           </div>
-          <div className="max-h-96 overflow-y-auto">
+          <div className="max-h-[500px] overflow-y-auto">
             {loading ? (
               <p className="px-4 py-8 text-sm text-center text-beige-500">
                 Loading...
@@ -107,20 +119,20 @@ export function NotificationDropdown() {
                 <Link
                   key={notification.id}
                   to={notificationRoute}
-                  className={`block px-4 py-3 text-sm hover:bg-beige-50 border-b border-beige-100 ${!notification.read ? "bg-beige-50" : "bg-white"
+                  className={`block px-4 py-3 text-sm hover:bg-beige-50 border-b border-beige-100 transition-colors ${!notification.read ? "bg-brown-200" : "bg-brown-50"
                     }`}
                   onClick={() => setIsOpen(false)}
                 >
-                  <div className="flex items-start">
+                  <div className="flex items-start gap-3">
                     <div
-                      className={`mr-3 mt-1 ${!notification.read ? "text-beige-700" : "text-beige-400"
+                      className={`mt-1 ${!notification.read ? "text-brown-800" : "text-beige-600"
                         }`}
                     >
-                      {!notification.read ? <FaBell /> : <FaEnvelopeOpen />}
+                      {!notification.read ? <FaBell size={16} /> : <FaEnvelopeOpen size={16} />}
                     </div>
-                    <div className="flex-1">
+                    <div className="flex-1 min-w-0">
                       <p
-                        className={`line-clamp-2 ${!notification.read
+                        className={`break-words ${!notification.read
                           ? "font-semibold text-beige-900"
                           : "text-beige-700"
                           }`}
@@ -133,7 +145,7 @@ export function NotificationDropdown() {
                           : "text-beige-500"
                           }`}
                       >
-                        {new Date(notification.createdAt).toLocaleString("en-US", {
+                        {new Date(notification.createdAt).toLocaleString("vi-VN", {
                           month: "short",
                           day: "numeric",
                           year: "numeric",
@@ -151,10 +163,10 @@ export function NotificationDropdown() {
               </p>
             )}
           </div>
-          <div className="p-2 border-t border-beige-200">
+          <div className="p-2 border-t border-beige-200 bg-beige-50">
             <Link
               to={notificationRoute}
-              className="block w-full px-4 py-2 text-sm font-medium text-center rounded-md text-beige-700 hover:bg-beige-100"
+              className="block w-full px-4 py-2 text-sm font-medium text-center rounded-md text-brown-900 hover:bg-brown-100 transition-colors"
               onClick={() => setIsOpen(false)}
             >
               View All Notifications

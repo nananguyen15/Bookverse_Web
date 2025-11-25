@@ -26,7 +26,6 @@ export function ProductDetail() {
   const [showWarning, setShowWarning] = useState(false);
   const [subCategoryPromotions, setSubCategoryPromotions] = useState<Record<string, PromotionResponse | null>>({});
   const [canReview, setCanReview] = useState(false);
-  const [existingReview, setExistingReview] = useState<ReviewResponse | null>(null);
 
   // Check if user can review this book
   useEffect(() => {
@@ -522,9 +521,8 @@ export function ProductDetail() {
                 <ReviewForm
                   bookId={product.id}
                   bookTitle={product.title}
-                  existingReview={existingReview ? { comment: existingReview.comment } : undefined}
                   onSuccess={() => {
-                    alert(existingReview ? "Review updated successfully!" : "Thank you for your review!");
+                    alert("Thank you for your review!");
                     setShowReviewForm(false);
                     setRefreshReviews((prev) => prev + 1);
                   }}
@@ -535,7 +533,7 @@ export function ProductDetail() {
                   onClick={() => setShowReviewForm(true)}
                   className="px-6 py-3 font-semibold text-white transition-colors rounded-lg bg-brown-600 hover:bg-brown-700"
                 >
-                  {existingReview ? "✍️ Edit Your Review" : "✍️ Write a Review"}
+                  ✍️ Write a Review
                 </button>
               )}
             </div>
