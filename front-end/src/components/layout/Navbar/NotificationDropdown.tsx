@@ -101,7 +101,7 @@ export function NotificationDropdown({ alignRight = false }: NotificationDropdow
           <div className="p-4 border-b border-beige-200 bg-beige-50">
             <div className="flex items-center justify-between">
               <h3 className="font-semibold text-beige-900 flex items-center gap-2">
-                <FaBell className="text-brown-900" />
+                <FaBell className="text-brown-700" />
                 Notifications
               </h3>
               <span className="text-xs text-beige-600">
@@ -124,11 +124,12 @@ export function NotificationDropdown({ alignRight = false }: NotificationDropdow
                   onClick={() => setIsOpen(false)}
                 >
                   <div className="flex items-start gap-3">
-                    <div
-                      className={`mt-1 ${!notification.read ? "text-brown-800" : "text-beige-600"
-                        }`}
-                    >
-                      {!notification.read ? <FaBell size={16} /> : <FaEnvelopeOpen size={16} />}
+                    <div className="mt-1">
+                      {!notification.read ? (
+                        <FaBell size={16} className="text-brown-700" style={{ color: '#a16207' }} />
+                      ) : (
+                        <FaEnvelopeOpen size={16} className="text-beige-500" style={{ color: '#737373' }} />
+                      )}
                     </div>
                     <div className="flex-1 min-w-0">
                       <p
@@ -166,7 +167,8 @@ export function NotificationDropdown({ alignRight = false }: NotificationDropdow
           <div className="p-2 border-t border-beige-200 bg-beige-50">
             <Link
               to={notificationRoute}
-              className="block w-full px-4 py-2 text-sm font-medium text-center rounded-md text-brown-900 hover:bg-brown-100 transition-colors"
+              className="block w-full px-4 py-2 text-sm font-semibold text-center rounded-md hover:bg-brown-100 transition-colors"
+              style={{ color: '#a16207' }}
               onClick={() => setIsOpen(false)}
             >
               View All Notifications
