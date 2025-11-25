@@ -353,11 +353,11 @@ public class OrderService {
         Order order = orderRepository.findByIdWithItems(id)
                 .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
 
-        // check if the order status is in PENDING_PAYMENT/PENDING/CONFIRMED/PROCESSING/DELIVERING
-        if (order.getStatus() != OrderStatus.PENDING && order.getStatus() != OrderStatus.CONFIRMED &&
-                order.getStatus() != OrderStatus.PROCESSING && order.getStatus() != OrderStatus.DELIVERING) {
-            throw new AppException(ErrorCode.ORDER_CANNOT_BE_CANCELLED);
-        }
+//        // check if the order status is in PENDING_PAYMENT/PENDING/CONFIRMED/PROCESSING/DELIVERING
+//        if (order.getStatus() != OrderStatus.PENDING && order.getStatus() != OrderStatus.CONFIRMED &&
+//                order.getStatus() != OrderStatus.PROCESSING && order.getStatus() != OrderStatus.DELIVERING) {
+//            throw new AppException(ErrorCode.ORDER_CANNOT_BE_CANCELLED);
+//        }
 
         order.setStatus(OrderStatus.CANCELLED);
 
