@@ -99,6 +99,7 @@ public enum ErrorCode {
     ORDER_NEED_REASON(1409, "Reason is required for cancelling order"),
     ORDER_INVALID_STATUS_TRANSITION(1410, "Invalid order status transition"),
     ORDER_CANNOT_CHANGE_ADDRESS(1411, "Cannot change address (only PENDING orders can change address)"),
+    NO_ORDERS_STORED(1412, "No orders stored in database"),
 
     // custom error codes for payment entity
     PAYMENT_ALREADY_EXISTS(1501, "Payment already exists for this order"),

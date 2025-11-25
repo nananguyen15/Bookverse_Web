@@ -1,8 +1,7 @@
 package com.swp391.bookverse.service;
 
 import com.swp391.bookverse.dto.request.*;
-import com.swp391.bookverse.dto.response.OrderResponse;
-import com.swp391.bookverse.dto.response.PaymentResponse;
+import com.swp391.bookverse.dto.response.*;
 import com.swp391.bookverse.entity.*;
 import com.swp391.bookverse.enums.NotificationType;
 import com.swp391.bookverse.enums.OrderStatus;
@@ -11,15 +10,16 @@ import com.swp391.bookverse.enums.PaymentStatus;
 import com.swp391.bookverse.exception.AppException;
 import com.swp391.bookverse.exception.ErrorCode;
 import com.swp391.bookverse.mapper.OrderMapper;
+import com.swp391.bookverse.mapper.UserMapper;
 import com.swp391.bookverse.repository.*;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -36,6 +36,7 @@ public class OrderService {
     OrderMapper orderMapper;
     PaymentRepository paymentRepository;
     NotificationService notificationService;
+    UserMapper userMapper;
 
     /**
      * Create order from current user's cart
@@ -419,5 +420,263 @@ public class OrderService {
         notificationService.createPersonalNotification(customerNotificationRequest);
 
         return orderMapper.toOrderResponse(updatedOrder);
+    }
+
+    // for statistic
+
+    /**
+     * Get top 5 customers who have the highest total spending on orders
+     * @return List<UserResponse>
+     */
+    public List<StatisticUserResponse> getTop5Customers() {
+        // find id of top 5 customers by total spending on orders
+        List<String> topCustomerIds = orderRepository.findTop5CustomerIdsByTotalSpending();
+
+        // fetch user details for each id
+        List<UserResponse> topCustomers = new ArrayList<>();
+        for (String userId : topCustomerIds) {
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+            topCustomers.add(userMapper.toUserResponse(user));
+        }
+
+        // map to StatisticUserResponse with totalSpent
+        List<StatisticUserResponse> statisticTopCustomers = new ArrayList<>();
+        for (UserResponse userResponse : topCustomers) {
+            Double totalSpent = orderRepository.findTotalSpentByUserId(userResponse.getId());
+            StatisticUserResponse statisticUserResponse = StatisticUserResponse.builder()
+                    .id(userResponse.getId())
+                    .username(userResponse.getUsername())
+                    .name(userResponse.getName())
+                    .image(userResponse.getImage())
+                    .totalSpent(totalSpent != null ? totalSpent : 0.0)
+                    .build();
+            statisticTopCustomers.add(statisticUserResponse);
+        }
+
+        // return list of top customers
+        return statisticTopCustomers;
+    }
+
+    /**
+     * Get top 5 best-selling books
+     * @return List<StatisticBookResponse>
+     */
+    public List<StatisticBookResponse> getTop5Books() {
+        // find id of top-selling books
+        List<Long> topBookIds = orderRepository.findTopSellingBookIds();
+
+        // fetch book details for each id
+        List<StatisticBookResponse> statisticTopBooks = new ArrayList<>();
+        int count = 0;
+        for (Long bookId : topBookIds) {
+            if (count >= 5) break; // limit to top 5
+            Book book = bookRepository.findById(bookId)
+                    .orElseThrow(() -> new AppException(ErrorCode.BOOK_NOT_FOUND));
+
+            // calculate total sold for the book
+            Long totalSold = 0L;
+            List<Order> deliveredOrders = orderRepository.findAllActiveOrders().stream()
+                    .filter(o -> o.getStatus() == OrderStatus.DELIVERED)
+                    .toList();
+            for (Order order : deliveredOrders) {
+                for (OrderItem item : order.getOrderItems()) {
+                    if (item.getBook().getId().equals(bookId)) {
+                        totalSold += item.getQuantity();
+                    }
+                }
+            }
+
+            StatisticBookResponse statisticBookResponse = StatisticBookResponse.builder()
+                    .id(book.getId())
+                    .title(book.getTitle())
+                    .image(book.getImage())
+                    .totalSold(totalSold)
+                    .build();
+            statisticTopBooks.add(statisticBookResponse);
+            count++;
+        }
+
+        // return list of top books
+        return statisticTopBooks;
+    }
+
+    /**
+     * Get total number of user who have role = CUSTOMER
+     * @return Long
+     */
+    public Long getTotalCustomers() {
+        // throw exception if there are no user entity store in DB
+        if (userRepository.count() == 0) {
+            throw new AppException(ErrorCode.NO_USERS_STORED);
+        }
+
+        // fetch list of users who is active = true
+        List<User> activeUsers = userRepository.findAll().stream().filter(User::isActive).toList();
+
+        // count number of users who have roles field containing CUSTOMER
+        Long totalCustomers = 0L;
+
+        for (User user: activeUsers) {
+            for (String role: user.getRoles()) {
+                if (role.equals("CUSTOMER")) {
+                    totalCustomers++;
+                    break; // no need to check other roles for this user
+                }
+            }
+        }
+
+        return totalCustomers;
+    }
+
+    /**
+     * Get total number of orders
+     * @return Long
+     */
+    public Long getTotalOrders() {
+        return orderRepository.count();
+    }
+
+    /**
+     * Get total revenue from all orders with status = DELIVERED
+     * @return Double
+     */
+    public Double getTotalRevenue() {
+        // check if there are no orders
+        if (orderRepository.count() == 0) {
+            throw new AppException(ErrorCode.NO_ORDERS_STORED);
+        }
+
+        // fetch all delivered orders
+        List<Order> deliveredOrders = orderRepository.findAllActiveOrders().stream()
+                .filter(o -> o.getStatus() == OrderStatus.DELIVERED)
+                .toList();
+
+        Double totalRevenue = 0.0;
+        for (Order order : deliveredOrders) {
+            totalRevenue += order.getTotalAmount();
+        }
+
+        return totalRevenue;
+    }
+
+    /**
+     * Get sales over time (total sales each day)
+     * @return
+     */
+    public List<StatisticSalesOverTimeResponse> getSalesOverTime() {
+        // check if there are no orders
+        if (orderRepository.count() == 0) {
+            throw new AppException(ErrorCode.NO_ORDERS_STORED);
+        }
+
+        // fetch all delivered orders
+        List<Order> deliveredOrders = orderRepository.findAllActiveOrders().stream()
+                .filter(o -> o.getStatus() == OrderStatus.DELIVERED)
+                .toList();
+
+        // map of date string to total sales
+        java.util.Map<String, Double> salesMap = new java.util.HashMap<>();
+
+        for (Order order : deliveredOrders) {
+            String dateStr = order.getCreatedAt().toLocalDate().toString();
+            salesMap.put(dateStr, salesMap.getOrDefault(dateStr, 0.0) + order.getTotalAmount());
+        }
+
+        // convert map to list of StatisticSalesOverTimeResponse
+        List<StatisticSalesOverTimeResponse> salesOverTimeList = new ArrayList<>();
+        for (java.util.Map.Entry<String, Double> entry : salesMap.entrySet()) {
+            StatisticSalesOverTimeResponse response = StatisticSalesOverTimeResponse.builder()
+                    .date(LocalDate.parse(entry.getKey()))
+                    .totalSales(Math.round(entry.getValue()))
+                    .build();
+            salesOverTimeList.add(response);
+        }
+
+        // sort list by date ascending
+        salesOverTimeList.sort((a, b) -> a.getDate().compareTo(b.getDate()));
+
+        return salesOverTimeList;
+    }
+
+    /**
+     * Get orders over time (total number of orders each day)
+     * @return List<StatisticSalesOverTimeResponse>
+     */
+    public List<StatisticSalesOverTimeResponse> getOrdersOverTime() {
+        List<Order> allOrders = orderRepository.findAllActiveOrders();
+
+        // map of date string to total orders
+        java.util.Map<String, Long> ordersMap = new java.util.HashMap<>();
+
+        for (Order order : allOrders) {
+            String dateStr = order.getCreatedAt().toLocalDate().toString();
+            ordersMap.put(dateStr, ordersMap.getOrDefault(dateStr, 0L) + 1);
+        }
+
+        // convert map to list of StatisticSalesOverTimeResponse
+        List<StatisticSalesOverTimeResponse> ordersOverTimeList = new ArrayList<>();
+        for (java.util.Map.Entry<String, Long> entry : ordersMap.entrySet()) {
+            StatisticSalesOverTimeResponse response = StatisticSalesOverTimeResponse.builder()
+                    .date(LocalDate.parse(entry.getKey()))
+                    .totalSales(entry.getValue())
+                    .build();
+            ordersOverTimeList.add(response);
+        }
+
+        // sort list by date ascending
+        ordersOverTimeList.sort((a, b) -> a.getDate().compareTo(b.getDate()));
+
+        return ordersOverTimeList;
+    }
+
+
+    /**
+     * Get total of each status
+     * @return
+     */
+    public StatisticOrderStatusResponse getOrdersStatus() {
+        List<Order> allOrders = orderRepository.findAllActiveOrders();
+
+        Long pending = 0L;
+        Long confirmed = 0L;
+        Long processing = 0L;
+        Long delivering = 0L;
+        Long delivered = 0L;
+        Long cancelled = 0L;
+
+        for (Order order : allOrders) {
+            switch (order.getStatus()) {
+                case PENDING, PENDING_PAYMENT:
+                    pending++;
+                    break;
+                case CONFIRMED:
+                    confirmed++;
+                    break;
+                case PROCESSING:
+                    processing++;
+                    break;
+                case DELIVERING:
+                    delivering++;
+                    break;
+                case DELIVERED:
+                    delivered++;
+                    break;
+                case CANCELLED:
+                    cancelled++;
+                    break;
+                default:
+                    // do nothing for other statuses
+            }
+        }
+
+        return StatisticOrderStatusResponse.builder()
+                .pending(pending)
+                .confirmed(confirmed)
+                .processing(processing)
+                .delivering(delivering)
+                .delivered(delivered)
+                .cancelled(cancelled)
+                .build();
     }
 }
