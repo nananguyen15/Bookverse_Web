@@ -132,6 +132,9 @@ export const usersApi = {
   ): Promise<User> => {
     const formData = new FormData();
 
+    console.log("📤 USER UPDATE API - Input data:", data);
+    console.log("🖼️ Image File:", data.imageFile);
+
     // Add text fields (only if provided)
     if (data.name !== undefined) formData.append("name", data.name);
     if (data.phone !== undefined) formData.append("phone", data.phone);
@@ -140,10 +143,18 @@ export const usersApi = {
     // Add image - either file or URL string
     if (data.imageFile) {
       // File upload
+      console.log("✅ Appending image FILE to FormData");
       formData.append("image", data.imageFile);
     } else if (data.image !== undefined) {
       // URL/path string
+      console.log("✅ Appending image URL to FormData:", data.image);
       formData.append("imageUrl", data.image);
+    }
+
+    // Log FormData entries
+    console.log("📋 FormData entries:");
+    for (const pair of formData.entries()) {
+      console.log(`  ${pair[0]}:`, pair[1]);
     }
 
     // Don't set Content-Type - let browser set it with boundary
@@ -151,6 +162,7 @@ export const usersApi = {
       `${USERS_ENDPOINT}/update/${userId}`,
       formData
     );
+    console.log("✅ UPDATE Response:", response.data);
     return response.data.result;
   },
 
@@ -164,20 +176,21 @@ export const usersApi = {
     image?: string;
   }): Promise<User> => {
     const formData = new FormData();
-    
+
     // Add text fields
     if (data.name !== undefined) formData.append("name", data.name);
     if (data.phone !== undefined) formData.append("phone", data.phone);
     if (data.address !== undefined) formData.append("address", data.address);
-    if (data.birthDate !== undefined) formData.append("birthDate", data.birthDate);
-    
+    if (data.birthDate !== undefined)
+      formData.append("birthDate", data.birthDate);
+
     // Add image - either file or URL string
     if (data.imageFile) {
       formData.append("image", data.imageFile);
     } else if (data.image !== undefined) {
       formData.append("imageUrl", data.image);
     }
-    
+
     const response = await apiClient.put<ApiResponse<User>>(
       `${USERS_ENDPOINT}/myInfo`,
       formData

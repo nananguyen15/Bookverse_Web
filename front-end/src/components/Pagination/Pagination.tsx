@@ -1,107 +1,171 @@
-import { BsChevronLeft, BsChevronRight } from "react-icons/bs";
+import { useState } from "react";
 
 type PaginationProps = {
   currentPage: number;
   totalPages: number;
+  itemsPerPage: number;
   onPageChange: (page: number) => void;
+  onItemsPerPageChange: (itemsPerPage: number) => void;
 };
 
 export function Pagination({
   currentPage,
   totalPages,
+  itemsPerPage,
   onPageChange,
+  onItemsPerPageChange,
 }: PaginationProps) {
-  const maxVisiblePages = 5;
+  const [goToPage, setGoToPage] = useState("");
 
-  // Calculate range of pages to show
-  const getPageRange = () => {
-    const pages: number[] = [];
-    let start = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
-    const end = Math.min(totalPages, start + maxVisiblePages - 1);
-
-    // Adjust start if we're near the end
-    if (end - start + 1 < maxVisiblePages) {
-      start = Math.max(1, end - maxVisiblePages + 1);
+  const handlePrevious = () => {
+    if (currentPage > 1) {
+      onPageChange(currentPage - 1);
     }
+  };
 
-    for (let i = start; i <= end; i++) {
-      pages.push(i);
+  const handleNext = () => {
+    if (currentPage < totalPages) {
+      onPageChange(currentPage + 1);
+    }
+  };
+
+  const handleGoToPage = (e: React.FormEvent) => {
+    e.preventDefault();
+    const pageNum = parseInt(goToPage, 10);
+    if (pageNum >= 1 && pageNum <= totalPages) {
+      onPageChange(pageNum);
+      setGoToPage("");
+    }
+  };
+
+  // Generate page numbers to display
+  const getPageNumbers = () => {
+    const pages: (number | string)[] = [];
+    const showPages = 5;
+
+    if (totalPages <= showPages) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      pages.push(1);
+
+      if (currentPage > 3) {
+        pages.push("...");
+      }
+
+      const start = Math.max(2, currentPage - 1);
+      const end = Math.min(totalPages - 1, currentPage + 1);
+
+      for (let i = start; i <= end; i++) {
+        pages.push(i);
+      }
+
+      if (currentPage < totalPages - 2) {
+        pages.push("...");
+      }
+
+      pages.push(totalPages);
     }
 
     return pages;
   };
 
-  const pages = getPageRange();
-
   return (
-    <div className="flex items-center justify-center gap-2 py-6">
-      {/* Previous Button */}
-      <button
-        onClick={() => onPageChange(currentPage - 1)}
-        disabled={currentPage === 1}
-        className="flex items-center gap-1 px-3 py-2 text-sm font-medium transition-colors border rounded-lg disabled:opacity-50 disabled:cursor-not-allowed text-beige-700 border-beige-300 hover:bg-beige-100"
-      >
-        <BsChevronLeft />
-        Previous
-      </button>
-
-      {/* Page Numbers */}
-      <div className="flex gap-1">
-        {/* First page if not in range */}
-        {pages[0] > 1 && (
-          <>
-            <button
-              onClick={() => onPageChange(1)}
-              className="px-3 py-2 text-sm font-medium transition-colors border rounded-lg text-beige-700 border-beige-300 hover:bg-beige-100"
-            >
-              1
-            </button>
-            {pages[0] > 2 && (
-              <span className="px-2 py-2 text-beige-500">...</span>
-            )}
-          </>
-        )}
-
-        {/* Visible page numbers */}
-        {pages.map((page) => (
+    <nav
+      aria-label="Page navigation"
+      className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-6 px-4"
+    >
+      {/* Page buttons */}
+      <ul className="flex -space-x-px text-sm">
+        <li>
           <button
-            key={page}
-            onClick={() => onPageChange(page)}
-            className={`px-3 py-2 text-sm font-medium transition-colors border rounded-lg ${
-              currentPage === page
-                ? "bg-beige-800 text-white border-beige-800"
-                : "text-beige-700 border-beige-300 hover:bg-beige-100"
-            }`}
+            onClick={handlePrevious}
+            disabled={currentPage === 1}
+            className="flex items-center justify-center text-beige-800 bg-white border border-beige-200 hover:bg-beige-50 hover:text-beige-900 shadow-sm font-medium leading-5 rounded-l-lg text-sm px-3 h-9 focus:outline-none focus:ring-2 focus:ring-beige-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white transition-colors"
           >
-            {page}
+            Previous
           </button>
+        </li>
+
+        {getPageNumbers().map((page, index) => (
+          <li key={index}>
+            {page === "..." ? (
+              <span className="flex items-center justify-center text-beige-600 bg-white border border-beige-200 font-medium text-sm w-9 h-9">
+                ...
+              </span>
+            ) : (
+              <button
+                onClick={() => onPageChange(page as number)}
+                className={`flex items-center justify-center border font-medium text-sm w-9 h-9 focus:outline-none focus:ring-2 focus:ring-beige-500 transition-colors ${currentPage === page
+                  ? "text-white bg-beige-700 border-beige-700 hover:bg-beige-800"
+                  : "text-beige-800 bg-white border-beige-200 hover:bg-beige-50 hover:text-beige-900 shadow-sm"
+                  }`}
+              >
+                {page}
+              </button>
+            )}
+          </li>
         ))}
 
-        {/* Last page if not in range */}
-        {pages[pages.length - 1] < totalPages && (
-          <>
-            {pages[pages.length - 1] < totalPages - 1 && (
-              <span className="px-2 py-2 text-beige-500">...</span>
-            )}
-            <button
-              onClick={() => onPageChange(totalPages)}
-              className="px-3 py-2 text-sm font-medium transition-colors border rounded-lg text-beige-700 border-beige-300 hover:bg-beige-100"
-            >
-              {totalPages}
-            </button>
-          </>
-        )}
-      </div>
+        <li>
+          <button
+            onClick={handleNext}
+            disabled={currentPage === totalPages}
+            className="flex items-center justify-center text-beige-800 bg-white border border-beige-200 hover:bg-beige-50 hover:text-beige-900 shadow-sm font-medium leading-5 rounded-r-lg text-sm px-3 h-9 focus:outline-none focus:ring-2 focus:ring-beige-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white transition-colors"
+          >
+            Next
+          </button>
+        </li>
+      </ul>
 
-      {/* Next Button */}
-      <button
-        onClick={() => onPageChange(currentPage + 1)}
-        disabled={currentPage === totalPages}
-        className="flex items-center gap-1 px-3 py-2 text-sm font-medium transition-colors border rounded-lg disabled:opacity-50 disabled:cursor-not-allowed text-beige-700 border-beige-300 hover:bg-beige-100"
-      >
-        Next
-        <BsChevronRight />
-      </button>
-    </div>
+      {/* Items per page & Go to page */}
+      <div className="flex items-center gap-3">
+        {/* Items per page dropdown */}
+        <div className="w-32">
+          <label htmlFor="items-per-page" className="sr-only">
+            Items per page
+          </label>
+          <select
+            id="items-per-page"
+            value={itemsPerPage}
+            onChange={(e) => onItemsPerPageChange(Number(e.target.value))}
+            className="block w-full px-3 py-2 bg-white border border-beige-200 text-beige-800 text-sm leading-5 rounded-lg focus:ring-2 focus:ring-beige-500 focus:border-beige-500 shadow-sm hover:border-beige-300 transition-colors"
+          >
+            <option value={10}>10 per page</option>
+            <option value={25}>25 per page</option>
+            <option value={50}>50 per page</option>
+            <option value={100}>100 per page</option>
+          </select>
+        </div>
+
+        {/* Go to page */}
+        <form onSubmit={handleGoToPage} className="flex items-center gap-2">
+          <label
+            htmlFor="go-to-page"
+            className="text-sm font-medium text-beige-800 shrink-0"
+          >
+            Go to
+          </label>
+          <input
+            type="number"
+            id="go-to-page"
+            min="1"
+            max={totalPages}
+            value={goToPage}
+            onChange={(e) => setGoToPage(e.target.value)}
+            className="bg-white w-14 border border-beige-200 text-beige-800 text-sm rounded-lg focus:ring-2 focus:ring-beige-500 focus:border-beige-500 px-2.5 py-2 shadow-sm hover:border-beige-300 transition-colors"
+            placeholder={currentPage.toString()}
+          />
+          <span className="text-sm font-medium text-beige-800">page</span>
+          <button
+            type="submit"
+            className="text-white bg-beige-700 hover:bg-beige-800 border border-transparent focus:ring-4 focus:ring-beige-300 shadow-sm font-medium leading-5 rounded-lg text-sm px-3 py-2 focus:outline-none transition-colors active:scale-95"
+          >
+            Go
+          </button>
+        </form>
+      </div>
+    </nav>
   );
 }

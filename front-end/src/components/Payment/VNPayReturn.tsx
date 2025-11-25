@@ -13,51 +13,98 @@ export function VNPayReturn() {
   );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [orderId, setOrderId] = useState<number | null>(null);
 
   useEffect(() => {
     const processPayment = async () => {
       try {
-        // Extract all VNPay parameters from URL
-        const vnpParams = {
-          vnp_Amount: searchParams.get("vnp_Amount") || "",
-          vnp_BankCode: searchParams.get("vnp_BankCode") || "",
-          vnp_BankTranNo: searchParams.get("vnp_BankTranNo") || "",
-          vnp_PayDate: searchParams.get("vnp_PayDate") || "",
-          vnp_OrderInfo: searchParams.get("vnp_OrderInfo") || "",
-          vnp_ResponseCode: searchParams.get("vnp_ResponseCode") || "",
-          vnp_TransactionNo: searchParams.get("vnp_TransactionNo") || "",
-          vnp_TxnRef: searchParams.get("vnp_TxnRef") || undefined,
-          vnp_SecureHash: searchParams.get("vnp_SecureHash") || undefined,
-        };
+        // Extract orderId from vnp_TxnRef (backend puts random number here, but we can get orderId from vnp_OrderInfo)
+        const vnpResponseCode = searchParams.get("vnp_ResponseCode");
+        const vnpOrderInfo = searchParams.get("vnp_OrderInfo"); // Format: "Thanh toan don hang:12345678"
+        const vnpTxnRef = searchParams.get("vnp_TxnRef"); // This is the random transaction reference
 
-        // Call backend to process and save payment
-        const result = await paymentApi.handleVNPayReturn(vnpParams);
-        setPaymentResult(result);
+        console.log('🔍 VNPay Return Parameters:');
+        console.log('   Response Code:', vnpResponseCode);
+        console.log('   Order Info:', vnpOrderInfo);
+        console.log('   TxnRef:', vnpTxnRef);
 
-        // If payment successful, create order in database
-        if (paymentApi.isPaymentSuccessful(result.responseCode)) {
-          const pendingOrderData = localStorage.getItem("pendingOrder");
-          if (pendingOrderData) {
-            try {
-              const orderData = JSON.parse(pendingOrderData);
-              // Create order via API
-              await orderApi.createOrder({
-                address: orderData.address,
-              });
-              localStorage.removeItem("pendingOrder"); // Clear pending order
-            } catch (orderError) {
-              console.error("Failed to create order:", orderError);
-            }
+        // Since backend doesn't store orderId in vnp_TxnRef, we need to find the order
+        // The order was just created, so we can get the latest pending order
+        // Or extract from vnp_OrderInfo if backend includes orderId there
+        
+        // For now, extract orderId from vnp_OrderInfo (format: "Thanh toan don hang:ORDERID")
+        let orderId: number | null = null;
+        if (vnpOrderInfo) {
+          const match = vnpOrderInfo.match(/:(\d+)/);
+          if (match) {
+            orderId = parseInt(match[1]);
+            console.log('📋 Extracted OrderId from OrderInfo:', orderId);
+          }
+        }
+
+        if (!orderId) {
+          console.error('❌ Could not extract orderId from payment info');
+          setError("Invalid order reference. Please check your orders.");
+          setLoading(false);
+          return;
+        }
+
+        // Get order details to get the payment ID
+        const order = await orderApi.getOrderById(orderId);
+        console.log('📦 Order details:', order);
+
+        if (!order.payment || !order.payment.id) {
+          console.error('❌ Order has no payment record');
+          setError("Payment record not found for this order.");
+          setLoading(false);
+          return;
+        }
+
+        const paymentId = order.payment.id;
+        console.log('💳 Payment ID:', paymentId);
+
+        // If payment successful (response code 00), mark payment as done
+        if (vnpResponseCode === "00") {
+          try {
+            console.log('✅ Payment successful, marking as done...');
+            const payment = await paymentApi.markPaymentDone(paymentId);
+            
+            console.log('✅ Payment marked as SUCCESS:', payment);
+            setOrderId(order.id);
+
+            // Create payment record for display
+            setPaymentResult({
+              amount: payment.amount,
+              bankCode: searchParams.get("vnp_BankCode") || "",
+              bankTranNo: searchParams.get("vnp_BankTranNo") || "",
+              payDate: searchParams.get("vnp_PayDate") || "",
+              orderInfo: vnpOrderInfo || "",
+              responseCode: vnpResponseCode || "",
+              transactionNo: searchParams.get("vnp_TransactionNo") || "",
+              status: "SUCCESS",
+            });
+          } catch (err) {
+            console.error("❌ Failed to mark payment as done:", err);
+            setError("Failed to confirm payment. Please contact support with order #" + orderId);
           }
         } else {
-          // Payment failed, remove pending order
-          localStorage.removeItem("pendingOrder");
+          console.warn('⚠️ Payment failed with response code:', vnpResponseCode);
+          // Payment failed - just display the info, don't update payment status
+          setPaymentResult({
+            amount: parseFloat(searchParams.get("vnp_Amount") || "0") / 100,
+            bankCode: searchParams.get("vnp_BankCode") || "",
+            bankTranNo: searchParams.get("vnp_BankTranNo") || "",
+            payDate: searchParams.get("vnp_PayDate") || "",
+            orderInfo: vnpOrderInfo || "",
+            responseCode: vnpResponseCode || "",
+            transactionNo: searchParams.get("vnp_TransactionNo") || "",
+            status: "FAILED",
+          });
+          setOrderId(orderId);
         }
       } catch (err) {
-        setError("Có lỗi xảy ra khi xử lý thanh toán. Please try again.");
-        console.error("Payment processing error:", err);
-        // Clear pending order on error
-        localStorage.removeItem("pendingOrder");
+        console.error("❌ Payment processing error:", err);
+        setError("An error occurred while processing payment. Please check your orders or contact support.");
       } finally {
         setLoading(false);
       }
@@ -119,9 +166,8 @@ export function VNPayReturn() {
           <div className="overflow-hidden bg-white shadow-lg rounded-2xl">
             {/* Header */}
             <div className={`p-8 text-center ${isSuccess ? "bg-green-50" : "bg-red-50"}`}>
-              <div className={`flex items-center justify-center w-20 h-20 mx-auto mb-6 rounded-full ${
-                isSuccess ? "bg-green-100" : "bg-red-100"
-              }`}>
+              <div className={`flex items-center justify-center w-20 h-20 mx-auto mb-6 rounded-full ${isSuccess ? "bg-green-100" : "bg-red-100"
+                }`}>
                 {isSuccess ? (
                   <svg className="w-12 h-12 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -174,9 +220,8 @@ export function VNPayReturn() {
                 </div>
                 <div className="flex justify-between py-3">
                   <span className="font-medium text-beige-600">Status</span>
-                  <span className={`px-3 py-1 text-sm font-semibold rounded-full ${
-                    isSuccess ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
-                  }`}>
+                  <span className={`px-3 py-1 text-sm font-semibold rounded-full ${isSuccess ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+                    }`}>
                     {isSuccess ? "Success" : "Failed"}
                   </span>
                 </div>
@@ -187,13 +232,13 @@ export function VNPayReturn() {
                 {isSuccess ? (
                   <>
                     <button
-                      onClick={() => navigate("/my-orders")}
+                      onClick={() => orderId ? navigate(`/order/${orderId}`) : navigate("/profile/orders")}
                       className="flex-1 px-6 py-3 font-semibold text-white transition-colors rounded-lg bg-beige-700 hover:bg-beige-800"
                     >
-                      View My Orders
+                      {orderId ? "View Order" : "View My Orders"}
                     </button>
                     <button
-                      onClick={() => navigate("/allbooks")}
+                      onClick={() => navigate("/")}
                       className="flex-1 px-6 py-3 font-semibold transition-colors border-2 rounded-lg text-beige-700 border-beige-700 hover:bg-beige-50"
                     >
                       Continue Shopping
@@ -208,7 +253,7 @@ export function VNPayReturn() {
                       Return to Cart
                     </button>
                     <button
-                      onClick={() => navigate("/order")}
+                      onClick={() => navigate("/payment")}
                       className="flex-1 px-6 py-3 font-semibold transition-colors border-2 rounded-lg text-beige-700 border-beige-700 hover:bg-beige-50"
                     >
                       Try Again

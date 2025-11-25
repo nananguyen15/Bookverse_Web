@@ -64,7 +64,7 @@ export function Homepage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <p className="text-xl text-brown-600">Đang tải...</p>
+        <p className="text-xl text-brown-600">Loading...</p>
       </div>
     );
   }

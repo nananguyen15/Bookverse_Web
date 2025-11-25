@@ -44,4 +44,5 @@ export type UpdatePromotionRequest = {
   startDate: string; // 'YYYY-MM-DD'
   endDate: string; // 'YYYY-MM-DD'
   active: boolean;
+  subCategoryIds?: number[]; // Optional: update sub-category assignments
 };

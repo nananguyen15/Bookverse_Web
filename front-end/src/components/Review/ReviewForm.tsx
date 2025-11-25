@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { reviewApi } from "../../api/endpoints";
 import type { CreateReviewRequest, UpdateReviewRequest } from "../../types/api/review.types";
 
@@ -24,6 +24,12 @@ export function ReviewForm({
   const [error, setError] = useState<string | null>(null);
 
   const isUpdate = !!existingReview;
+
+  useEffect(() => {
+    if (existingReview) {
+      setComment(existingReview.comment || "");
+    }
+  }, [existingReview]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -100,7 +106,7 @@ export function ReviewForm({
           <button
             type="submit"
             disabled={loading}
-            className="flex-1 bg-brown-600 text-white px-6 py-2 rounded-lg hover:bg-brown-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed font-medium"
+            className="flex-1 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed font-medium"
           >
             {loading ? "Processing..." : isUpdate ? "Update" : "Submit Review"}
           </button>

@@ -27,13 +27,12 @@ export function AuthorForm({ formData, onUpdate, onImageUpload, isEdit }: Author
         />
       </FormField>
 
-      <FormField label="Biography / Description" required>
+      <FormField label="Biography / Description">
         <TextAreaField
           rows={4}
-          required
           value={formData.bio}
           onChange={(value) => onUpdate({ ...formData, bio: value })}
-          placeholder="Enter author biography or description (required)"
+          placeholder="Enter author biography or description (optional)"
         />
       </FormField>
 
@@ -44,7 +43,6 @@ export function AuthorForm({ formData, onUpdate, onImageUpload, isEdit }: Author
         label="Author Image"
         type="avatar"
         folder="author"
-        required
       />
     </div>
   );

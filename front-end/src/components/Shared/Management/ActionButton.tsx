@@ -1,7 +1,7 @@
-import { FaEye, FaEdit, FaUserShield, FaTrash, FaUndo } from "react-icons/fa";
+import { FaEye, FaEdit, FaUserShield, FaTrash, FaUndo, FaBook, FaTimes } from "react-icons/fa";
 import { ReactNode } from "react";
 
-export type ActionType = "view" | "edit" | "role" | "deactivate" | "activate" | "delete" | "custom";
+export type ActionType = "view" | "edit" | "role" | "deactivate" | "activate" | "delete" | "viewBooks" | "cancel" | "custom";
 
 interface ActionButtonProps {
   onClick: () => void;
@@ -18,6 +18,8 @@ const defaultIconMap: Record<string, any> = {
   deactivate: FaTrash,
   activate: FaUndo,
   delete: FaTrash,
+  viewBooks: FaBook,
+  cancel: FaTimes,
 };
 
 const defaultColorMap: Record<string, string> = {
@@ -27,12 +29,14 @@ const defaultColorMap: Record<string, string> = {
   danger: "text-red-600 hover:bg-red-50",
   success: "text-green-600 hover:bg-green-50",
   purple: "text-purple-600 hover:bg-purple-50",
+  viewBooks: "text-green-600 hover:bg-green-50",
+  cancel: "text-red-600 hover:bg-red-50",
 };
 
 export function ActionButton({ onClick, icon, title, variant, className = "" }: ActionButtonProps) {
   // If icon is a string (ActionType), use default icon
   const IconComponent = typeof icon === "string" ? defaultIconMap[icon] : null;
-  
+
   // Determine color class
   let colorClass = "";
   if (variant) {

@@ -4,6 +4,8 @@ import type {
   OrderResponse,
   CreateOrderRequest,
   UpdateOrderRequest,
+  ChangeAddressRequest,
+  CancelOrderRequest,
   OrderStatus,
 } from "../../types";
 
@@ -64,9 +66,43 @@ export const orderApi = {
   },
 
   // PUT /api/orders/myOrders/cancel/{id} - Cancel user's order
-  cancelMyOrder: async (id: number): Promise<OrderResponse> => {
+  // Requires cancelReason in request body
+  // Can only cancel when status: PENDING/CONFIRMED/PROCESSING (before DELIVERING)
+  // If payment method is VNPay and already paid, payment status will change to REFUNDING
+  cancelMyOrder: async (
+    id: number,
+    data: CancelOrderRequest
+  ): Promise<OrderResponse> => {
     const response = await apiClient.put<ApiResponse<OrderResponse>>(
-      `${ORDERS_ENDPOINT}/myOrders/cancel/${id}`
+      `${ORDERS_ENDPOINT}/myOrders/cancel/${id}`,
+      data
+    );
+    return response.data.result;
+  },
+
+  // PUT /api/orders/myOrders/change-address/{id} - Change order address
+  changeMyOrderAddress: async (
+    id: number,
+    data: ChangeAddressRequest
+  ): Promise<OrderResponse> => {
+    const response = await apiClient.put<ApiResponse<OrderResponse>>(
+      `${ORDERS_ENDPOINT}/myOrders/change-address/${id}`,
+      data
+    );
+    return response.data.result;
+  },
+
+  /**
+   * Admin/Staff cancel order with reason (dedicated endpoint)
+   * PUT /api/orders/admin-staff-cancel/{id}
+   */
+  adminStaffCancelOrder: async (
+    id: number,
+    data: { cancelReason: string }
+  ): Promise<OrderResponse> => {
+    const response = await apiClient.put<ApiResponse<OrderResponse>>(
+      `${ORDERS_ENDPOINT}/admin-staff-cancel/${id}`,
+      data
     );
     return response.data.result;
   },

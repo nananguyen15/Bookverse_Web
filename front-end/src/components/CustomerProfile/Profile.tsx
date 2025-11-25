@@ -223,6 +223,19 @@ export function Profile() {
     }
   };
 
+  const validateImageUrl = (url: string): boolean => {
+    // Check if URL is valid format
+    try {
+      new URL(url);
+    } catch {
+      return false;
+    }
+
+    // Check if URL ends with common image extensions
+    const imageExtensions = /\.(jpg|jpeg|png|gif|webp|bmp|svg)(\?.*)?$/i;
+    return imageExtensions.test(url);
+  };
+
   const onSubmit = async (data: ProfileFormValues) => {
     try {
       setIsSaving(true);
@@ -248,6 +261,14 @@ export function Profile() {
       // Handle image update - priority: file > URL > keep existing
       if (avatarChanged) {
         if (useUrlUpload && imageUrlInput.trim()) {
+          // Validate image URL before using it
+          if (!validateImageUrl(imageUrlInput.trim())) {
+            setErrorMessage("Please enter a valid image URL (must end with .jpg, .jpeg, .png, .gif, .webp, .bmp, or .svg)");
+            setShowError(true);
+            setIsSaving(false);
+            setTimeout(() => setShowError(false), 5000);
+            return;
+          }
           // Use URL upload
           console.log("✅ Using image URL:", imageUrlInput.trim());
           updateData.image = imageUrlInput.trim();
@@ -368,16 +389,16 @@ export function Profile() {
 
           {!useUrlUpload ? (
             // File Upload Mode
-            <div className="flex items-center space-x-6">
+            <div className="flex flex-col items-center space-y-4">
               <div className="relative">
                 {avatarPreview ? (
                   <img
                     src={avatarPreview}
                     alt="Avatar preview"
-                    className="object-cover w-24 h-24 border-4 rounded-full border-beige-200"
+                    className="object-cover w-32 h-32 border-4 rounded-full border-beige-200"
                   />
                 ) : (
-                  <FaUserCircle className="w-24 h-24 text-beige-300" />
+                  <FaUserCircle className="w-32 h-32 text-beige-300" />
                 )}
                 <input
                   type="file"
@@ -388,7 +409,7 @@ export function Profile() {
                   accept="image/*"
                 />
               </div>
-              <div>
+              <div className="text-center">
                 <label
                   htmlFor="avatar"
                   className="px-4 py-2 text-sm font-medium bg-white border rounded-md shadow-sm cursor-pointer text-beige-700 border-beige-300 hover:bg-beige-50"
@@ -403,12 +424,12 @@ export function Profile() {
           ) : (
             // URL Input Mode
             <div className="space-y-4">
-              <div className="flex items-center gap-4">
+              <div className="flex justify-center">
                 {imageUrlInput && (
                   <img
                     src={imageUrlInput}
                     alt="Preview"
-                    className="object-cover w-24 h-24 border-4 rounded-full border-beige-200"
+                    className="object-cover w-32 h-32 border-4 rounded-full border-beige-200"
                     onError={(e) => {
                       e.currentTarget.src = "";
                       e.currentTarget.style.display = "none";
@@ -419,11 +440,11 @@ export function Profile() {
                   <img
                     src={avatarPreview}
                     alt="Current avatar"
-                    className="object-cover w-24 h-24 border-4 rounded-full border-beige-200"
+                    className="object-cover w-32 h-32 border-4 rounded-full border-beige-200"
                   />
                 )}
                 {!imageUrlInput && !avatarPreview && (
-                  <FaUserCircle className="w-24 h-24 text-beige-300" />
+                  <FaUserCircle className="w-32 h-32 text-beige-300" />
                 )}
               </div>
               <div>
@@ -438,7 +459,7 @@ export function Profile() {
                   className="block w-full px-3 py-2 border rounded-md shadow-sm border-beige-300 focus:outline-none focus:ring-beige-500 focus:border-beige-500 sm:text-sm"
                 />
                 <p className="mt-2 text-xs text-beige-500">
-                  Enter a direct link to an image (JPG, PNG, GIF)
+                  Enter a direct link to an image (JPG, PNG, GIF, WEBP, BMP, SVG)
                 </p>
               </div>
             </div>

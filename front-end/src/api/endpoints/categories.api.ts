@@ -118,6 +118,14 @@ export const categoriesApi = {
       return "result" in response.data ? response.data.result : response.data;
     },
 
+    // GET search sub-categories by keyword
+    search: async (keyword: string): Promise<SubCategory[]> => {
+      const response = await apiClient.get<ApiResponse<SubCategory[]>>(
+        `${SUB_CATEGORIES_ENDPOINT}/search/${encodeURIComponent(keyword)}`
+      );
+      return response.data.result;
+    },
+
     // GET active books by sub-category ID
     getActiveBooks: async (subId: number): Promise<Book[]> => {
       const response = await apiClient.get<ApiResponse<Book[]>>(

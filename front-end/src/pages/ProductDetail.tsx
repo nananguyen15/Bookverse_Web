@@ -1,25 +1,141 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { booksApi, authorsApi, publishersApi, cartApi } from "../api";
-import type { Book } from "../types";
+import { booksApi, authorsApi, publishersApi, promotionApi, orderApi, reviewApi } from "../api";
+import { categoriesApi } from "../api/endpoints/categories.api";
+import type { Book, PromotionResponse, SubCategory, ReviewResponse } from "../types";
 import { useAuth } from "../contexts/AuthContext";
 import { useCart } from "../contexts/CartContext";
 import { mapBookWithNames } from "../utils/bookHelpers";
+import { getPromotionalPrice } from "../utils/promotionHelpers";
 import { ReviewForm } from "../components/Review/ReviewForm";
 import { ReviewList } from "../components/Review/ReviewList";
 import { Footer } from "../components/layout/Footer/Footer";
 import { Navbar } from "../components/layout/Navbar/Navbar";
+import { IoInformationCircle } from "react-icons/io5";
 
 export function ProductDetail() {
   const { type, id } = useParams<{ type: string; id: string }>();
   const navigate = useNavigate();
   const { isAuthenticated, user } = useAuth();
-  const { addToCart } = useCart();
+  const { addToCart, cartItems } = useCart();
   const [product, setProduct] = useState<Book | null>(null);
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
   const [refreshReviews, setRefreshReviews] = useState(0);
   const [showReviewForm, setShowReviewForm] = useState(false);
+  const [showWarning, setShowWarning] = useState(false);
+  const [subCategoryPromotions, setSubCategoryPromotions] = useState<Record<string, PromotionResponse | null>>({});
+  const [canReview, setCanReview] = useState(false);
+
+  // Check if user can review this book
+  useEffect(() => {
+    const checkReviewStatus = async () => {
+      if (!isAuthenticated || !id || !user) {
+        setCanReview(false);
+        return;
+      }
+
+      try {
+        // Check eligibility (must have delivered order) and that they haven't reviewed yet
+        const orders = await orderApi.getMyOrders();
+        const deliveredOrders = orders.filter(order => order.status === "DELIVERED");
+        const hasOrderedBook = deliveredOrders.some(order =>
+          order.orderItems.some(item => item.bookId === parseInt(id))
+        );
+
+        if (!hasOrderedBook) {
+          setCanReview(false);
+          return;
+        }
+
+        // Check if user has already reviewed this book
+        const hasReviewed = await reviewApi.isReviewed(parseInt(id));
+        // Can review ONLY if ordered and NOT reviewed yet
+        setCanReview(!hasReviewed);
+      } catch (error) {
+        console.error("Failed to check review status:", error);
+        setCanReview(false);
+      }
+    };
+
+    checkReviewStatus();
+  }, [isAuthenticated, id, user, refreshReviews]);
+
+  // Check URL hash and open review form if #review is present (only if user can review)
+  useEffect(() => {
+    console.log('Hash check effect:', {
+      hash: window.location.hash,
+      canReview,
+      isAuthenticated,
+      userRole: user?.role
+    });
+
+    // Only process the hash once canReview has been determined (not initial false state)
+    if (window.location.hash === '#review') {
+      if (canReview) {
+        console.log('Opening review form');
+        setShowReviewForm(true);
+        // Scroll to review section after a short delay
+        setTimeout(() => {
+          const reviewSection = document.getElementById('review-section');
+          if (reviewSection) {
+            reviewSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        }, 500);
+      } else {
+        console.log('Cannot review - user not eligible');
+      }
+    }
+  }, [canReview, isAuthenticated, user?.role]);
+
+  // Fetch active promotions
+  useEffect(() => {
+    const fetchPromotions = async () => {
+      try {
+        const [promotionsData, categoriesData] = await Promise.all([
+          promotionApi.getActive(),
+          categoriesApi.sub.getActive(),
+        ]);
+
+        const promotionSubCatsCache: Record<number, SubCategory[]> = {};
+        for (const promo of promotionsData) {
+          try {
+            const subCats = await promotionApi.getPromotionSubCategories(promo.id);
+            promotionSubCatsCache[promo.id] = subCats;
+          } catch (error) {
+            console.error(`Error fetching sub-categories for promotion ${promo.id}:`, error);
+            promotionSubCatsCache[promo.id] = [];
+          }
+        }
+
+        const subCatPromos: Record<string, PromotionResponse | null> = {};
+        for (const subCat of categoriesData) {
+          let foundPromo: PromotionResponse | null = null;
+
+          for (const promo of promotionsData) {
+            const subCats = promotionSubCatsCache[promo.id] || [];
+            if (subCats.some(sc => sc.id === subCat.id)) {
+              const now = new Date();
+              const start = new Date(promo.startDate);
+              const end = new Date(promo.endDate);
+              if (now >= start && now <= end && promo.active) {
+                foundPromo = promo;
+                break;
+              }
+            }
+          }
+
+          subCatPromos[subCat.id] = foundPromo;
+        }
+
+        setSubCategoryPromotions(subCatPromos);
+      } catch (error) {
+        console.error("Error fetching promotions:", error);
+      }
+    };
+
+    fetchPromotions();
+  }, []);
 
   useEffect(() => {
     const fetchProduct = async () => {
@@ -28,7 +144,7 @@ export function ProductDetail() {
         return;
       }
 
-      console.log("Starting fetch for:", { type, id }); // Debug log
+      console.log("Starting fetch for:", { type, id });
 
       // Reset state when URL changes
       setProduct(null);
@@ -38,33 +154,36 @@ export function ProductDetail() {
       try {
         // Only support books for now (series needs backend API)
         if (type === "book") {
-          console.log("Fetching book with ID:", id); // Debug log
+          console.log("Fetching book with ID:", id);
 
-          const [book, authorsData, publishersData] = await Promise.all([
+          const [book, authorsData, publishersData, categoriesData] = await Promise.all([
             booksApi.getById(parseInt(id)),
             authorsApi.getActive(),
             publishersApi.getActive(),
+            categoriesApi.sub.getActive(),
           ]);
 
-          console.log("✓ Fetched book:", book); // Debug log
+          console.log("✓ Fetched book:", book);
           console.log("✓ Authors count:", authorsData.length);
           console.log("✓ Publishers count:", publishersData.length);
+          console.log("✓ Categories count:", categoriesData.length);
 
-          // Map book with author/publisher names and fix image path
+          // Map book with author/publisher/category names and fix image path
           const bookWithNames = mapBookWithNames(
             book,
             authorsData,
-            publishersData
+            publishersData,
+            categoriesData
           );
 
-          console.log("✓ Book with names:", bookWithNames); // Debug log
+          console.log("✓ Book with names:", bookWithNames);
 
           if (!bookWithNames) {
             throw new Error("Failed to map book data");
           }
 
           setProduct(bookWithNames);
-          console.log("✓ Product state updated!"); // Debug log
+          console.log("✓ Product state updated!");
         } else {
           // Series not supported yet
           console.log("Series not supported, redirecting...");
@@ -81,9 +200,8 @@ export function ProductDetail() {
           `Failed to load product: ${error instanceof Error ? error.message : "Unknown error"
           }`
         );
-        // Don't navigate away on error, let user see the error
       } finally {
-        console.log("Setting loading to false"); // Debug log
+        console.log("Setting loading to false");
         setLoading(false);
       }
     };
@@ -98,36 +216,46 @@ export function ProductDetail() {
     }
     if (!product) return;
 
-    // Check if product is inactive
     if (!product.active) {
       alert("This product is currently unavailable.");
       return;
     }
 
-    // Check if product is out of stock
     if (product.stockQuantity <= 0) {
       alert("This product is out of stock.");
       return;
     }
 
-    try {
-      if (quantity > 1) {
-        // Use addMultipleToCart for quantity > 1
-        await cartApi.addMultipleToCart({
-          bookId: product.id,
-          quantity: quantity,
-        });
-      } else {
-        // Use addOneToCart for quantity = 1
-        await cartApi.addOneToCart({ bookId: product.id });
-      }
+    const itemInCart = cartItems.find(
+      (item) => item.id === product.id.toString() && item.type === type
+    );
+    const quantityInCart = itemInCart?.quantity || 0;
+    const totalQuantity = quantityInCart + quantity;
 
-      // Also update CartContext for immediate UI update
-      addToCart(product.id.toString(), type as "book" | "series", quantity);
+    if (totalQuantity > product.stockQuantity) {
+      alert(
+        `Cannot add ${quantity} item(s). You already have ${quantityInCart} in cart. Stock available: ${product.stockQuantity}`
+      );
+      return;
+    }
+
+    try {
+      console.log("🛒 Adding to cart:", { bookId: product.id, quantity });
+      await addToCart(product.id.toString(), type as "book" | "series", quantity);
+      console.log("✅ Successfully added to cart");
       alert(`Added ${quantity} item(s) to cart!`);
+      setQuantity(1);
     } catch (error) {
-      console.error("Error adding to cart:", error);
-      alert("Could not add to cart. Please try again.");
+      console.error("❌ Error adding to cart:", error);
+      const err = error as { response?: { data?: { message?: string; code?: number } }; message?: string };
+      const errorMsg = err.response?.data?.message || err.message || "Could not add to cart";
+      console.error("Error details:", err.response?.data);
+
+      if (errorMsg.includes("unique result") || errorMsg.includes("2 results") || errorMsg.includes("Internal Server Error")) {
+        alert("⚠️ Database Error: Your account has duplicate shopping carts.\n\nThis is a backend data issue that requires admin intervention.\n\nPlease contact support to fix your cart data.\n\nTechnical: User has multiple active carts in database.");
+      } else {
+        alert(errorMsg + ". Please try again.");
+      }
     }
   };
 
@@ -137,35 +265,26 @@ export function ProductDetail() {
       return;
     }
 
+    const userRole = user?.role?.toLowerCase();
+    if (userRole === "admin" || userRole === "staff") {
+      alert("Admin and Staff accounts cannot place orders.");
+      return;
+    }
+
     if (!product) return;
 
-    // Check if product is inactive
     if (!product.active) {
       alert("This product is currently unavailable.");
       return;
     }
 
-    // Check if product is out of stock
     if (product.stockQuantity <= 0) {
       alert("This product is out of stock.");
       return;
     }
 
-    // Add to cart first, then go to checkout
     try {
-      if (quantity > 1) {
-        await cartApi.addMultipleToCart({
-          bookId: product.id,
-          quantity: quantity,
-        });
-      } else {
-        await cartApi.addOneToCart({ bookId: product.id });
-      }
-
-      // Update context
-      addToCart(product.id.toString(), type as "book" | "series", quantity);
-
-      // Navigate to cart/order
+      await addToCart(product.id.toString(), type as "book" | "series", quantity);
       navigate("/cart");
     } catch (error) {
       console.error("Error in buy now:", error);
@@ -229,66 +348,47 @@ export function ProductDetail() {
                 className="object-cover w-full h-auto"
               />
             </div>
-            <div className="w-full max-w-md space-y-4">
-              <div className="flex items-center justify-between">
-                <label htmlFor="quantity-input" className="text-sm font-medium text-beige-800">
-                  Quantity:
-                </label>
-                <input
-                  id="quantity-input"
-                  type="number"
-                  min="1"
-                  max={product.stockQuantity}
-                  value={quantity}
-                  onChange={(e) =>
-                    setQuantity(
-                      Math.max(
-                        1,
-                        Math.min(
-                          product.stockQuantity,
-                          parseInt(e.target.value) || 1
-                        )
-                      )
-                    )
-                  }
-                  className="w-20 px-3 py-2 border rounded-lg border-beige-300 focus:outline-none focus:ring-2 focus:ring-beige-500"
-                  aria-label="Product quantity"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <button
-                  onClick={handleAddToCart}
-                  className="py-3 font-semibold text-white transition-colors rounded-lg bg-beige-700 hover:bg-beige-800 disabled:bg-gray-400 disabled:cursor-not-allowed"
-                  disabled={!product.active || product.stockQuantity === 0}
-                >
-                  {!product.active
-                    ? "Unavailable"
-                    : product.stockQuantity > 0
-                      ? "Add to Cart"
-                      : "Out of Stock"}
-                </button>
-                <button
-                  onClick={handleBuyNow}
-                  className="py-3 font-semibold transition-colors border-2 rounded-lg text-beige-700 border-beige-700 hover:bg-beige-700 hover:text-white disabled:border-gray-400 disabled:text-gray-400 disabled:cursor-not-allowed"
-                  disabled={!product.active || product.stockQuantity === 0}
-                >
-                  Buy Now
-                </button>
-              </div>
-            </div>
           </div>
 
           {/* Right: Product Info */}
           <div>
-            <h1 className="mb-4 text-4xl font-bold text-beige-900">
+            <h1 className="mb-6 text-4xl font-bold text-beige-900">
               {product.title}
             </h1>
 
-            <div className="mb-6 text-3xl font-bold text-beige-900">
-              ${product.price.toFixed(2)}
-            </div>
-
             <div className="space-y-3 text-beige-700">
+              <div className="grid grid-cols-3 gap-2">
+                <span className="font-semibold">Price:</span>
+                <div className="col-span-2">
+                  {(() => {
+                    const priceInfo = getPromotionalPrice(product, subCategoryPromotions);
+                    if (priceInfo.promoPrice !== null && priceInfo.promoPrice !== undefined) {
+                      return (
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-baseline gap-2">
+                            <span className="text-2xl font-bold text-green-600">
+                              ${priceInfo.promoPrice.toFixed(2)}
+                            </span>
+                            {priceInfo.percentage && (
+                              <span className="px-2 py-1 text-sm font-medium text-white bg-red-500 rounded">
+                                -{priceInfo.percentage}%
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-base text-gray-500 line-through">
+                            ${product.price.toFixed(2)}
+                          </span>
+                        </div>
+                      );
+                    }
+                    return (
+                      <span className="text-lg font-bold text-beige-900">
+                        ${product.price.toFixed(2)}
+                      </span>
+                    );
+                  })()}
+                </div>
+              </div>
               <div className="grid grid-cols-3 gap-2">
                 <span className="font-semibold">Author:</span>
                 <span className="col-span-2">
@@ -327,6 +427,74 @@ export function ProductDetail() {
                 <span className="font-semibold">Product ID:</span>
                 <span className="col-span-2">#{product.id}</span>
               </div>
+
+              {/* Quantity and Action Buttons - Only for customers */}
+              {user?.role?.toLowerCase() !== "admin" && user?.role?.toLowerCase() !== "staff" && (() => {
+                const itemInCart = cartItems.find(
+                  (item) => item.id === product.id.toString() && item.type === type
+                );
+                const quantityInCart = itemInCart?.quantity || 0;
+                const maxAvailable = Math.max(1, product.stockQuantity - quantityInCart);
+
+                return (
+                  <div className="pt-4 mt-4 space-y-3 border-t border-beige-200">
+                    <div className="grid grid-cols-3 gap-2">
+                      <span className="font-semibold">Quantity:</span>
+                      <div className="col-span-2">
+                        <input
+                          id="quantity-input"
+                          type="number"
+                          min="1"
+                          max={maxAvailable}
+                          value={quantity}
+                          onChange={(e) => {
+                            const value = parseInt(e.target.value) || 1;
+
+                            // Show warning if user tries to exceed available quantity
+                            if (value > maxAvailable && quantityInCart > 0) {
+                              setShowWarning(true);
+                              // Auto-hide after 3 seconds
+                              setTimeout(() => setShowWarning(false), 5000);
+                            } else {
+                              setShowWarning(false);
+                            }
+
+                            setQuantity(Math.max(1, Math.min(maxAvailable, value)));
+                          }}
+                          className="w-20 px-3 py-2 border rounded-lg border-beige-300 focus:outline-none focus:ring-2 focus:ring-beige-500"
+                          aria-label="Product quantity"
+                        />
+                        {showWarning && quantityInCart > 0 && (
+                          <p className="flex items-center gap-1 mt-1 text-sm text-amber-600">
+                            <IoInformationCircle className="shrink-0" size={16} />
+                            <span>You have {quantityInCart} in cart. Only {maxAvailable} more available.</span>
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                      <button
+                        onClick={handleAddToCart}
+                        className="py-3 font-semibold text-white transition-colors rounded-lg bg-beige-700 hover:bg-beige-800 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                        disabled={!product.active || product.stockQuantity === 0}
+                      >
+                        {!product.active
+                          ? "Unavailable"
+                          : product.stockQuantity > 0
+                            ? "Add to Cart"
+                            : "Out of Stock"}
+                      </button>
+                      <button
+                        onClick={handleBuyNow}
+                        className="py-3 font-semibold transition-colors border-2 rounded-lg text-beige-700 border-beige-700 hover:bg-beige-700 hover:text-white disabled:border-gray-400 disabled:text-gray-400 disabled:cursor-not-allowed"
+                        disabled={!product.active || product.stockQuantity === 0}
+                      >
+                        Buy Now
+                      </button>
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
 
             <div className="pt-6 mt-6 border-t border-beige-200">
@@ -341,13 +509,13 @@ export function ProductDetail() {
         </div>
 
         {/* Reviews Section */}
-        <div className="pt-12 mt-12 border-t border-beige-200">
+        <div id="review-section" className="pt-12 mt-12 border-t border-beige-200">
           <h2 className="mb-6 text-3xl font-bold text-beige-900">
             Customer Reviews
           </h2>
 
-          {/* Review Form for CUSTOMER users */}
-          {isAuthenticated && user?.role === "CUSTOMER" && (
+          {/* Review Form for CUSTOMER users who have purchased this book */}
+          {isAuthenticated && user?.role?.toUpperCase() === "CUSTOMER" && canReview && (
             <div className="mb-8">
               {showReviewForm ? (
                 <ReviewForm
@@ -371,6 +539,13 @@ export function ProductDetail() {
             </div>
           )}
 
+          {/* Message for customers who haven't purchased this book */}
+          {isAuthenticated && user?.role?.toUpperCase() === "CUSTOMER" && !canReview && (
+            <p className="mb-8 text-beige-600">
+              You can only review books you have purchased and received.
+            </p>
+          )}
+
           {!isAuthenticated && (
             <p className="mb-8 text-beige-600">
               <a href="/signin" className="font-semibold hover:underline text-brown-600">
@@ -388,4 +563,3 @@ export function ProductDetail() {
     </div>
   );
 }
-
