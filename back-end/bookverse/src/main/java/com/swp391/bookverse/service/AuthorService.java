@@ -97,6 +97,13 @@ public class AuthorService {
                 .build();
         notificationService.createBroadcastNotification(notificationBroadCastCreationRequestRequest);
 
+        // create notification for new author creation to all admins
+        notificationBroadCastCreationRequestRequest = NotificationBroadCastCreationRequest.builder()
+                .type(NotificationType.FOR_ADMINS)
+                .content("A new author named '" + name + "' has been added to the system.")
+                .build();
+        notificationService.createBroadcastNotification(notificationBroadCastCreationRequestRequest);
+
         return authorRepository.save(author);
     }
 
@@ -242,9 +249,16 @@ public class AuthorService {
             existingAuthor.setActive(active);
         }
 
-        // create notification for author update to all admins, staffs
+        // create notification for author update to all staffs
         NotificationBroadCastCreationRequest notificationBroadCastCreationRequestRequest = NotificationBroadCastCreationRequest.builder()
                 .type(NotificationType.FOR_STAFFS)
+                .content("The author named '" + existingAuthor.getName() + "' has been updated.")
+                .build();
+        notificationService.createBroadcastNotification(notificationBroadCastCreationRequestRequest);
+
+        // create notification for author update to all admins
+        notificationBroadCastCreationRequestRequest = NotificationBroadCastCreationRequest.builder()
+                .type(NotificationType.FOR_ADMINS)
                 .content("The author named '" + existingAuthor.getName() + "' has been updated.")
                 .build();
         notificationService.createBroadcastNotification(notificationBroadCastCreationRequestRequest);
@@ -266,6 +280,21 @@ public class AuthorService {
         
         existingAuthor.setActive(isActive);
         authorRepository.save(existingAuthor);
+
+        // create notification for author status change to all staffs
+        String status = isActive ? "active" : "inactive";
+        NotificationBroadCastCreationRequest notificationBroadCastCreationRequestRequest = NotificationBroadCastCreationRequest.builder()
+                .type(NotificationType.FOR_STAFFS)
+                .content("Author " +status+ " : " + existingAuthor.getName() + ".")
+                .build();
+        notificationService.createBroadcastNotification(notificationBroadCastCreationRequestRequest);
+
+        // create notification for author status change to all admins
+        notificationBroadCastCreationRequestRequest = NotificationBroadCastCreationRequest.builder()
+                .type(NotificationType.FOR_ADMINS)
+                .content("Author " +status+ " : " + existingAuthor.getName() + ".")
+                .build();
+        notificationService.createBroadcastNotification(notificationBroadCastCreationRequestRequest);
         
         return AuthorActiveResponse.builder()
                 .id(existingAuthor.getId())

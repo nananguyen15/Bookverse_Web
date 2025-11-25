@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { booksApi, authorsApi, publishersApi, promotionApi, orderApi } from "../api";
+import { booksApi, authorsApi, publishersApi, promotionApi, orderApi, reviewApi } from "../api";
 import { categoriesApi } from "../api/endpoints/categories.api";
-import type { Book, PromotionResponse, SubCategory } from "../types";
+import type { Book, PromotionResponse, SubCategory, ReviewResponse } from "../types";
 import { useAuth } from "../contexts/AuthContext";
 import { useCart } from "../contexts/CartContext";
 import { mapBookWithNames } from "../utils/bookHelpers";
@@ -26,33 +26,41 @@ export function ProductDetail() {
   const [showWarning, setShowWarning] = useState(false);
   const [subCategoryPromotions, setSubCategoryPromotions] = useState<Record<string, PromotionResponse | null>>({});
   const [canReview, setCanReview] = useState(false);
+  const [existingReview, setExistingReview] = useState<ReviewResponse | null>(null);
 
-  // Check if user can review this book (must have purchased it in a delivered order)
+  // Check if user can review this book
   useEffect(() => {
-    const checkReviewEligibility = async () => {
-      if (!isAuthenticated || !id) {
+    const checkReviewStatus = async () => {
+      if (!isAuthenticated || !id || !user) {
         setCanReview(false);
         return;
       }
 
       try {
+        // Check eligibility (must have delivered order) and that they haven't reviewed yet
         const orders = await orderApi.getMyOrders();
         const deliveredOrders = orders.filter(order => order.status === "DELIVERED");
-
-        // Check if any delivered order contains this book
         const hasOrderedBook = deliveredOrders.some(order =>
           order.orderItems.some(item => item.bookId === parseInt(id))
         );
 
-        setCanReview(hasOrderedBook);
+        if (!hasOrderedBook) {
+          setCanReview(false);
+          return;
+        }
+
+        // Check if user has already reviewed this book
+        const hasReviewed = await reviewApi.isReviewed(parseInt(id));
+        // Can review ONLY if ordered and NOT reviewed yet
+        setCanReview(!hasReviewed);
       } catch (error) {
-        console.error("Failed to check review eligibility:", error);
+        console.error("Failed to check review status:", error);
         setCanReview(false);
       }
     };
 
-    checkReviewEligibility();
-  }, [isAuthenticated, id]);
+    checkReviewStatus();
+  }, [isAuthenticated, id, user, refreshReviews]);
 
   // Check URL hash and open review form if #review is present (only if user can review)
   useEffect(() => {
@@ -79,7 +87,7 @@ export function ProductDetail() {
         console.log('Cannot review - user not eligible');
       }
     }
-  }, [canReview, isAuthenticated, user?.role]); // Re-run when review eligibility changes
+  }, [canReview, isAuthenticated, user?.role]);
 
   // Fetch active promotions
   useEffect(() => {
@@ -137,7 +145,7 @@ export function ProductDetail() {
         return;
       }
 
-      console.log("Starting fetch for:", { type, id }); // Debug log
+      console.log("Starting fetch for:", { type, id });
 
       // Reset state when URL changes
       setProduct(null);
@@ -147,7 +155,7 @@ export function ProductDetail() {
       try {
         // Only support books for now (series needs backend API)
         if (type === "book") {
-          console.log("Fetching book with ID:", id); // Debug log
+          console.log("Fetching book with ID:", id);
 
           const [book, authorsData, publishersData, categoriesData] = await Promise.all([
             booksApi.getById(parseInt(id)),
@@ -156,7 +164,7 @@ export function ProductDetail() {
             categoriesApi.sub.getActive(),
           ]);
 
-          console.log("✓ Fetched book:", book); // Debug log
+          console.log("✓ Fetched book:", book);
           console.log("✓ Authors count:", authorsData.length);
           console.log("✓ Publishers count:", publishersData.length);
           console.log("✓ Categories count:", categoriesData.length);
@@ -169,14 +177,14 @@ export function ProductDetail() {
             categoriesData
           );
 
-          console.log("✓ Book with names:", bookWithNames); // Debug log
+          console.log("✓ Book with names:", bookWithNames);
 
           if (!bookWithNames) {
             throw new Error("Failed to map book data");
           }
 
           setProduct(bookWithNames);
-          console.log("✓ Product state updated!"); // Debug log
+          console.log("✓ Product state updated!");
         } else {
           // Series not supported yet
           console.log("Series not supported, redirecting...");
@@ -193,9 +201,8 @@ export function ProductDetail() {
           `Failed to load product: ${error instanceof Error ? error.message : "Unknown error"
           }`
         );
-        // Don't navigate away on error, let user see the error
       } finally {
-        console.log("Setting loading to false"); // Debug log
+        console.log("Setting loading to false");
         setLoading(false);
       }
     };
@@ -210,26 +217,22 @@ export function ProductDetail() {
     }
     if (!product) return;
 
-    // Check if product is inactive
     if (!product.active) {
       alert("This product is currently unavailable.");
       return;
     }
 
-    // Check if product is out of stock
     if (product.stockQuantity <= 0) {
       alert("This product is out of stock.");
       return;
     }
 
-    // Check quantity in cart
     const itemInCart = cartItems.find(
       (item) => item.id === product.id.toString() && item.type === type
     );
     const quantityInCart = itemInCart?.quantity || 0;
     const totalQuantity = quantityInCart + quantity;
 
-    // Validate total quantity doesn't exceed stock
     if (totalQuantity > product.stockQuantity) {
       alert(
         `Cannot add ${quantity} item(s). You already have ${quantityInCart} in cart. Stock available: ${product.stockQuantity}`
@@ -239,14 +242,9 @@ export function ProductDetail() {
 
     try {
       console.log("🛒 Adding to cart:", { bookId: product.id, quantity });
-
-      // Use CartContext - it handles backend API call
       await addToCart(product.id.toString(), type as "book" | "series", quantity);
-
       console.log("✅ Successfully added to cart");
       alert(`Added ${quantity} item(s) to cart!`);
-
-      // Reset quantity to 1 after successful add
       setQuantity(1);
     } catch (error) {
       console.error("❌ Error adding to cart:", error);
@@ -254,7 +252,6 @@ export function ProductDetail() {
       const errorMsg = err.response?.data?.message || err.message || "Could not add to cart";
       console.error("Error details:", err.response?.data);
 
-      // Check if it's a duplicate cart error (backend issue)
       if (errorMsg.includes("unique result") || errorMsg.includes("2 results") || errorMsg.includes("Internal Server Error")) {
         alert("⚠️ Database Error: Your account has duplicate shopping carts.\n\nThis is a backend data issue that requires admin intervention.\n\nPlease contact support to fix your cart data.\n\nTechnical: User has multiple active carts in database.");
       } else {
@@ -269,7 +266,6 @@ export function ProductDetail() {
       return;
     }
 
-    // Restrict admin and staff from buying
     const userRole = user?.role?.toLowerCase();
     if (userRole === "admin" || userRole === "staff") {
       alert("Admin and Staff accounts cannot place orders.");
@@ -278,24 +274,18 @@ export function ProductDetail() {
 
     if (!product) return;
 
-    // Check if product is inactive
     if (!product.active) {
       alert("This product is currently unavailable.");
       return;
     }
 
-    // Check if product is out of stock
     if (product.stockQuantity <= 0) {
       alert("This product is out of stock.");
       return;
     }
 
-    // Add to cart first, then go to checkout
     try {
-      // Use CartContext - it handles backend API call
       await addToCart(product.id.toString(), type as "book" | "series", quantity);
-
-      // Navigate to cart/order
       navigate("/cart");
     } catch (error) {
       console.error("Error in buy now:", error);
@@ -532,8 +522,9 @@ export function ProductDetail() {
                 <ReviewForm
                   bookId={product.id}
                   bookTitle={product.title}
+                  existingReview={existingReview ? { comment: existingReview.comment } : undefined}
                   onSuccess={() => {
-                    alert("Thank you for your review!");
+                    alert(existingReview ? "Review updated successfully!" : "Thank you for your review!");
                     setShowReviewForm(false);
                     setRefreshReviews((prev) => prev + 1);
                   }}
@@ -544,7 +535,7 @@ export function ProductDetail() {
                   onClick={() => setShowReviewForm(true)}
                   className="px-6 py-3 font-semibold text-white transition-colors rounded-lg bg-brown-600 hover:bg-brown-700"
                 >
-                  ✍️ Write a Review
+                  {existingReview ? "✍️ Edit Your Review" : "✍️ Write a Review"}
                 </button>
               )}
             </div>
@@ -574,4 +565,3 @@ export function ProductDetail() {
     </div>
   );
 }
-

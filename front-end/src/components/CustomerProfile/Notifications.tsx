@@ -7,20 +7,31 @@ import {
 } from "react-icons/fa";
 import { notificationApi } from "../../api";
 import type { Notification } from "../../api/endpoints/notification.api";
+import { Pagination } from "../Pagination/Pagination";
 
-type NotificationCategory = "All" | "Order" | "Event" | "Promotion" | "System";
+// Format notification type to human-readable title
+function getNotificationTitle(type: string, content: string): string {
+  // Check content for specific keywords to determine type
+  const lowerContent = content.toLowerCase();
 
-function getCategory(type: string): NotificationCategory {
-  if (type.includes("ORDER")) return "Order";
-  if (type.includes("EVENT")) return "Event";
-  if (type.includes("PROMOTION")) return "Promotion";
-  return "System";
+  if (lowerContent.includes("order")) {
+    return "Order Update";
+  } else if (lowerContent.includes("promotion") || lowerContent.includes("discount") || lowerContent.includes("sale")) {
+    return "Promotion";
+  } else if (lowerContent.includes("event")) {
+    return "Event";
+  } else if (type.includes("PERSONAL")) {
+    return "Notification";
+  } else {
+    return "Announcement";
+  }
 }
 
 export function Notifications() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [activeTab, setActiveTab] = useState<NotificationCategory>("All");
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   useEffect(() => {
     loadNotifications();
@@ -106,20 +117,23 @@ export function Notifications() {
     }
   };
 
-  const filteredNotifications =
-    activeTab === "All"
-      ? notifications
-      : notifications.filter((n) => getCategory(n.type) === activeTab);
-
-  const tabs: NotificationCategory[] = [
-    "All",
-    "Order",
-    "Event",
-    "Promotion",
-    "System",
-  ];
-
   const unreadCount = notifications.filter(n => !n.read).length;
+
+  // Pagination
+  const totalPages = Math.ceil(notifications.length / itemsPerPage);
+  const paginatedNotifications = notifications.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const handleItemsPerPageChange = (newItemsPerPage: number) => {
+    setItemsPerPage(newItemsPerPage);
+    setCurrentPage(1);
+  };
 
   return (
     <div className="p-6 bg-white rounded-lg shadow-sm">
@@ -153,30 +167,13 @@ export function Notifications() {
         </div>
       </div>
 
-      <div className="mb-4 border-b border-beige-200">
-        <nav className="flex -mb-px space-x-6">
-          {tabs.map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`py-3 px-1 border-b-2 font-medium text-sm ${activeTab === tab
-                ? "border-beige-700 text-beige-900"
-                : "border-transparent text-beige-600 hover:text-beige-900 hover:border-beige-300"
-                }`}
-            >
-              {tab}
-            </button>
-          ))}
-        </nav>
-      </div>
-
       <div className="space-y-4">
         {loading ? (
           <div className="py-12 text-center text-beige-600">
             <p>Loading notifications...</p>
           </div>
-        ) : filteredNotifications.length > 0 ? (
-          filteredNotifications.map((notification) => (
+        ) : paginatedNotifications.length > 0 ? (
+          paginatedNotifications.map((notification) => (
             <div
               key={notification.id}
               className={`p-4 rounded-lg flex items-start justify-between border ${notification.read
@@ -193,7 +190,7 @@ export function Notifications() {
                 </div>
                 <div className="flex-1">
                   <h3 className="font-semibold text-beige-900">
-                    {getCategory(notification.type)}
+                    {getNotificationTitle(notification.type, notification.content)}
                   </h3>
                   <p className="text-sm text-beige-700">
                     {notification.content}
@@ -241,6 +238,19 @@ export function Notifications() {
           </div>
         )}
       </div>
+
+      {/* Pagination */}
+      {notifications.length > 0 && (
+        <div className="mt-6">
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            itemsPerPage={itemsPerPage}
+            onPageChange={handlePageChange}
+            onItemsPerPageChange={handleItemsPerPageChange}
+          />
+        </div>
+      )}
     </div>
   );
 }

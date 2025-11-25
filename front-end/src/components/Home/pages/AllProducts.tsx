@@ -450,7 +450,7 @@ export function AllProducts({ defaultType }: AllProductsProps) {
                   </div>
 
                   {/* Pagination */}
-                  {totalPages > 1 && (
+                  {filteredProducts.length > 0 && (
                     <Pagination
                       currentPage={currentPage}
                       totalPages={totalPages}

@@ -6,6 +6,7 @@ import com.swp391.bookverse.dto.response.PaymentResponse;
 import com.swp391.bookverse.entity.*;
 import com.swp391.bookverse.enums.NotificationType;
 import com.swp391.bookverse.enums.OrderStatus;
+import com.swp391.bookverse.enums.PaymentMethod;
 import com.swp391.bookverse.enums.PaymentStatus;
 import com.swp391.bookverse.exception.AppException;
 import com.swp391.bookverse.exception.ErrorCode;
@@ -106,6 +107,21 @@ public class OrderService {
                 .build();
         notificationService.createBroadcastNotification(notificationRequest);
 
+        // send notification to all admins about new order
+        NotificationBroadCastCreationRequest adminNotificationRequest = NotificationBroadCastCreationRequest.builder()
+                .type(NotificationType.FOR_ADMINS)
+                .content("New order placed by " + user.getUsername() + ". Order ID: " + savedOrder.getId())
+                .build();
+        notificationService.createBroadcastNotification(adminNotificationRequest);
+
+        // send notification to current customer about order creation
+        NotificationCreationRequest customerNotificationRequest = NotificationCreationRequest.builder()
+                .targetUserId(user.getId())
+                .type(NotificationType.FOR_CUSTOMERS_PERSONAL)
+                .content("Your order (ID: " + savedOrder.getId() + ") has been created and is now pending for confirmation.")
+                .build();
+        notificationService.createPersonalNotification(customerNotificationRequest);
+
         // Return order response DTO after saving
         return orderMapper.toOrderResponse(savedOrder);
     }
@@ -166,14 +182,33 @@ public class OrderService {
             switch (order.getStatus()) {
                 case PENDING_PAYMENT, PENDING:
                     validTransition = (request.getStatus() == OrderStatus.CONFIRMED);
+                    // send notification to customer when order is confirmed
+                    if (validTransition) {
+                        NotificationCreationRequest notificationRequest = NotificationCreationRequest.builder()
+                                .targetUserId(order.getUser().getId())
+                                .type(NotificationType.FOR_CUSTOMERS_PERSONAL)
+                                .content("Your order (ID: " + order.getId() + ") has been confirmed.")
+                                .build();
+                        notificationService.createPersonalNotification(notificationRequest);
+                    }
                     break;
                 case CONFIRMED:
                     validTransition = (request.getStatus() == OrderStatus.PROCESSING);
+                    // send notification to customer when order is being processed
+                    if (validTransition) {
+                        NotificationCreationRequest notificationRequest = NotificationCreationRequest.builder()
+                                .targetUserId(order.getUser().getId())
+                                .type(NotificationType.FOR_CUSTOMERS_PERSONAL)
+                                .content("Your order (ID: " + order.getId() + ") is being processed.")
+                                .build();
+                        notificationService.createPersonalNotification(notificationRequest);
+                    }
                     break;
                 case PROCESSING:
                     validTransition = (request.getStatus() == OrderStatus.DELIVERING);
-                    // update stock quantities when order is moved to DELIVERING
+
                     if (validTransition) {
+                        // update stock quantities when order is moved to DELIVERING
                         for (OrderItem item : order.getOrderItems()) {
                             Book book = item.getBook();
                             if (book.getStockQuantity() < item.getQuantity()) {
@@ -181,18 +216,35 @@ public class OrderService {
                             }
                             book.setStockQuantity(book.getStockQuantity() - item.getQuantity());
                             bookRepository.save(book);
+
+                            // send notification to customer when order is out for delivery
+                            NotificationCreationRequest notificationRequest = NotificationCreationRequest.builder()
+                                    .targetUserId(order.getUser().getId())
+                                    .type(NotificationType.FOR_CUSTOMERS_PERSONAL)
+                                    .content("Your order (ID: " + order.getId() + ") is out for delivery (DELIVERING) and cannot be cancelled now.")
+                                    .build();
+                            notificationService.createPersonalNotification(notificationRequest);
                         }
                     }
                     break;
                 case DELIVERING:
                     validTransition = (request.getStatus() == OrderStatus.DELIVERED);
-                    // change its payment status to SUCCESS if it's a COD order when order is DELIVERED
+
                     if (validTransition) {
+                        // change its payment status to SUCCESS if it's a COD order when order is DELIVERED
                         Payment payment = paymentRepository.findByOrderId(order.getId());
-                        if (payment != null && payment.getMethod() == com.swp391.bookverse.enums.PaymentMethod.COD) {
+                        if (payment != null && payment.getMethod() == PaymentMethod.COD) {
                             payment.setStatus(PaymentStatus.SUCCESS);
                             paymentRepository.save(payment);
                         }
+
+                        // send notification to customer when order is delivered
+                        NotificationCreationRequest notificationRequest = NotificationCreationRequest.builder()
+                                .targetUserId(order.getUser().getId())
+                                .type(NotificationType.FOR_CUSTOMERS_PERSONAL)
+                                .content("Your order (ID: " + order.getId() + ") has been delivered by shipper.")
+                                .build();
+                        notificationService.createPersonalNotification(notificationRequest);
                     }
                     break;
 //                case DELIVERED:
@@ -212,14 +264,6 @@ public class OrderService {
         }
 
         Order updatedOrder = orderRepository.save(order);
-
-        // send notification to current cútomer about order status update
-        NotificationCreationRequest notificationRequest = NotificationCreationRequest.builder()
-                .targetUserId(order.getUser().getId())
-                .type(NotificationType.FOR_CUSTOMERS_PERSONAL)
-                .content("Your order (ID: " + order.getId() + ") status has been updated to " + order.getStatus())
-                .build();
-        notificationService.createPersonalNotification(notificationRequest);
 
         return orderMapper.toOrderResponse(updatedOrder);
     }
@@ -253,6 +297,7 @@ public class OrderService {
         }
 
         order.setStatus(OrderStatus.CANCELLED);
+        order.setCancelReason(request.getCancelReason());
 
         Order updatedOrder = orderRepository.save(order);
 
@@ -282,6 +327,21 @@ public class OrderService {
                 .content(contentNotification)
                 .build();
         notificationService.createBroadcastNotification(notificationRequest);
+
+        // send notification to all admins about order cancellation
+        NotificationBroadCastCreationRequest adminNotificationRequest = NotificationBroadCastCreationRequest.builder()
+                .type(NotificationType.FOR_ADMINS)
+                .content(contentNotification)
+                .build();
+        notificationService.createBroadcastNotification(adminNotificationRequest);
+
+        // send notification to current customer about order cancellation
+        NotificationCreationRequest customerNotificationRequest = NotificationCreationRequest.builder()
+                .targetUserId(user.getId())
+                .type(NotificationType.FOR_CUSTOMERS_PERSONAL)
+                .content("Your order (ID: " + order.getId() + ") has been cancelled successfully.")
+                .build();
+        notificationService.createPersonalNotification(customerNotificationRequest);
 
         return orderMapper.toOrderResponse(updatedOrder);
     }
@@ -343,6 +403,21 @@ public class OrderService {
                 .content("Order ID: " + order.getId() + " address has been changed by the customer " + user.getUsername())
                 .build();
         notificationService.createBroadcastNotification(notificationRequest);
+
+        // send notification to all admins about order address change
+        NotificationBroadCastCreationRequest adminNotificationRequest = NotificationBroadCastCreationRequest.builder()
+                .type(NotificationType.FOR_ADMINS)
+                .content("Order ID: " + order.getId() + " address has been changed by the customer " + user.getUsername())
+                .build();
+        notificationService.createBroadcastNotification(adminNotificationRequest);
+
+        // send notification to current customer about order address change
+        NotificationCreationRequest customerNotificationRequest = NotificationCreationRequest.builder()
+                .targetUserId(user.getId())
+                .type(NotificationType.FOR_CUSTOMERS_PERSONAL)
+                .content("Your order (ID: " + order.getId() + ") address has been changed successfully.")
+                .build();
+        notificationService.createPersonalNotification(customerNotificationRequest);
 
         return orderMapper.toOrderResponse(updatedOrder);
     }

@@ -17,8 +17,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
-import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
-import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.web.SecurityFilterChain;
 
 import javax.crypto.spec.SecretKeySpec;
@@ -52,12 +50,13 @@ public class SecurityConfig {
     String[] PUBLIC_PUT_ENDPOINTS = {"api/users/myInfo", "api/users/change-my-password"};
 
     String[] ADMIN_GET_ENDPOINTS = {"api/users/**"};
-    String[] ADMIN_POST_ENDPOINTS = {"api/authors/**", "api/books/**", "api/publishers/**", "api/sup-categories/**", "/api/sub-categories/**", "api/promotions/**"};
-    String[] ADMIN_PUT_ENDPOINTS = {"api/authors/**" , "api/books/**", "api/publishers/**", "api/sup-categories/**", "/api/sub-categories/**","api/users/**", "api/promotions/**"};
+    String[] ADMIN_POST_ENDPOINTS = {/*"api/authors/**", "api/books/**", "api/publishers/**", "api/sup-categories/**", "/api/sub-categories/**",*/ "api/promotions/**"};
+    String[] ADMIN_PUT_ENDPOINTS = {/*"api/authors/**" , "api/books/**", "api/publishers/**", "api/sup-categories/**", "/api/sub-categories/**",*/"api/users/**", "api/promotions/**"};
     String[] ADMIN_DELETE_ENDPOINTS = {""};
 
     String[] STAFF_GET_ENDPOINTS = {""};
-    String[] STAFF_POST_ENDPOINTS = {""};
+    String[] STAFF_POST_ENDPOINTS = {"api/authors/**", "api/books/**", "api/publishers/**", "api/sup-categories/**", "/api/sub-categories/**"};
+    String[] STAFF_PUT_ENDPOINTS = {"api/authors/**" , "api/books/**", "api/publishers/**", "api/sup-categories/**", "/api/sub-categories/**"};
     String[] STAFF_DELETE_ENDPOINTS = {""};
 
     String[] CUSTOMER_GET_ENDPOINTS = {""};
@@ -89,17 +88,15 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, PUBLIC_POST_ENDPOINTS).permitAll()
                         .requestMatchers(HttpMethod.PUT, PUBLIC_PUT_ENDPOINTS).permitAll()
 //                        .requestMatchers(HttpMethod.GET, ADMIN_GET_ENDPOINTS).hasAnyAuthority("SCOPE_ADMIN")
-                        // Allow both ADMIN and STAFF for POST operations on these endpoints
-                        .requestMatchers(HttpMethod.POST, ADMIN_POST_ENDPOINTS).hasAnyAuthority("SCOPE_ADMIN", "SCOPE_STAFF")
-                        // Allow both ADMIN and STAFF for PUT operations on these endpoints
-                        .requestMatchers(HttpMethod.PUT, ADMIN_PUT_ENDPOINTS).hasAnyAuthority("SCOPE_ADMIN", "SCOPE_STAFF")
+                        .requestMatchers(HttpMethod.PUT, STAFF_PUT_ENDPOINTS).hasAnyAuthority("SCOPE_ADMIN", "SCOPE_STAFF")
+                        .requestMatchers(HttpMethod.POST, STAFF_POST_ENDPOINTS).hasAnyAuthority("SCOPE_ADMIN", "SCOPE_STAFF")
+                        .requestMatchers(HttpMethod.PUT, ADMIN_PUT_ENDPOINTS).hasAnyAuthority("SCOPE_ADMIN")
+                        .requestMatchers(HttpMethod.POST, ADMIN_POST_ENDPOINTS).hasAnyAuthority("SCOPE_ADMIN")
                         .anyRequest().authenticated());
 
         // Configure ability to use form login and basic authentication
         httpSecurity.oauth2ResourceServer(oauth2 ->
-                oauth2.jwt(jwtConfigurer -> jwtConfigurer
-                        .decoder(jwtDecoder())
-                        .jwtAuthenticationConverter(jwtAuthenticationConverter()))
+                oauth2.jwt(jwtConfigurer -> jwtConfigurer.decoder(jwtDecoder()))
         );
 
         // Disable CSRF protection for simplicity in this example.
@@ -120,26 +117,6 @@ public class SecurityConfig {
                 .withSecretKey(secretKeySpec)
                 .macAlgorithm(MacAlgorithm.HS512)
                 .build();
-    }
-
-    /**
-     * Configures JWT authentication converter to extract authorities from scope claim.
-     * Spring Security automatically adds SCOPE_ prefix when reading from 'scope' claim.
-     * Token should contain roles like "ADMIN STAFF" and Spring converts to "SCOPE_ADMIN SCOPE_STAFF".
-     *
-     * @return JwtAuthenticationConverter configured to use scope claim
-     */
-    @Bean
-    JwtAuthenticationConverter jwtAuthenticationConverter() {
-        JwtGrantedAuthoritiesConverter grantedAuthoritiesConverter = new JwtGrantedAuthoritiesConverter();
-        // Don't set prefix or claim name - use defaults:
-        // - Default claim name: "scope"
-        // - Default prefix: "SCOPE_"
-        // Spring will read "ADMIN STAFF" from token and convert to [SCOPE_ADMIN, SCOPE_STAFF]
-
-        JwtAuthenticationConverter jwtAuthenticationConverter = new JwtAuthenticationConverter();
-        jwtAuthenticationConverter.setJwtGrantedAuthoritiesConverter(grantedAuthoritiesConverter);
-        return jwtAuthenticationConverter;
     }
 
     @Bean

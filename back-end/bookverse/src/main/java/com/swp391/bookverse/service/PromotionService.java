@@ -1,11 +1,13 @@
 package com.swp391.bookverse.service;
 
+import com.swp391.bookverse.dto.request.NotificationBroadCastCreationRequest;
 import com.swp391.bookverse.dto.request.PromotionCreationRequest;
 import com.swp391.bookverse.dto.request.PromotionUpdateRequest;
 import com.swp391.bookverse.dto.response.PromotionResponse;
 import com.swp391.bookverse.dto.response.SubCategoryResponse;
 import com.swp391.bookverse.entity.Promotion;
 import com.swp391.bookverse.entity.SubCategory;
+import com.swp391.bookverse.enums.NotificationType;
 import com.swp391.bookverse.exception.AppException;
 import com.swp391.bookverse.exception.ErrorCode;
 import com.swp391.bookverse.mapper.PromotionMapper;
@@ -29,6 +31,7 @@ public class PromotionService {
     PromotionRepository promotionRepository;
     PromotionMapper promotionMapper;
     SubCategoryRepository subCategoryRepository;
+    NotificationService notificationService;
 
     /**
      * Create a new promotion. Only admins can perform this action.
@@ -49,6 +52,14 @@ public class PromotionService {
         }
 
         Promotion promotion = promotionMapper.toPromotion(request);
+
+        // send notification to all admins
+        NotificationBroadCastCreationRequest notificationRequest = NotificationBroadCastCreationRequest.builder()
+                .type(NotificationType.FOR_ADMINS)
+                .content("New promotion created: " + promotion.getContent())
+                .build();
+        notificationService.createBroadcastNotification(notificationRequest);
+
         return promotionMapper.toPromotionResponse(promotionRepository.save(promotion));
     }
 
@@ -107,6 +118,13 @@ public class PromotionService {
             throw new AppException(ErrorCode.INVALID_DATE_RANGE);
         }
 
+        // send notification to all admins
+        NotificationBroadCastCreationRequest notificationRequest = NotificationBroadCastCreationRequest.builder()
+                .type(NotificationType.FOR_ADMINS)
+                .content("Promotion updated: " + existingPromotion.getContent())
+                .build();
+        notificationService.createBroadcastNotification(notificationRequest);
+
         return promotionMapper.toPromotionResponse(promotionRepository.save(existingPromotion));
     }
 
@@ -129,6 +147,22 @@ public class PromotionService {
         Promotion promotion = promotionRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.PROMOTION_NOT_FOUND));
         promotion.setActive(b);
+
+        // send notification to all admins
+        String status = b ? "active" : "inactive";
+        NotificationBroadCastCreationRequest notificationRequest = NotificationBroadCastCreationRequest.builder()
+                .type(NotificationType.FOR_ADMINS)
+                .content("Promotion " + status + ": " + promotion.getContent())
+                .build();
+        notificationService.createBroadcastNotification(notificationRequest);
+
+        // send notification to all staffs
+        NotificationBroadCastCreationRequest staffNotificationRequest = NotificationBroadCastCreationRequest.builder()
+                .type(NotificationType.FOR_STAFFS)
+                .content("Promotion " + status + ": " + promotion.getContent())
+                .build();
+        notificationService.createBroadcastNotification(staffNotificationRequest);
+
         return promotionMapper.toPromotionResponse(promotionRepository.save(promotion));
     }
 

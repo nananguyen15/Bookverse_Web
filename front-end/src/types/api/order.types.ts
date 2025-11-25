@@ -46,6 +46,7 @@ export type OrderResponse = {
   id: number;
   userId: string;
   userName: string;
+  userPhone?: string; // Customer phone number
   status: OrderStatus;
   totalAmount: number;
   address: string;

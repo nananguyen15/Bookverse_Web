@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import { orderApi, notificationApi, paymentApi } from "../../api";
 import type { OrderResponse, OrderStatus, PaymentStatus } from "../../types";
 import {
@@ -16,9 +16,6 @@ import {
   ActionButtonGroup,
   Modal,
   ModalActions,
-  ViewDetailsContainer,
-  ViewDetailsGrid,
-  ViewDetailsRow,
 } from "../Shared/Management";
 import {
   OrderStatusBadge,
@@ -27,15 +24,12 @@ import {
 } from "../Order";
 import {
   formatOrderDate,
-  getTotalOrderItems,
-  getNextAllowedStatuses,
 } from "../../utils/orderHelpers";
 
 type SortField = "no" | "id" | "date" | "total" | "customer" | "payment";
 
 export function OrderManagementNew() {
   const location = useLocation();
-  const navigate = useNavigate();
   const isStaffRoute = location.pathname.startsWith("/staff");
 
   const [orders, setOrders] = useState<OrderResponse[]>([]);
@@ -175,7 +169,6 @@ export function OrderManagementNew() {
       // Update order status to CANCELLED
       await orderApi.updateOrder(selectedOrder.id, {
         status: "CANCELLED",
-        address: selectedOrder.address,
       });
 
       // Send notification to customer
@@ -361,7 +354,7 @@ export function OrderManagementNew() {
                   </td>
                 </tr>
               ) : (
-                paginatedOrders.map((order, index) => (
+                paginatedOrders.map((order) => (
                   <tr key={order.id} className="hover:bg-beige-50 transition-colors">
                     <TableCell>
                       <TableCellText className="font-semibold text-beige-700">
@@ -458,6 +451,7 @@ export function OrderManagementNew() {
         }
       />
 
+
       {/* View Modal */}
       <Modal
         isOpen={showViewModal}
@@ -470,60 +464,89 @@ export function OrderManagementNew() {
       >
         {selectedOrder && (
           <>
-            <ViewDetailsContainer>
-              <ViewDetailsGrid>
-                <ViewDetailsRow label="Order ID" value={`#${selectedOrder.id}`} />
-                <ViewDetailsRow label="Customer" value={selectedOrder.userName} />
-              </ViewDetailsGrid>
+            <div className="space-y-6">
+              {/* Order Info Section */}
+              <div className="grid grid-cols-2 gap-6">
+                <div>
+                  <p className="text-sm text-gray-500 mb-1">Order ID</p>
+                  <p className="text-base font-semibold text-gray-900">#{selectedOrder.id}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500 mb-1">Customer</p>
+                  <p className="text-base font-semibold text-gray-900">{selectedOrder.userName}</p>
+                </div>
+              </div>
 
-              <ViewDetailsGrid>
-                <ViewDetailsRow
-                  label="Order Date"
-                  value={new Date(selectedOrder.createdAt).toLocaleString()}
-                />
-                <ViewDetailsRow label="Status" value={<OrderStatusBadge status={selectedOrder.status} />} />
-              </ViewDetailsGrid>
+              <div className="grid grid-cols-2 gap-6">
+                <div>
+                  <p className="text-sm text-gray-500 mb-1">Phone</p>
+                  <p className="text-base font-medium text-gray-900">{selectedOrder.userPhone || "N/A"}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500 mb-1">Order Date</p>
+                  <p className="text-base font-medium text-gray-900">
+                    {new Date(selectedOrder.createdAt).toLocaleString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </p>
+                </div>
+              </div>
 
-              <ViewDetailsGrid>
-                <ViewDetailsRow
-                  label="Payment Method"
-                  value={selectedOrder.payment?.method === "VNPAY" ? "VNPay" : "Cash on Delivery"}
-                />
-                <ViewDetailsRow
-                  label="Payment Status"
-                  value={<PaymentStatusBadge status={selectedOrder.payment?.status || "PENDING"} />}
-                />
-              </ViewDetailsGrid>
+              <div className="grid grid-cols-2 gap-6">
+                <div>
+                  <p className="text-sm text-gray-500 mb-1">Status</p>
+                  <OrderStatusBadge status={selectedOrder.status} />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-gray-500 mb-1">Payment Method</p>
+                    <p className="text-base font-medium text-gray-900">
+                      {selectedOrder.payment?.method === "VNPAY" ? "VNPay" : "Cash on Delivery"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500 mb-1">Payment Status</p>
+                    <PaymentStatusBadge status={selectedOrder.payment?.status || "PENDING"} />
+                  </div>
+                </div>
+              </div>
 
+              {/* Cancellation Reason */}
               {selectedOrder.cancelReason && (
-                <div className="col-span-2 mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
                   <h4 className="text-sm font-semibold text-red-700 mb-2">Cancellation Reason</h4>
-                  <p className="text-gray-700 text-sm">{selectedOrder.cancelReason}</p>
+                  <p className="text-sm text-gray-700">{selectedOrder.cancelReason}</p>
                 </div>
               )}
 
+              {/* Shipping Address */}
               {selectedOrder.address && (
-                <div className="col-span-2 mt-4">
-                  <h4 className="text-sm font-semibold text-beige-700 mb-2">Shipping Address</h4>
-                  <p className="text-gray-700 text-sm">{selectedOrder.address}</p>
+                <div className="border-t border-gray-200 pt-6">
+                  <h4 className="text-sm font-semibold text-gray-700 mb-2">Shipping Address</h4>
+                  <p className="text-sm text-gray-600">{selectedOrder.address}</p>
                 </div>
               )}
 
-              <div className="col-span-2 mt-4">
-                <h4 className="text-sm font-semibold text-beige-700 mb-3">Order Items</h4>
-                <div className="space-y-2">
+              {/* Order Items */}
+              <div className="border-t border-gray-200 pt-6">
+                <h4 className="text-sm font-semibold text-gray-700 mb-4">Order Items</h4>
+                <div className="space-y-3">
                   {selectedOrder.orderItems.map((item) => (
                     <div
                       key={item.id}
-                      className="flex justify-between items-center p-3 bg-beige-50 rounded-lg"
+                      className="flex justify-between items-center p-4 bg-gray-50 rounded-lg border border-gray-200"
                     >
                       <div className="flex-1">
-                        <p className="font-medium text-gray-800">{item.bookTitle}</p>
-                        <p className="text-sm text-gray-600">
+                        <p className="font-medium text-gray-900">{item.bookTitle}</p>
+                        <p className="text-sm text-gray-500 mt-1">
                           Quantity: {item.quantity} × ${item.price.toFixed(2)}
                         </p>
                       </div>
-                      <p className="font-semibold text-beige-700">
+                      <p className="text-lg font-semibold text-gray-900">
                         ${(item.quantity * item.price).toFixed(2)}
                       </p>
                     </div>
@@ -531,24 +554,27 @@ export function OrderManagementNew() {
                 </div>
               </div>
 
-              <ViewDetailsGrid>
-                <div className="col-span-2 flex justify-end pt-4 border-t">
+              {/* Total */}
+              <div className="border-t-2 border-gray-300 pt-4">
+                <div className="flex justify-end">
                   <div className="text-right">
-                    <p className="text-2xl font-bold text-beige-700">
-                      Total: ${selectedOrder.totalAmount.toFixed(2)}
+                    <p className="text-sm text-gray-500 mb-1">Total Amount</p>
+                    <p className="text-3xl font-bold text-gray-900">
+                      ${selectedOrder.totalAmount.toFixed(2)}
                     </p>
                   </div>
                 </div>
-              </ViewDetailsGrid>
-            </ViewDetailsContainer>
+              </div>
+            </div>
 
-            <div className="flex justify-end pt-4 mt-4 border-t">
+            {/* Footer */}
+            <div className="flex justify-end pt-6 mt-6 border-t border-gray-200">
               <button
                 onClick={() => {
                   setShowViewModal(false);
                   setSelectedOrder(null);
                 }}
-                className="px-4 py-2 text-gray-700 transition-colors bg-gray-200 rounded-lg hover:bg-gray-300"
+                className="px-6 py-2.5 text-sm font-medium text-gray-700 transition-colors bg-gray-200 rounded-lg hover:bg-gray-300"
               >
                 Close
               </button>
@@ -569,22 +595,23 @@ export function OrderManagementNew() {
       >
         {selectedOrder && (
           <div className="space-y-4">
-            <div className="p-4 bg-beige-50 border border-beige-200 rounded-lg">
-              <ViewDetailsGrid>
-                <ViewDetailsRow label="Customer" value={selectedOrder.userName} />
-                <ViewDetailsRow
-                  label="Total"
-                  value={`$${selectedOrder.totalAmount.toFixed(2)}`}
-                />
-                <ViewDetailsRow
-                  label="Current Status"
-                  value={<OrderStatusBadge status={selectedOrder.status} />}
-                />
-                <ViewDetailsRow
-                  label="Payment"
-                  value={<PaymentStatusBadge status={selectedOrder.payment?.status || "PENDING"} />}
-                />
-              </ViewDetailsGrid>
+            <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg space-y-3">
+              <div className="flex justify-between">
+                <span className="text-sm text-gray-500">Customer</span>
+                <span className="text-sm font-medium text-gray-900">{selectedOrder.userName}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-sm text-gray-500">Total</span>
+                <span className="text-sm font-medium text-gray-900">${selectedOrder.totalAmount.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-500">Current Status</span>
+                <OrderStatusBadge status={selectedOrder.status} />
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-gray-500">Payment</span>
+                <PaymentStatusBadge status={selectedOrder.payment?.status || "PENDING"} />
+              </div>
             </div>
 
             <OrderStatusUpdate
@@ -705,18 +732,24 @@ export function OrderManagementNew() {
 
           {selectedOrder && (
             <>
-              <ViewDetailsGrid>
-                <ViewDetailsRow label="Order ID" value={`#${selectedOrder.id}`} />
-                <ViewDetailsRow label="Customer" value={selectedOrder.userName} />
-                <ViewDetailsRow
-                  label="Refund Amount"
-                  value={<span className="text-lg font-bold text-green-600">${selectedOrder.totalAmount.toFixed(2)}</span>}
-                />
-                <ViewDetailsRow
-                  label="Payment Status"
-                  value={<PaymentStatusBadge status={selectedOrder.payment?.status || "PENDING"} />}
-                />
-              </ViewDetailsGrid>
+              <div className="space-y-3 mb-6">
+                <div className="flex justify-between">
+                  <span className="text-sm text-gray-500">Order ID</span>
+                  <span className="text-sm font-medium text-gray-900">#{selectedOrder.id}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm text-gray-500">Customer</span>
+                  <span className="text-sm font-medium text-gray-900">{selectedOrder.userName}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-500">Refund Amount</span>
+                  <span className="text-lg font-bold text-green-600">${selectedOrder.totalAmount.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-500">Payment Status</span>
+                  <PaymentStatusBadge status={selectedOrder.payment?.status || "PENDING"} />
+                </div>
+              </div>
 
               <div className="p-4 bg-gray-50 rounded-lg">
                 <h4 className="text-sm font-semibold text-gray-700 mb-2">Please Confirm:</h4>

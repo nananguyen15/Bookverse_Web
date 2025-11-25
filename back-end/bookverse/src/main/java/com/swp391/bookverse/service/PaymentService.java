@@ -1,11 +1,13 @@
 package com.swp391.bookverse.service;
 
+import com.swp391.bookverse.dto.request.NotificationCreationRequest;
 import com.swp391.bookverse.dto.request.PaymentCreationRequest;
 import com.swp391.bookverse.dto.request.PaymentRequest;
 import com.swp391.bookverse.dto.response.PaymentResponse;
 import com.swp391.bookverse.dto.response.VNPayURLResponse;
 import com.swp391.bookverse.entity.Order;
 import com.swp391.bookverse.entity.Payment;
+import com.swp391.bookverse.enums.NotificationType;
 import com.swp391.bookverse.enums.OrderStatus;
 import com.swp391.bookverse.enums.PaymentMethod;
 import com.swp391.bookverse.enums.PaymentStatus;
@@ -35,6 +37,7 @@ public class PaymentService {
     OrderRepository orderRepository;
     UserRepository userRepository;
     PaymentMapper paymentMapper;
+    NotificationService notificationService;
 
     /**
      * Create payment record for an order. Only the current user can create payment for their own order.
@@ -230,6 +233,15 @@ public class PaymentService {
         payment.setPaidAt(LocalDateTime.now());
         Payment updatedPayment = paymentRepository.save(payment);
 
+        // send notification to user of the order
+        String userId = updatedPayment.getOrder().getUser().getId();
+        String message = "Your payment for order #" + updatedPayment.getOrder().getId() + " successful.";
+        NotificationCreationRequest notificationRequest = NotificationCreationRequest.builder()
+                .targetUserId(userId)
+                .content(message)
+                .type(NotificationType.FOR_CUSTOMERS_PERSONAL)
+                .build();
+        notificationService.createPersonalNotification(notificationRequest);
 
         return PaymentResponse.builder()
                 .id(updatedPayment.getId())

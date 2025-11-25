@@ -15,10 +15,10 @@ export const canCancelOrder = (status: OrderStatus): boolean => {
 
 /**
  * Check if customer can change order address
- * Can only change address before order is confirmed for delivery
+ * Can only change address when order is in PENDING status (backend restriction)
  */
 export const canChangeAddress = (status: OrderStatus): boolean => {
-  return ["PENDING", "CONFIRMED", "PROCESSING"].includes(status);
+  return status === "PENDING";
 };
 
 /**

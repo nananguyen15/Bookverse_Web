@@ -1,0 +1,511 @@
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { useCart } from "../../contexts/CartContext";
+import { useAuth } from "../../contexts/AuthContext";
+import { usersApi, paymentApi, orderApi } from "../../api";
+import { Navbar } from "../layout/Navbar/Navbar";
+import { Footer } from "../layout/Footer/Footer";
+import { provinces, districts, wards } from "vietnam-provinces";
+
+const shippingSchema = z.object({
+  fullName: z.string().min(1, "Full name is required"),
+  phone: z
+    .string()
+    .min(1, "Phone number is required")
+    .regex(/^0[3-9]\d{8}$/, "Invalid Vietnamese phone number"),
+  province: z.string().min(1, "Province is required"),
+  district: z.string().min(1, "District is required"),
+  ward: z.string().min(1, "Ward is required"),
+  street: z.string().min(1, "Street address is required"),
+});
+
+type ShippingFormValues = z.infer<typeof shippingSchema>;
+
+interface District {
+  code: string;
+  name: string;
+  province_code: string;
+  province_name: string;
+  unit: string;
+  full_name: string;
+}
+
+interface Ward {
+  code: string;
+  name: string;
+  district_code: string;
+  district_name: string;
+  province_code: string;
+  province_name: string;
+  unit: string;
+  full_name: string;
+}
+
+export function Payment() {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { cartDetails, clearCart } = useCart();
+  const [paymentMethod, setPaymentMethod] = useState("cod");
+  const [districtOptions, setDistrictOptions] = useState<District[]>([]);
+  const [wardOptions, setWardOptions] = useState<Ward[]>([]);
+  const [saveToProfile, setSaveToProfile] = useState(false);
+  const [userInfoLoaded, setUserInfoLoaded] = useState(false);
+
+  const {
+    register,
+    handleSubmit,
+    watch,
+    setValue,
+    formState: { errors },
+  } = useForm<ShippingFormValues>({
+    resolver: zodResolver(shippingSchema),
+  });
+
+  const selectedProvince = watch("province");
+  const selectedDistrict = watch("district");
+
+  // Load user info and pre-fill form
+  useEffect(() => {
+    const loadUserInfo = async () => {
+      if (user && !userInfoLoaded) {
+        try {
+          const userInfo = await usersApi.getMyInfo();
+
+          // Pre-fill name and phone if available
+          if (userInfo.name) {
+            setValue("fullName", userInfo.name);
+          }
+          if (userInfo.phone) {
+            setValue("phone", userInfo.phone);
+          }
+
+          // Parse address if available (format: "street, ward, district, province")
+          if (userInfo.address) {
+            const addressParts = userInfo.address.split(",").map(part => part.trim());
+            if (addressParts.length === 4) {
+              const [street, ward, district, province] = addressParts;
+              setValue("street", street);
+              setValue("province", province);
+              // District and ward will be set after options are loaded
+              setTimeout(() => {
+                setValue("district", district);
+                setTimeout(() => {
+                  setValue("ward", ward);
+                }, 100);
+              }, 100);
+            }
+          }
+
+          setUserInfoLoaded(true);
+        } catch (error) {
+          console.error("Failed to load user info:", error);
+        }
+      }
+    };
+
+    loadUserInfo();
+  }, [user, userInfoLoaded, setValue]);
+
+  // Update district options when province changes
+  useEffect(() => {
+    if (selectedProvince) {
+      const provinceData = provinces.find((p) => p.name === selectedProvince);
+      if (provinceData) {
+        const filteredDistricts = districts.filter(
+          (d) => d.province_code === provinceData.code
+        );
+        setDistrictOptions(filteredDistricts);
+        setWardOptions([]);
+        setValue("district", "");
+        setValue("ward", "");
+      }
+    } else {
+      setDistrictOptions([]);
+      setWardOptions([]);
+    }
+  }, [selectedProvince, setValue]);
+
+  // Update ward options when district changes
+  useEffect(() => {
+    if (selectedDistrict) {
+      const districtData = districts.find((d) => d.name === selectedDistrict);
+      if (districtData) {
+        const filteredWards = wards.filter(
+          (w) => w.district_code === districtData.code
+        );
+        setWardOptions(filteredWards);
+        setValue("ward", "");
+      }
+    } else {
+      setWardOptions([]);
+    }
+  }, [selectedDistrict, setValue]);
+
+  const onSubmit = async (data: ShippingFormValues) => {
+    // Format full address for order
+    const fullAddress = `${data.street}, ${data.ward}, ${data.district}, ${data.province}`;
+
+    // Update user profile if checkbox is checked
+    if (saveToProfile && user) {
+      try {
+        await usersApi.updateMyInfo({
+          name: data.fullName,
+          phone: data.phone,
+          address: fullAddress,
+        });
+      } catch (error) {
+        console.error("Failed to update user profile:", error);
+      }
+    }
+
+    // Handle payment method
+    if (paymentMethod === "vnpay") {
+      try {
+        // VNPAY FLOW:
+        // Step 1: Create order (status: PENDING)
+        const newOrder = await orderApi.createOrder({
+          address: fullAddress,
+        });
+
+        console.log('✅ Step 1: Order created:', newOrder);
+        console.log('📋 Order ID:', newOrder.id);
+        console.log('📊 Order Status:', newOrder.status, '(should be PENDING)');
+
+        // Step 2: Create payment record (method: VNPAY)
+        const payment = await paymentApi.createPaymentRecord({
+          orderId: newOrder.id,
+          method: "VNPAY",
+        });
+
+        console.log('✅ Step 2: Payment record created:', payment);
+        console.log('🆔 Payment ID:', payment.id);
+        console.log('💳 Payment Method:', payment.method);
+        console.log('💰 Payment Status:', payment.status, '(should be PENDING)');
+
+        // Step 3: Create VNPay payment URL
+        // Convert USD to VND (1 USD = 25,000 VND approximately)
+        const amountInVND = Math.round(newOrder.totalAmount * 25000);
+        const paymentUrl = await paymentApi.createVNPayUrl({
+          paymentId: payment.id, // Include payment ID so backend can associate VNPay transaction
+          amount: newOrder.totalAmount,
+          amountInVND: amountInVND,
+        });
+
+        console.log('✅ Step 3: VNPay URL received:', paymentUrl);
+
+        if (!paymentUrl || typeof paymentUrl !== 'string') {
+          console.error('❌ Invalid payment URL:', paymentUrl);
+          throw new Error('Invalid payment URL received from server');
+        }
+
+        // Save payment ID and order ID to localStorage for callback processing
+        localStorage.setItem('vnpay_pending_payment_id', payment.id.toString());
+        localStorage.setItem('vnpay_pending_order_id', newOrder.id.toString());
+        console.log('💾 Saved to localStorage - Payment ID:', payment.id, 'Order ID:', newOrder.id);
+
+        // Clear cart before redirecting to payment
+        clearCart();
+
+        // Step 5: Redirect to VNPay payment page
+        // After payment, VNPay will redirect to: http://localhost:5173/order-confirmed
+        console.log('🔄 Redirecting to VNPay...');
+        window.location.href = paymentUrl;
+      } catch (error) {
+        console.error("❌ Failed to create VNPay payment:", error);
+        alert("Could not create VNPay payment. Please try again.");
+      }
+    } else {
+      // COD FLOW:
+      // Step 1: Create order (status: PENDING)
+      try {
+        const newOrder = await orderApi.createOrder({
+          address: fullAddress,
+        });
+
+        console.log('✅ COD Order created:', newOrder);
+        console.log('📋 Order Status:', newOrder.status, '(should be PENDING)');
+
+        // Step 2: Create payment record (method: COD)
+        const payment = await paymentApi.createPaymentRecord({
+          orderId: newOrder.id,
+          method: "COD",
+        });
+
+        console.log('✅ Payment record created:', payment);
+        console.log('💳 Payment Method:', payment.method, '(should be COD)');
+
+        clearCart();
+        console.log('✅ Order confirmed page with orderId:', newOrder.id);
+        navigate(`/order-confirmed/${newOrder.id}`);
+      } catch (error: any) {
+        console.error("❌ Failed to create order:", error);
+        console.error("Error details:", error.response?.data);
+        const errorMessage = error.response?.data?.message || "Could not create order. Please try again.";
+        alert(errorMessage);
+        // Don't navigate if order creation failed
+      }
+    }
+  };
+
+  return (
+    <>
+      <Navbar />
+      <div className="min-h-screen px-4 py-12 bg-beige-50 sm:px-6 lg:px-8">
+        <div className="max-w-4xl mx-auto">
+          <h1 className="mb-8 text-3xl font-bold text-center text-beige-900">
+            Checkout
+          </h1>
+          <form
+            onSubmit={handleSubmit(onSubmit)}
+            className="grid grid-cols-1 gap-12 lg:grid-cols-2"
+          >
+            {/* Shipping Address */}
+            <div className="p-6 bg-white rounded-lg shadow-sm">
+              <h2 className="mb-4 text-xl font-bold text-beige-900">
+                Shipping Address
+              </h2>
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <div>
+                    <label
+                      htmlFor="fullName"
+                      className="block text-sm font-medium text-beige-800"
+                    >
+                      Full Name
+                    </label>
+                    <input
+                      type="text"
+                      id="fullName"
+                      {...register("fullName")}
+                      className="block w-full px-3 py-2 mt-1 border rounded-md shadow-sm border-beige-300 focus:ring-beige-500 focus:border-beige-500"
+                    />
+                    {errors.fullName && (
+                      <p className="mt-1 text-sm text-red-600">
+                        {errors.fullName.message}
+                      </p>
+                    )}
+                  </div>
+                  <div>
+                    <label
+                      htmlFor="phone"
+                      className="block text-sm font-medium text-beige-800"
+                    >
+                      Phone Number
+                    </label>
+                    <input
+                      type="tel"
+                      id="phone"
+                      {...register("phone")}
+                      className="block w-full px-3 py-2 mt-1 border rounded-md shadow-sm border-beige-300 focus:ring-beige-500 focus:border-beige-500"
+                    />
+                    {errors.phone && (
+                      <p className="mt-1 text-sm text-red-600">
+                        {errors.phone.message}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="province"
+                    className="block text-sm font-medium text-beige-800"
+                  >
+                    Province/City
+                  </label>
+                  <select
+                    id="province"
+                    {...register("province")}
+                    className="block w-full px-3 py-2 mt-1 border rounded-md shadow-sm border-beige-300 focus:ring-beige-500 focus:border-beige-500"
+                  >
+                    <option value="">Select Province</option>
+                    {provinces.map((p) => (
+                      <option key={p.code} value={p.name}>
+                        {p.name}
+                      </option>
+                    ))}
+                  </select>
+                  {errors.province && (
+                    <p className="mt-1 text-sm text-red-600">
+                      {errors.province.message}
+                    </p>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <div>
+                    <label
+                      htmlFor="district"
+                      className="block text-sm font-medium text-beige-800"
+                    >
+                      District
+                    </label>
+                    <select
+                      id="district"
+                      {...register("district")}
+                      className="block w-full px-3 py-2 mt-1 border rounded-md shadow-sm border-beige-300 focus:ring-beige-500 focus:border-beige-500"
+                      disabled={!selectedProvince}
+                    >
+                      <option value="">Select District</option>
+                      {districtOptions.map((d) => (
+                        <option key={d.code} value={d.name}>
+                          {d.name}
+                        </option>
+                      ))}
+                    </select>
+                    {errors.district && (
+                      <p className="mt-1 text-sm text-red-600">
+                        {errors.district.message}
+                      </p>
+                    )}
+                  </div>
+                  <div>
+                    <label
+                      htmlFor="ward"
+                      className="block text-sm font-medium text-beige-800"
+                    >
+                      Ward/Commune
+                    </label>
+                    <select
+                      id="ward"
+                      {...register("ward")}
+                      className="block w-full px-3 py-2 mt-1 border rounded-md shadow-sm border-beige-300 focus:ring-beige-500 focus:border-beige-500"
+                      disabled={!selectedDistrict}
+                    >
+                      <option value="">Select Ward</option>
+                      {wardOptions.map((w) => (
+                        <option key={w.code} value={w.name}>
+                          {w.name}
+                        </option>
+                      ))}
+                    </select>
+                    {errors.ward && (
+                      <p className="mt-1 text-sm text-red-600">
+                        {errors.ward.message}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="street"
+                    className="block text-sm font-medium text-beige-800"
+                  >
+                    Street Address
+                  </label>
+                  <textarea
+                    id="street"
+                    {...register("street")}
+                    className="block w-full px-3 py-2 mt-1 border rounded-md shadow-sm border-beige-300 focus:ring-beige-500 focus:border-beige-500"
+                    rows={3}
+                    placeholder="01 dien bien phu, vinh quang"
+                  ></textarea>
+                  {errors.street && (
+                    <p className="mt-1 text-sm text-red-600">
+                      {errors.street.message}
+                    </p>
+                  )}
+                </div>
+
+                {/* Save to Profile Checkbox */}
+                {user && (
+                  <div className="flex items-center pt-2">
+                    <input
+                      type="checkbox"
+                      id="saveToProfile"
+                      checked={saveToProfile}
+                      onChange={(e) => setSaveToProfile(e.target.checked)}
+                      className="w-4 h-4 border-beige-300 rounded text-beige-700 focus:ring-beige-500"
+                    />
+                    <label
+                      htmlFor="saveToProfile"
+                      className="ml-2 text-sm text-beige-700"
+                    >
+                      Save this address as my default delivery address
+                    </label>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Order & Payment */}
+            <div className="p-6 bg-white rounded-lg shadow-sm">
+              <h2 className="mb-4 text-xl font-bold">Your Order</h2>
+              <div className="space-y-2">
+                {cartDetails.selectedItems.map((item) => (
+                  <div key={item.id} className="flex justify-between text-sm">
+                    <span>
+                      {item.title} x {item.quantity}
+                    </span>
+                    <span>${(item.price * item.quantity).toFixed(2)}</span>
+                  </div>
+                ))}
+              </div>
+              <hr className="my-4" />
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span>Subtotal</span>
+                  <span>${cartDetails.subtotal.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-green-600">
+                  <span>Promotion Discount (10%)</span>
+                  <span>-${cartDetails.promotionDiscount.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Shipping</span>
+                  <span>
+                    {cartDetails.shippingFee === 0
+                      ? "Free"
+                      : `$${cartDetails.shippingFee.toFixed(2)}`}
+                  </span>
+                </div>
+                <div className="flex justify-between text-lg font-bold">
+                  <span>Total</span>
+                  <span>${cartDetails.total.toFixed(2)}</span>
+                </div>
+              </div>
+
+              <h2 className="mt-6 mb-4 text-xl font-bold">Payment Method</h2>
+              <div className="space-y-3">
+                <label className="flex items-center p-3 border rounded-md cursor-pointer">
+                  <input
+                    type="radio"
+                    name="payment"
+                    value="cod"
+                    checked={paymentMethod === "cod"}
+                    onChange={() => setPaymentMethod("cod")}
+                    className="mr-3"
+                  />
+                  <span>Ship COD (Cash on Delivery)</span>
+                </label>
+                <label className="flex items-center p-3 border rounded-md cursor-pointer">
+                  <input
+                    type="radio"
+                    name="payment"
+                    value="vnpay"
+                    checked={paymentMethod === "vnpay"}
+                    onChange={() => setPaymentMethod("vnpay")}
+                    className="mr-3"
+                  />
+                  <span>VNPay</span>
+                </label>
+              </div>
+
+              <button
+                type="submit"
+                className="w-full py-3 mt-6 font-semibold text-white transition-colors rounded-lg bg-beige-700 hover:bg-beige-800"
+              >
+                {paymentMethod === "vnpay" ? "Proceed to Payment" : "Place Order"}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+      <Footer />
+    </>
+  );
+}

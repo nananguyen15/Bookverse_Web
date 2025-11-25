@@ -19,14 +19,25 @@ public class Review {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long id;
 
-    @Column(name = "user_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    User user;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "book_id", nullable = false)
+    Book book;
+
+    @Column(name = "user_id", insertable = false, updatable = false)
     String userId;
 
-    @Column(name = "book_id", nullable = false)
+    @Column(name = "book_id", insertable = false, updatable = false)
     Long bookId;
 
     @Column(nullable = false, columnDefinition = "TEXT")
     String comment;
+
+    @Column(name = "user_name")
+    String userName;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)

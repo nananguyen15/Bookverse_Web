@@ -98,8 +98,8 @@ export function Pagination({
               <button
                 onClick={() => onPageChange(page as number)}
                 className={`flex items-center justify-center border font-medium text-sm w-9 h-9 focus:outline-none focus:ring-2 focus:ring-beige-500 transition-colors ${currentPage === page
-                    ? "text-white bg-beige-700 border-beige-700 hover:bg-beige-800"
-                    : "text-beige-800 bg-white border-beige-200 hover:bg-beige-50 hover:text-beige-900 shadow-sm"
+                  ? "text-white bg-beige-700 border-beige-700 hover:bg-beige-800"
+                  : "text-beige-800 bg-white border-beige-200 hover:bg-beige-50 hover:text-beige-900 shadow-sm"
                   }`}
               >
                 {page}
@@ -155,7 +155,7 @@ export function Pagination({
             value={goToPage}
             onChange={(e) => setGoToPage(e.target.value)}
             className="bg-white w-14 border border-beige-200 text-beige-800 text-sm rounded-lg focus:ring-2 focus:ring-beige-500 focus:border-beige-500 px-2.5 py-2 shadow-sm hover:border-beige-300 transition-colors"
-            placeholder="1"
+            placeholder={currentPage.toString()}
           />
           <span className="text-sm font-medium text-beige-800">page</span>
           <button

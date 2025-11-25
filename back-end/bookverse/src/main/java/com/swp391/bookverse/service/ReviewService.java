@@ -1,14 +1,13 @@
 package com.swp391.bookverse.service;
 
 import com.swp391.bookverse.dto.APIResponse;
-import com.swp391.bookverse.dto.request.ReviewCreationRequest;
-import com.swp391.bookverse.dto.request.ReviewDeletionRequest;
-import com.swp391.bookverse.dto.request.ReviewUpdateRequest;
+import com.swp391.bookverse.dto.request.*;
 import com.swp391.bookverse.dto.response.ReviewOfBookResponse;
 import com.swp391.bookverse.dto.response.ReviewResponse;
 import com.swp391.bookverse.entity.Book;
 import com.swp391.bookverse.entity.Review;
 import com.swp391.bookverse.entity.User;
+import com.swp391.bookverse.enums.NotificationType;
 import com.swp391.bookverse.exception.AppException;
 import com.swp391.bookverse.exception.ErrorCode;
 import com.swp391.bookverse.mapper.ReviewMapper;
@@ -35,6 +34,8 @@ public class ReviewService {
     ReviewRepository reviewRepository;
     BookRepository bookRepository;
     UserRepository userRepository;
+    NotificationService notificationService;
+
 
     /**
      * Create a new review of current user for a specific book.
@@ -59,8 +60,9 @@ public class ReviewService {
 
         // Create review entity
         Review review = Review.builder()
-                .userId(user.getId())
-                .bookId(request.getBookId())
+                .user(user)
+                .book(book)
+                .userName(user.getUsername())
                 .comment(request.getComment())
                 .build();
 
@@ -133,6 +135,15 @@ public class ReviewService {
 
         // Delete the review
         reviewRepository.delete(review);
+
+        // send notification to the user whose review is deleted
+        NotificationCreationRequest notificationRequest = NotificationCreationRequest.builder()
+                .type(NotificationType.FOR_CUSTOMERS_PERSONAL)
+                .targetUserId(request.getUserId())
+                .content("Your review for book ID " + bookId + " has been deleted by an admin/staff.")
+                .build();
+        notificationService.createPersonalNotification(notificationRequest);
+
         return true;
     }
 
@@ -155,6 +166,11 @@ public class ReviewService {
 
         // Update the review comment
         review.setComment(request.getComment());
+        
+        // Ensure userName is set (for backward compatibility with old reviews)
+        if (review.getUserName() == null && review.getUser() != null) {
+            review.setUserName(review.getUser().getUsername());
+        }
 
         // Save the updated review
         Review updatedReview = reviewRepository.save(review);

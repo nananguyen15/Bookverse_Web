@@ -6,7 +6,7 @@
 export type ReviewResponse = {
   id: number;
   userId: string;
-  userName?: string; // Optional, populated by getAllFlat
+  userName: string; // Now always populated
   bookId: number;
   bookTitle?: string; // Optional, may be populated by client
   comment?: string;
