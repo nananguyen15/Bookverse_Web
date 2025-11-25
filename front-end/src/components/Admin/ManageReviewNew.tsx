@@ -121,14 +121,25 @@ export function ManageReviewNew() {
     currentPage * itemsPerPage
   );
 
+  // Create a position map: each review gets a stable position number based on ID ascending order
+  const positionMap = new Map<number, number>();
+  const sortedByIdAsc = [...reviews].sort((a, b) => (a.id || 0) - (b.id || 0));
+  sortedByIdAsc.forEach((review, index) => {
+    if (review.id) {
+      positionMap.set(review.id, index + 1);
+    }
+  });
+
   // Sort handler
   const handleSort = (key: SortField) => {
+    console.log("handleSort called with key:", key, "current sortField:", sortField, "sortOrder:", sortOrder);
     if (sortField === key) {
       setSortOrder(sortOrder === "asc" ? "desc" : "asc");
     } else {
       setSortField(key);
       setSortOrder("asc");
     }
+    setCurrentPage(1); // Reset to first page when sorting
   };
 
   // Handlers
@@ -212,7 +223,14 @@ export function ManageReviewNew() {
           <table className="w-full">
             <thead className="bg-beige-100 border-b border-beige-200">
               <tr>
-                <SimpleTableHeader label="#" />
+                <NewSortableHeader
+                  label="No"
+                  sortKey="id"
+                  currentSort={sortField}
+                  sortOrder={sortOrder}
+                  onSort={handleSort}
+                  className="w-28 whitespace-nowrap"
+                />
                 <NewSortableHeader
                   label="Review ID"
                   sortKey="id"
@@ -257,7 +275,7 @@ export function ManageReviewNew() {
                   <tr key={review.id} className="hover:bg-beige-50 transition-colors">
                     <TableCell>
                       <TableCellText className="font-semibold text-beige-700">
-                        {(currentPage - 1) * itemsPerPage + index + 1}
+                        {positionMap.get(review.id || 0) || 0}
                       </TableCellText>
                     </TableCell>
                     <TableCell>

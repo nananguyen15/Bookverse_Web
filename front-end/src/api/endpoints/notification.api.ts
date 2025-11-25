@@ -38,7 +38,7 @@ export interface UpdateNotificationRequest {
 const NOTIFICATION_ENDPOINT = "/notifications";
 
 export const notificationApi = {
-  // Admin: Get all notifications in the system
+  // Admin/Staff: Get all notifications in the system
   getAll: async (): Promise<Notification[]> => {
     const response = await apiClient.get<ApiResponse<Notification[]>>(
       NOTIFICATION_ENDPOINT
@@ -54,7 +54,7 @@ export const notificationApi = {
     return response.data.result;
   },
 
-  // Admin: Create personal notification for specific user
+  // Admin/Staff: Create personal notification for specific user
   createPersonal: async (
     data: CreatePersonalNotificationRequest
   ): Promise<Notification> => {
@@ -65,7 +65,7 @@ export const notificationApi = {
     return response.data.result;
   },
 
-  // Admin: Create broadcast notification for all users with specific role
+  // Admin/Staff: Create broadcast notification for all users with specific role
   // Returns list of users who received the notification
   createBroadcast: async (
     data: CreateBroadcastNotificationRequest
@@ -89,7 +89,7 @@ export const notificationApi = {
     return response.data.result;
   },
 
-  // Admin: Delete any user's notification
+  // Admin/Staff: Delete any notification
   adminDelete: async (id: number): Promise<string> => {
     const response = await apiClient.delete<ApiResponse<string>>(
       `${NOTIFICATION_ENDPOINT}/admin-delete/${id}`

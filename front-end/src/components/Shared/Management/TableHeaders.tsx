@@ -7,6 +7,7 @@ interface SortableTableHeaderProps<T extends string> {
   sortOrder: "asc" | "desc";
   onSort: (key: T) => void;
   align?: "left" | "center" | "right";
+  className?: string;
 }
 
 export function SortableTableHeader<T extends string>({
@@ -16,6 +17,7 @@ export function SortableTableHeader<T extends string>({
   sortOrder,
   onSort,
   align = "left",
+  className = "",
 }: SortableTableHeaderProps<T>) {
   const getSortIcon = () => {
     if (currentSort !== sortKey) {
@@ -38,7 +40,7 @@ export function SortableTableHeader<T extends string>({
   return (
     <th
       onClick={() => onSort(sortKey)}
-      className={`px-4 py-3 ${alignClass} text-sm font-semibold text-beige-900 cursor-pointer hover:bg-beige-200 transition-colors select-none`}
+      className={`px-4 py-3 ${alignClass} text-sm font-semibold text-beige-900 cursor-pointer hover:bg-beige-200 transition-colors select-none ${className}`}
     >
       {label} {getSortIcon()}
     </th>

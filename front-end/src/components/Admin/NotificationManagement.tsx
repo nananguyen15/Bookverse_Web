@@ -87,7 +87,7 @@ export function NotificationManagement({ noLayout = false }: NotificationManagem
       setLoading(true);
       const [customers, staffs, apiNotifications] = await Promise.all([
         usersApi.getCustomers(),
-        usersApi.getStaffs(),
+        usersApi.getStaffs().catch(() => [] as User[]), // Staff may not have permission to list all staffs
         notificationApi.getAll(),
       ]);
       setUsers([...customers, ...staffs]);
@@ -148,14 +148,16 @@ export function NotificationManagement({ noLayout = false }: NotificationManagem
             groupedMap.set(key, { ...notif });
           }
         } else {
-          // Personal notifications - keep as-is with unique key
-          const key = `personal|${notif.id}`;
+          // Personal notifications - add individually
+          const key = `personal-${notif.id}`;
           groupedMap.set(key, notif);
         }
       });
 
-      // Convert map to array
-      const groupedNotifications = Array.from(groupedMap.values());
+      // Convert map to array and sort by ID descending
+      const groupedNotifications = Array.from(groupedMap.values()).sort(
+        (a, b) => b.id - a.id
+      );
 
       setNotifications(groupedNotifications);
     } catch (error) {
@@ -456,6 +458,7 @@ export function NotificationManagement({ noLayout = false }: NotificationManagem
                   currentSort={sortField}
                   sortOrder={sortOrder}
                   onSort={handleSort}
+                  className="w-28 whitespace-nowrap"
                 />
                 <SimpleTableHeader label="Content" />
                 <SimpleTableHeader label="Type" />
