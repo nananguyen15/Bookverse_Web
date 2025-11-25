@@ -1,6 +1,7 @@
 package com.swp391.bookverse.repository;
 
 import com.swp391.bookverse.entity.Notification;
+import com.swp391.bookverse.enums.NotificationType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -31,4 +32,5 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
 
     Page<Notification> findByUserIdOrderByCreatedAtAsc(String userId, Pageable firstFive);
 
+    List<Notification> findAllByType(NotificationType notificationType);
 }

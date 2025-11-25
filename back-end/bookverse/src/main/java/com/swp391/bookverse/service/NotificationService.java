@@ -221,4 +221,35 @@ public class NotificationService {
         String userId = getCurrentUserId();
         notificationRepository.markAsReadByIdAndUserId(id, userId);
     }
+
+    /**
+     * Get notifications by type.
+     * FOR_STAFFS, FOR_ADMINS, FOR_CUSTOMERS, FOR_STAFFS_PERSONAL, FOR_ADMINS_PERSONAL, FOR_CUSTOMERS_PERSONAL
+     * @param type
+     * @return list of notifications of the specified type
+     */
+    public List<NotificationResponseWithID> getNotificationsByType(String type) {
+        NotificationType notificationType;
+        try {
+            notificationType = NotificationType.valueOf(type);
+        } catch (IllegalArgumentException e) {
+            throw new AppException(ErrorCode.INVALID_REQUEST);
+        }
+
+        List<Notification> notifications = notificationRepository.findAllByType(notificationType);
+
+        List<NotificationResponseWithID> responseWithIDs = notifications.stream()
+                .map(notification -> {
+                    NotificationResponseWithID responseWithID = new NotificationResponseWithID();
+                    responseWithID.setId(notification.getId());
+                    responseWithID.setContent(notification.getContent());
+                    responseWithID.setType(notification.getType());
+                    responseWithID.setRead(notification.isRead());
+                    responseWithID.setCreatedAt(notification.getCreatedAt());
+                    responseWithID.setUserId(notification.getUser().getId());
+                    return responseWithID;
+                })
+                .toList();
+        return responseWithIDs;
+    }
 }
