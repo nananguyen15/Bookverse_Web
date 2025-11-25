@@ -32,7 +32,7 @@ public class NotificationController {
     NotificationService notificationService;
 
     @GetMapping
-    @PreAuthorize("hasAuthority('SCOPE_ADMIN')")
+    @PreAuthorize("hasAuthority('SCOPE_ADMIN') or hasAuthority('SCOPE_STAFF')")
     public APIResponse<List<NotificationResponseWithID>> getAllNotifications() {
         return APIResponse.<List<NotificationResponseWithID>>builder()
                 .code(200)
@@ -49,7 +49,7 @@ public class NotificationController {
      * @return APIResponse with success message
      */
     @PostMapping("/admin-create/personal")
-    @PreAuthorize("hasAuthority('SCOPE_ADMIN')")
+    @PreAuthorize("hasAuthority('SCOPE_ADMIN') or hasAuthority('SCOPE_STAFF')")
     public APIResponse<NotificationResponse> createPersonalNotification(@Valid @RequestBody NotificationCreationRequest request) {
         return APIResponse.<NotificationResponse>builder()
                 .code(200)
@@ -59,7 +59,7 @@ public class NotificationController {
     }
 
     @PostMapping("/admin-create/broadcast")
-    @PreAuthorize("hasAuthority('SCOPE_ADMIN')")
+    @PreAuthorize("hasAuthority('SCOPE_ADMIN') or hasAuthority('SCOPE_STAFF')")
     public APIResponse<List<UserResponse>> createBroadcastNotification(@Valid @RequestBody NotificationBroadCastCreationRequest request) {
         return APIResponse.<List<UserResponse>>builder()
                 .code(200)
@@ -119,7 +119,7 @@ public class NotificationController {
     }
 
     @PutMapping("/update/{id}")
-    @PreAuthorize("hasAnyAuthority('SCOPE_ADMIN')")
+    @PreAuthorize("hasAnyAuthority('SCOPE_ADMIN') or hasAnyAuthority('SCOPE_STAFF')")
     public APIResponse<NotificationResponse> updateNotification(@PathVariable Long id, @RequestBody NotificationUpdateRequest request) {
         return APIResponse.<NotificationResponse>builder()
                 .code(200)
@@ -139,7 +139,7 @@ public class NotificationController {
     }
 
     @DeleteMapping("/admin-delete/{id}")
-    @PreAuthorize("hasAnyAuthority('SCOPE_ADMIN')")
+    @PreAuthorize("hasAnyAuthority('SCOPE_ADMIN') or hasAnyAuthority('SCOPE_STAFF')")
     public APIResponse<Void> adminDeleteNotification(@PathVariable Long id) {
         notificationService.adminDeleteNotification(id);
         return APIResponse.<Void>builder()
@@ -151,7 +151,7 @@ public class NotificationController {
     // apis to get notifications base on type FOR_STAFFS, FOR_ADMINS, FOR_CUSTOMERS, FOR_STAFFS_PERSONAL, FOR_ADMINS_PERSONAL, FOR_CUSTOMERS_PERSONAL
 
     @GetMapping("/type/{type}")
-    @PreAuthorize("hasAnyAuthority('SCOPE_ADMIN')")
+    @PreAuthorize("hasAnyAuthority('SCOPE_ADMIN') or hasAnyAuthority('SCOPE_STAFF')")
     public APIResponse<List<NotificationResponseWithID>> getNotificationsByType(@PathVariable String type) {
         return APIResponse.<List<NotificationResponseWithID>>builder()
                 .code(200)
