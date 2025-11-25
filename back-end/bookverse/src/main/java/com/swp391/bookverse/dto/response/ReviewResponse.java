@@ -13,6 +13,8 @@ import java.time.LocalDateTime;
 public class ReviewResponse {
     Long id;
     String userId;
+    String username;
+    String name;
     Long bookId;
     String comment;
     LocalDateTime createdAt;
