@@ -148,4 +148,16 @@ public class NotificationController {
                 .build();
     }
 
+    // apis to get notifications base on type FOR_STAFFS, FOR_ADMINS, FOR_CUSTOMERS, FOR_STAFFS_PERSONAL, FOR_ADMINS_PERSONAL, FOR_CUSTOMERS_PERSONAL
+
+    @GetMapping("/type/{type}")
+    @PreAuthorize("hasAnyAuthority('SCOPE_ADMIN')")
+    public APIResponse<List<NotificationResponseWithID>> getNotificationsByType(@PathVariable String type) {
+        return APIResponse.<List<NotificationResponseWithID>>builder()
+                .code(200)
+                .result(notificationService.getNotificationsByType(type))
+                .message("Fetched notifications of type " + type + " successfully")
+                .build();
+    }
+
 }

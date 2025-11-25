@@ -88,4 +88,12 @@ public class StatisticController {
         return response;
     }
 
+    @GetMapping("/total-books-sold")
+    @PreAuthorize("hasAuthority('SCOPE_ADMIN') or hasAuthority('SCOPE_STAFF')")
+    public APIResponse<List<StatisticTotalSoldResponse>> getTotalBooksSold() {
+        APIResponse<List<StatisticTotalSoldResponse>> response = new APIResponse<>();
+        response.setResult(orderService.getTotalBooksSold());
+        return response;
+    }
+
 }

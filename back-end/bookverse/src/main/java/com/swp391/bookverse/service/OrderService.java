@@ -679,4 +679,40 @@ public class OrderService {
                 .cancelled(cancelled)
                 .build();
     }
+
+    /**
+     * Get total sold of each book. Sort by total sold descending
+     * @return
+     */
+    public List<StatisticTotalSoldResponse> getTotalBooksSold() {
+        // fetch all delivered orders
+        List<Order> deliveredOrders = orderRepository.findAllActiveOrders().stream()
+                .filter(o -> o.getStatus() == OrderStatus.DELIVERED)
+                .toList();
+
+        // map of bookId to total sold
+        java.util.Map<Long, Long> totalSoldMap = new java.util.HashMap<>();
+
+        for (Order order : deliveredOrders) {
+            for (OrderItem item : order.getOrderItems()) {
+                Long bookId = item.getBook().getId();
+                totalSoldMap.put(bookId, totalSoldMap.getOrDefault(bookId, 0L) + item.getQuantity());
+            }
+        }
+
+        // convert map to list of StatisticTotalSoldResponse
+        List<StatisticTotalSoldResponse> totalSoldList = new ArrayList<>();
+        for (java.util.Map.Entry<Long, Long> entry : totalSoldMap.entrySet()) {
+            StatisticTotalSoldResponse response = StatisticTotalSoldResponse.builder()
+                    .bookId(entry.getKey())
+                    .totalSold(entry.getValue())
+                    .build();
+            totalSoldList.add(response);
+        }
+
+        // sort list by total sold descending
+        totalSoldList.sort((a, b) -> b.getTotalSold().compareTo(a.getTotalSold()));
+
+        return totalSoldList;
+    }
 }
