@@ -29,11 +29,11 @@ export function ImageUpload({
   accept = "image/*",
 }: ImageUploadProps) {
   const [uploadMode, setUploadMode] = useState<"file" | "url">("file");
-  const [urlInput, setUrlInput] = useState("");
+  const [urlInput, setUrlInput] = useState<string>("");
   const [previewUrl, setPreviewUrl] = useState(value || "");
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [fileError, setFileError] = useState("");
-  const [urlError, setUrlError] = useState("");
+  const [fileError, setFileError] = useState<string>("");
+  const [urlError, setUrlError] = useState<string>("");
 
   // Get image dimensions based on type
   const getImageClasses = () => {
