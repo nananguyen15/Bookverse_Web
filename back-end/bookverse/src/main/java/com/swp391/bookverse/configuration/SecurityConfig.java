@@ -44,7 +44,7 @@ public class SecurityConfig {
     // Define endpoint access rules based on user roles and HTTP methods
 
     String[] PUBLIC_POST_ENDPOINTS = {"api/auth/token", "api/auth/introspect", "api/users/create", "api/users/signup", "api/otp/**", "api/payments/create-vnpay-url"};
-    String[] PUBLIC_GET_ENDPOINTS = {"api/users/id-by-email/**","api/users/myInfo","api/users/is-active/**","api/authors/**", "api/books/**",
+    String[] PUBLIC_GET_ENDPOINTS = {"api/users/id-by-email/**","api/users/myInfo","api/users/is-active/**","api/users/team-members","api/authors/**", "api/books/**",
             "api/publishers/**", "api/sup-categories/**", "api/sub-categories/**", "api/cart/myCart", "api/payments/**",
             "api/payments/vnpay-return/**", "api/reviews/**", "api/promotions/**"};
     String[] PUBLIC_PUT_ENDPOINTS = {"api/users/myInfo", "api/users/change-my-password"};

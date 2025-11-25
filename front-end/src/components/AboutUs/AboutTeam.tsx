@@ -7,32 +7,12 @@ export function AboutTeam() {
   const [teamMembers, setTeamMembers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // List of team member usernames to display
-  const teamUsernames = [
-    "nhantce181298",
-    "thinhhtce191706",
-    "nhungpttce190544",
-    "tuyenntnce190631",
-    "datnhce180797",
-  ];
-
   useEffect(() => {
     const loadTeamMembers = async () => {
       try {
         setLoading(true);
-        const allUsers = await usersApi.getAll();
-
-        // Filter users by username
-        const members = allUsers.filter((user) =>
-          teamUsernames.includes(user.username)
-        );
-
-        // Sort by the order in teamUsernames array
-        const sortedMembers = teamUsernames
-          .map((username) => members.find((m) => m.username === username))
-          .filter((m): m is User => m !== undefined);
-
-        setTeamMembers(sortedMembers);
+        const members = await usersApi.getTeamMembers();
+        setTeamMembers(members);
       } catch (error) {
         console.error("Failed to load team members:", error);
       } finally {
@@ -41,7 +21,6 @@ export function AboutTeam() {
     };
 
     loadTeamMembers();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (loading) {

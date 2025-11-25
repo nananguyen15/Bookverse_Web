@@ -18,6 +18,12 @@ export const usersApi = {
     return response.data.result;
   },
 
+  // GET team members (public)
+  getTeamMembers: async (): Promise<User[]> => {
+    const response = await apiClient.get<ApiResponse<User[]>>(`${USERS_ENDPOINT}/team-members`);
+    return response.data.result;
+  },
+
   // GET user by ID
   getById: async (userId: string): Promise<User> => {
     const response = await apiClient.get<ApiResponse<User>>(

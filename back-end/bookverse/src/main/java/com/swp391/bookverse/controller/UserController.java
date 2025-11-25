@@ -62,6 +62,13 @@ public class UserController {
         return response;
     }
 
+    @GetMapping("/team-members")
+    public APIResponse<List<UserResponse>> getTeamMembers(){
+        APIResponse<List<UserResponse>> response = new APIResponse<>();
+        response.setResult(userService.getTeamMembers());
+        return response;
+    }
+
     @PostMapping("/signup")
     public APIResponse<UserResponse> signupUser(@RequestBody @Valid UserCreationRequest request) {
         APIResponse<UserResponse> response = new APIResponse<>();

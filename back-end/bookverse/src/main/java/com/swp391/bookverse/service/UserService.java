@@ -91,6 +91,31 @@ public class UserService {
         return usersResponses;
     }
 
+    /**
+     * Fetches team members for public display on About Us page.
+     * No authentication required - public endpoint.
+     * @return List<UserResponse> list of team members
+     */
+    public List<UserResponse> getTeamMembers() {
+        // Define team member usernames
+        List<String> teamUsernames = List.of(
+            "nhantce181298",
+            "thinhhtce191706",
+            "nhungpttce190544",
+            "tuyenntnce190631",
+            "datnhce180797"
+        );
+        
+        List<UserResponse> teamMembers = new ArrayList<>();
+        for (String username : teamUsernames) {
+            userRepository.findByUsername(username).ifPresent(user -> 
+                teamMembers.add(userMapper.toUserResponse(user))
+            );
+        }
+        
+        return teamMembers;
+    }
+
     public UserResponse signupUser(UserCreationRequest request) {
 
         // make sure the username of request object is not already taken. Stop the process if it is.
