@@ -147,9 +147,9 @@ public class AuthorService {
             String uniqueFilename = timestamp + "-" + cleanFilename + fileExtension;
 
             // Determine the upload directory
-            String projectRoot = System.getProperty("user.dir");
-            // Remove the back-end path if present to get the project root
-            projectRoot = projectRoot.replace("\\back-end\\bookverse", "");
+            String projectRoot = System.getProperty("user.dir")
+                    .replace("\\back-end\\bookverse", "")  // Windows
+                    .replace("/back-end/bookverse", "");    // Linux/Mac
             String uploadDir = projectRoot + "/front-end/public/img/" + folder;
 
             // Create directory if it doesn't exist

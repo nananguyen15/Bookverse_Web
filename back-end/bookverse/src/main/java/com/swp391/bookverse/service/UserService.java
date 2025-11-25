@@ -381,7 +381,9 @@ public class UserService {
 
             // Create upload directory if not exists
             // Use absolute path to avoid creating nested folders
-            String projectRoot = System.getProperty("user.dir").replace("\\back-end\\bookverse", "");
+            String projectRoot = System.getProperty("user.dir")
+                    .replace("\\back-end\\bookverse", "")  // Windows
+                    .replace("/back-end/bookverse", "");    // Linux/Mac
             String uploadDir = projectRoot + "/front-end/public/img/" + folder;
             Path uploadPath = Paths.get(uploadDir);
             

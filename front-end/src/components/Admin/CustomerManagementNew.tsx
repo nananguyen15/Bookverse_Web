@@ -220,13 +220,19 @@ export function CustomerManagementNew() {
         imageFile: imageFile || undefined,
         roles: ["CUSTOMER"]
       });
+      await loadCustomers(); // Load fresh data before closing modal
       alert("Customer created successfully");
       setShowCreateModal(false);
       resetForm();
-      loadCustomers();
-    } catch (error) {
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: unknown; status?: number }; message?: string };
       console.error("Error creating customer:", error);
-      alert("Failed to create customer");
+      console.error("Response data:", err.response?.data);
+      console.error("Status:", err.response?.status);
+
+      const responseData = err.response?.data as { message?: string; error?: string } | undefined;
+      const errorMsg = responseData?.message || responseData?.error || err.message || "Failed to create customer";
+      alert(`Failed to create customer: ${errorMsg}`);
     }
   };
 
@@ -250,10 +256,10 @@ export function CustomerManagementNew() {
         ...formData,
         imageFile: imageFile || undefined
       });
+      await loadCustomers(); // Load fresh data before closing modal
       alert("Customer updated successfully");
       setShowEditModal(false);
       resetForm();
-      loadCustomers();
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } }; message?: string };
       console.error("Error updating customer:", err);
