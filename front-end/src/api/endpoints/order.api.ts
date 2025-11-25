@@ -91,4 +91,19 @@ export const orderApi = {
     );
     return response.data.result;
   },
+
+  /**
+   * Admin/Staff cancel order with reason (dedicated endpoint)
+   * PUT /api/orders/admin-staff-cancel/{id}
+   */
+  adminStaffCancelOrder: async (
+    id: number,
+    data: { cancelReason: string }
+  ): Promise<OrderResponse> => {
+    const response = await apiClient.put<ApiResponse<OrderResponse>>(
+      `${ORDERS_ENDPOINT}/admin-staff-cancel/${id}`,
+      data
+    );
+    return response.data.result;
+  },
 };

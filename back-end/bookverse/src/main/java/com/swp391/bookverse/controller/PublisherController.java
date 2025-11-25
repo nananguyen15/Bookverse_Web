@@ -11,7 +11,6 @@ import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -50,13 +49,11 @@ public class PublisherController {
         return publisherService.updatePublisher(publisherId, request);
     }
 
-    @PreAuthorize("hasAuthority('SCOPE_ADMIN') or hasAuthority('SCOPE_STAFF')")
     @PutMapping("/active/{publisherId}")
     public PublisherActiveResponse restorePublisher(@PathVariable("publisherId") Long publisherId) {
         return publisherService.changeActivePublisherById(true, publisherId);
     }
 
-    @PreAuthorize("hasAuthority('SCOPE_ADMIN') or hasAuthority('SCOPE_STAFF')")
     @PutMapping("/inactive/{publisherId}")
     public PublisherActiveResponse deactivatePublisher(@PathVariable("publisherId") Long publisherId) {
         return publisherService.changeActivePublisherById(false, publisherId);

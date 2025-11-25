@@ -34,6 +34,7 @@ import { StatisticDashboard } from "./components/Admin/StatisticDashboard";
 import { AdminAccount } from "./components/Admin/AdminAccount";
 import { AdminProfile } from "./components/Admin/AdminProfile";
 import { AdminChangePassword } from "./components/Admin/AdminChangePassword";
+import { AdminNotifications } from "./components/Admin/AdminNotifications";
 import { NotificationManagement } from "./components/Admin/NotificationManagement";
 
 // New Management Components
@@ -137,7 +138,7 @@ function App() {
             <Route path="/admin/reviews" element={<AdminOnlyRoute><ManageReviewNew /></AdminOnlyRoute>} />
             <Route path="/admin/promotions" element={<AdminOnlyRoute><PromotionManagementNew /></AdminOnlyRoute>} />
             <Route path="/admin/notifications" element={<AdminOnlyRoute><NotificationManagement /></AdminOnlyRoute>} />
-            <Route path="/admin/my-notifications" element={<AdminOnlyRoute><Notifications /></AdminOnlyRoute>} />
+            <Route path="/admin/my-notifications" element={<AdminOnlyRoute><AdminNotifications /></AdminOnlyRoute>} />
             <Route path="/admin/my-account" element={<AdminOnlyRoute><AdminAccount /></AdminOnlyRoute>}>
               <Route index element={<AdminProfile />} />
               <Route path="profile" element={<AdminProfile />} />

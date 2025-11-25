@@ -85,9 +85,7 @@ public class BookService {
         book.setDescription(description);
         book.setPrice(price);
         book.setStockQuantity(stockQuantity);
-        if (publishedDate != null && !publishedDate.trim().isEmpty()) {
-            book.setPublishedDate(LocalDate.parse(publishedDate));
-        }
+        book.setPublishedDate(LocalDate.parse(publishedDate));
         book.setImage(imagePath);
         book.setActive(active);
 
@@ -244,13 +242,7 @@ public class BookService {
                 Book book = bookRepository.findById(bookResponse.getId())
                     .orElseThrow(() -> new AppException(ErrorCode.BOOK_NOT_FOUND));
                 SubCategory subCategory = book.getCategory();
-                if (subCategory == null) {
-                    return false; // Skip books without a category
-                }
                 SupCategory supCategory = subCategory.getSupCategory();
-                if (supCategory == null) {
-                    return false; // Skip books whose subcategory has no parent category
-                }
                 return subCategory.getActive() && supCategory.getActive();
             })
             .collect(Collectors.toList());
@@ -465,13 +457,7 @@ public class BookService {
             activeBooks = activeBooks.stream()
             .filter(book -> {
                 SubCategory subCategory = book.getCategory();
-                if (subCategory == null) {
-                    return false;
-                }
                 SupCategory supCategory = subCategory.getSupCategory();
-                if (supCategory == null) {
-                    return false;
-                }
                 return subCategory.getActive() && supCategory.getActive();
             })
             .collect(Collectors.toList());
@@ -502,13 +488,7 @@ public class BookService {
                 Book book = bookRepository.findById(bookResponse.getId())
                     .orElseThrow(() -> new AppException(ErrorCode.BOOK_NOT_FOUND));
                 SubCategory subCategory = book.getCategory();
-                if (subCategory == null) {
-                    return false;
-                }
                 SupCategory supCategory = subCategory.getSupCategory();
-                if (supCategory == null) {
-                    return false;
-                }
                 return subCategory.getActive() && supCategory.getActive();
             })
             .collect(Collectors.toList());
@@ -535,13 +515,7 @@ public class BookService {
                 Book book = bookRepository.findById(bookResponse.getId())
                     .orElseThrow(() -> new AppException(ErrorCode.BOOK_NOT_FOUND));
                 SubCategory subCategory = book.getCategory();
-                if (subCategory == null) {
-                    return false;
-                }
                 SupCategory supCategory = subCategory.getSupCategory();
-                if (supCategory == null) {
-                    return false;
-                }
                 return subCategory.getActive() && supCategory.getActive();
             })
             .collect(Collectors.toList());
@@ -568,13 +542,7 @@ public class BookService {
                 Book book = bookRepository.findById(bookResponse.getId())
                     .orElseThrow(() -> new AppException(ErrorCode.BOOK_NOT_FOUND));
                 SubCategory subCategory = book.getCategory();
-                if (subCategory == null) {
-                    return false;
-                }
                 SupCategory supCategory = subCategory.getSupCategory();
-                if (supCategory == null) {
-                    return false;
-                }
                 return subCategory.getActive() && supCategory.getActive();
             })
             .collect(Collectors.toList());
@@ -601,13 +569,7 @@ public class BookService {
                 Book book = bookRepository.findById(bookResponse.getId())
                     .orElseThrow(() -> new AppException(ErrorCode.BOOK_NOT_FOUND));
                 SubCategory subCategory = book.getCategory();
-                if (subCategory == null) {
-                    return false;
-                }
                 SupCategory supCategory = subCategory.getSupCategory();
-                if (supCategory == null) {
-                    return false;
-                }
                 return subCategory.getActive() && supCategory.getActive();
             })
             .collect(Collectors.toList());
@@ -670,9 +632,9 @@ public class BookService {
                 .title(book.getTitle())
                 .description(book.getDescription())
                 .price(book.getPrice())
-                .authorId(book.getAuthor() != null ? book.getAuthor().getId() : null)
-                .publisherId(book.getPublisher() != null ? book.getPublisher().getId() : null)
-                .categoryId(book.getCategory() != null ? book.getCategory().getId() : null)
+                .authorId(book.getAuthor().getId())
+                .publisherId(book.getPublisher().getId())
+                .categoryId(book.getCategory().getId())
                 .stockQuantity(book.getStockQuantity())
                 .publishedDate(book.getPublishedDate())
                 .image(book.getImage())

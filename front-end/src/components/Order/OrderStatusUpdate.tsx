@@ -57,14 +57,13 @@ export function OrderStatusUpdate({
     setIsLoading(true);
 
     try {
-      // Call API to update order status with cancel reason if applicable
-      await orderApi.updateOrder(orderId, {
-        status: selectedStatus,
-        ...(selectedStatus === "CANCELLED" ? { cancelReason: cancelReason.trim() } : {})
-      });
-
-      // Send notification to customer if order is cancelled
+      // Use dedicated API for cancellation if CANCELLED status selected
       if (selectedStatus === "CANCELLED") {
+        await orderApi.adminStaffCancelOrder(orderId, {
+          cancelReason: cancelReason.trim(),
+        });
+
+        // Send notification to customer
         try {
           await notificationApi.createPersonal({
             content: `Your order #${orderId} has been cancelled. Reason: ${cancelReason.trim()}`,
@@ -75,6 +74,9 @@ export function OrderStatusUpdate({
           console.error("Failed to send cancellation notification:", notifError);
           // Continue even if notification fails
         }
+      } else {
+        // Use regular update for other status changes
+        await orderApi.updateOrder(orderId, { status: selectedStatus });
       }
 
       // Call optional callback

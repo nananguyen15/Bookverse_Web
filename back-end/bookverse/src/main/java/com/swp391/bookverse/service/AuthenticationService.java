@@ -77,11 +77,6 @@ public class AuthenticationService {
 
         // define the claims for the JWT
         Set<String> roles = userRepository.findByUsername(username).orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND)).getRoles();
-        
-        // Join roles as space-separated string (e.g., "ADMIN STAFF")
-        // Spring Security will automatically add SCOPE_ prefix when parsing
-        String scopeString = String.join(" ", roles);
-        
         JWTClaimsSet claimsSet = new JWTClaimsSet.Builder()
                 .subject(username)
                 .issuer("http://localhost:8080/bookverse")
@@ -89,7 +84,7 @@ public class AuthenticationService {
                 .expirationTime(new Date(
                         Instant.now().plus(24, ChronoUnit.HOURS).toEpochMilli()
                 ))
-                .claim("scope", scopeString)
+                .claim("scope", String.join(" ", roles))
                 .build();
 
         // Create a payload with the claims

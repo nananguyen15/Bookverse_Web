@@ -14,13 +14,11 @@ public class OrderResponse {
     private Long id;
     private String userId;
     private String userName;
-    private String userPhone;
     private OrderStatus status;
     private Double totalAmount;
     private String address;
     private LocalDateTime createdAt;
     private Boolean active;
-    private String cancelReason;
     private List<OrderItemResponse> orderItems;
     private PaymentResponse payment;
 

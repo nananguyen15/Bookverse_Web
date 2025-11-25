@@ -52,8 +52,7 @@ public class OtpController {
      */
     @PostMapping("/verify")
     public ResponseEntity<?> verify(@RequestBody VerifyRequest req) {
-        APIResponse<?> response = svc.verify(req);
-        return response.getCode() == 200 ? ResponseEntity.ok(response) : ResponseEntity.status(400).body(response);
+        return ResponseEntity.ok(svc.verify(req));
     }
 
     @PostMapping("/verify-reset-password")

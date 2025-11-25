@@ -49,7 +49,7 @@ public class ReviewController {
         return response;
     }
 
-    @GetMapping("/is-reviewed/{bookId}")
+    @GetMapping("api/reviews/is-reviewed/{bookId}")
     public APIResponse<Boolean> isBookReviewedByUser(@PathVariable Long bookId) {
         APIResponse<Boolean> response = new APIResponse<>();
         response.setResult(reviewService.isBookReviewedByUser(bookId));

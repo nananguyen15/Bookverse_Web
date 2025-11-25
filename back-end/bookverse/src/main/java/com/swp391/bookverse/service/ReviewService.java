@@ -60,9 +60,8 @@ public class ReviewService {
 
         // Create review entity
         Review review = Review.builder()
-                .user(user)
-                .book(book)
-                .userName(user.getUsername())
+                .userId(user.getId())
+                .bookId(request.getBookId())
                 .comment(request.getComment())
                 .build();
 
@@ -181,11 +180,6 @@ public class ReviewService {
 
         // Update the review comment
         review.setComment(request.getComment());
-        
-        // Ensure userName is set (for backward compatibility with old reviews)
-        if (review.getUserName() == null && review.getUser() != null) {
-            review.setUserName(review.getUser().getUsername());
-        }
 
         // Save the updated review
         Review updatedReview = reviewRepository.save(review);

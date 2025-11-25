@@ -28,7 +28,11 @@ interface ManagementLayoutProps {
 export function ManagementLayout({ children }: ManagementLayoutProps) {
   const { logout } = useAuth();
   const navigate = useNavigate();
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  // Persist sidebar state in localStorage
+  const [sidebarOpen, setSidebarOpen] = useState(() => {
+    const saved = localStorage.getItem('adminSidebarOpen');
+    return saved !== null ? JSON.parse(saved) : true;
+  });
   const [showAccountMenu, setShowAccountMenu] = useState(false);
   const [hoverTimeout, setHoverTimeout] = useState<ReturnType<typeof setTimeout> | null>(null);
   const [userProfile, setUserProfile] = useState({
@@ -36,6 +40,11 @@ export function ManagementLayout({ children }: ManagementLayoutProps) {
     name: "User",
     avatarUrl: null as string | null,
   });
+
+  // Save sidebar state to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('adminSidebarOpen', JSON.stringify(sidebarOpen));
+  }, [sidebarOpen]);
 
   const handleMouseEnter = () => {
     if (hoverTimeout) clearTimeout(hoverTimeout);
@@ -77,7 +86,7 @@ export function ManagementLayout({ children }: ManagementLayoutProps) {
   };
 
   const navItems = [
-    { to: "/admin", icon: FaChartBar, label: "Statistics" },
+    { to: "/admin/statistics", icon: FaChartBar, label: "Statistics" },
     { to: "/admin/customers", icon: FaUsers, label: "Customers" },
     { to: "/admin/staff", icon: FaUserTie, label: "Staff" },
     { to: "/admin/books", icon: FaBook, label: "Books" },

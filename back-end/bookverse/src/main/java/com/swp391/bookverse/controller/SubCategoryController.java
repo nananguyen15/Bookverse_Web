@@ -8,7 +8,6 @@ import com.swp391.bookverse.service.SubCategoryService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -79,7 +78,6 @@ public class SubCategoryController {
         return response;
     }
 
-    @PreAuthorize("hasAuthority('SCOPE_ADMIN') or hasAuthority('SCOPE_STAFF')")
     @PutMapping("/active/{subCategoryId}")
     public APIResponse<SubCategoryResponse> activateSubCategory(@PathVariable("subCategoryId") Integer subCategoryId) {
         APIResponse<SubCategoryResponse> response = new APIResponse<>();
@@ -87,7 +85,6 @@ public class SubCategoryController {
         return response;
     }
 
-    @PreAuthorize("hasAuthority('SCOPE_ADMIN') or hasAuthority('SCOPE_STAFF')")
     @PutMapping("/inactive/{subCategoryId}")
     public APIResponse<SubCategoryResponse> deactivateSubCategory(@PathVariable("subCategoryId") Integer subCategoryId) {
         APIResponse<SubCategoryResponse> response = new APIResponse<>();

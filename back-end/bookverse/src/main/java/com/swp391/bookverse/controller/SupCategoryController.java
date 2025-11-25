@@ -9,7 +9,6 @@ import com.swp391.bookverse.service.SupCategoryService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.parameters.P;
 import org.springframework.web.bind.annotation.*;
 
@@ -73,7 +72,6 @@ public class SupCategoryController {
         return response;
     }
 
-    @PreAuthorize("hasAuthority('SCOPE_ADMIN') or hasAuthority('SCOPE_STAFF')")
     @PutMapping("/active/{supCategoryId}")
     public APIResponse<SupCategoryResponse> activateSupCategory(@PathVariable("supCategoryId") Integer supCategoryId) {
         APIResponse<SupCategoryResponse> response = new APIResponse<>();
@@ -81,7 +79,6 @@ public class SupCategoryController {
         return response;
     }
 
-    @PreAuthorize("hasAuthority('SCOPE_ADMIN') or hasAuthority('SCOPE_STAFF')")
     @PutMapping("/inactive/{supCategoryId}")
     public APIResponse<SupCategoryResponse> deactivateSupCategory(@PathVariable("supCategoryId") Integer supCategoryId) {
         APIResponse<SupCategoryResponse> response = new APIResponse<>();

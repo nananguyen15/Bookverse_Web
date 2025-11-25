@@ -140,13 +140,11 @@ public class BookController {
 //        return bookService.updateBook(bookId, request);
 //    }
 
-    @PreAuthorize("hasAuthority('SCOPE_ADMIN') or hasAuthority('SCOPE_STAFF')")
     @PutMapping("/active/{bookId}")
     public APIResponse<BookActiveResponse> restoreBook(@PathVariable("bookId") Long bookId) {
         return bookService.changeActiveBookById(true, bookId);
     }
 
-    @PreAuthorize("hasAuthority('SCOPE_ADMIN') or hasAuthority('SCOPE_STAFF')")
     @PutMapping("/inactive/{bookId}")
     public APIResponse<BookActiveResponse> deleteBook(@PathVariable("bookId") Long bookId) {
         return bookService.changeActiveBookById(false, bookId);

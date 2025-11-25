@@ -12,7 +12,6 @@ import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -93,13 +92,11 @@ public class AuthorController {
 //        return authorService.updateAuthor(authorId, authorUpdateRequest);
 //    }
 
-    @PreAuthorize("hasAuthority('SCOPE_ADMIN') or hasAuthority('SCOPE_STAFF')")
     @PutMapping("/active/{authorId}")
     public AuthorActiveResponse restoreAuthor(@PathVariable("authorId") Long authorId) {
         return authorService.changeActiveAuthorById(true, authorId);
     }
 
-    @PreAuthorize("hasAuthority('SCOPE_ADMIN') or hasAuthority('SCOPE_STAFF')")
     @PutMapping("/inactive/{authorId}")
     public AuthorActiveResponse deactivateAuthor(@PathVariable("authorId") Long authorId) {
         return authorService.changeActiveAuthorById(false, authorId);
