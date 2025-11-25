@@ -46,6 +46,14 @@ export const notificationApi = {
     return response.data.result;
   },
 
+  // Admin/Staff: Get notifications by type
+  getByType: async (type: NotificationType): Promise<Notification[]> => {
+    const response = await apiClient.get<ApiResponse<Notification[]>>(
+      `${NOTIFICATION_ENDPOINT}/type/${type}`
+    );
+    return response.data.result;
+  },
+
   // Admin: Create personal notification for specific user
   createPersonal: async (
     data: CreatePersonalNotificationRequest

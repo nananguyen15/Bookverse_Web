@@ -617,6 +617,7 @@ export function OrderManagementNew() {
             <OrderStatusUpdate
               orderId={selectedOrder.id}
               currentStatus={selectedOrder.status}
+              userId={selectedOrder.userId}
               onUpdate={async () => {
                 await loadOrders();
                 setShowEditStatusModal(false);

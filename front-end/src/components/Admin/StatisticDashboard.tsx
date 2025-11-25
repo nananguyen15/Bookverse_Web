@@ -10,7 +10,7 @@ import {
 import ReactApexChart from "react-apexcharts";
 import type { ApexOptions } from "apexcharts";
 import { statisticsApi } from "../../api";
-import type { TopCustomerStats, TopBookStats, SalesDataPoint, OrderStatusStats } from "../../api";
+import type { TopCustomerStats, TopBookStats, SalesDataPoint, OrderStatusStats, BookSoldStats } from "../../api";
 import { ManagementLayout } from "../Shared/Management/ManagementLayout";
 import { transformImageUrl, FALLBACK_IMAGES } from "../../utils/imageHelpers";
 
@@ -20,6 +20,7 @@ interface StatisticData {
   totalCustomers: number;
   topCustomers: TopCustomerStats[];
   topBooks: TopBookStats[];
+  totalBooksSold: BookSoldStats[];
   salesOverTime: SalesDataPoint[];
   ordersOverTime: SalesDataPoint[];
   orderStatus: OrderStatusStats;
@@ -33,6 +34,7 @@ export function StatisticDashboard() {
     totalCustomers: 0,
     topCustomers: [],
     topBooks: [],
+    totalBooksSold: [],
     salesOverTime: [],
     ordersOverTime: [],
     orderStatus: {
@@ -59,6 +61,7 @@ export function StatisticDashboard() {
         totalCustomers,
         topCustomers,
         topBooks,
+        totalBooksSold,
         salesOverTime,
         ordersOverTime,
         orderStatus,
@@ -68,6 +71,7 @@ export function StatisticDashboard() {
         statisticsApi.getTotalCustomers(),
         statisticsApi.getTop5Customers(),
         statisticsApi.getTop5Books(),
+        statisticsApi.getTotalBooksSold(),
         statisticsApi.getSalesOverTime(),
         statisticsApi.getOrdersOverTime(),
         statisticsApi.getOrdersStatus(),
@@ -79,6 +83,7 @@ export function StatisticDashboard() {
         totalCustomers,
         topCustomers,
         topBooks,
+        totalBooksSold,
         salesOverTime,
         ordersOverTime,
         orderStatus,
@@ -326,14 +331,6 @@ export function StatisticDashboard() {
             </h1>
             <p className="text-beige-600 mt-2 text-lg">Track your business performance and insights</p>
           </div>
-
-          <button
-            onClick={exportReport}
-            className="flex items-center gap-2 px-6 py-3 bg-beige-700 text-white rounded-lg hover:bg-beige-800 transition-all shadow-md hover:shadow-lg font-medium"
-          >
-            <FaDownload />
-            <span>Export Report</span>
-          </button>
         </div>
 
         {/* Key Metrics Cards */}
@@ -386,19 +383,19 @@ export function StatisticDashboard() {
             </p>
           </div>
 
-          {/* Top Products Sold */}
-          <div className="bg-gradient-to-br from-white to-amber-50 p-6 rounded-xl shadow-md border-2 border-amber-200 hover:shadow-xl transition-all">
+          {/* Total Books Sold */}
+          <div className="bg-gradient-to-br from-white to-green-50 p-6 rounded-xl shadow-md border-2 border-green-200 hover:shadow-xl transition-all">
             <div className="flex items-center justify-between mb-4">
-              <div className="p-3 bg-amber-600 rounded-lg shadow-lg">
+              <div className="p-3 bg-green-600 rounded-lg shadow-lg">
                 <FaBoxOpen className="text-white text-2xl" />
               </div>
             </div>
-            <h3 className="text-amber-700 text-sm font-bold tracking-wide uppercase">Top Products</h3>
-            <p className="text-4xl font-bold text-amber-900 mt-2">
-              {statistics.topBooks.length}
+            <h3 className="text-green-700 text-sm font-bold tracking-wide uppercase">Total Books Sold</h3>
+            <p className="text-4xl font-bold text-green-900 mt-2">
+              {statistics.totalBooksSold.reduce((sum, book) => sum + book.totalSold, 0).toLocaleString()}
             </p>
-            <p className="text-amber-600 text-sm mt-3 font-medium">
-              Best selling books
+            <p className="text-green-600 text-sm mt-3 font-medium">
+              Across all books
             </p>
           </div>
         </div>

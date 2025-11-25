@@ -44,6 +44,14 @@ export type OrderStatusStats = {
   cancelled: number;
 };
 
+/**
+ * Book sold statistics
+ */
+export type BookSoldStats = {
+  bookId: number;
+  totalSold: number;
+};
+
 // ============== API Functions ==============
 
 /**
@@ -111,6 +119,14 @@ export const getOrdersStatus = async (): Promise<OrderStatusStats> => {
   return response.data.result;
 };
 
+/**
+ * Get total books sold (all books with their sold quantities)
+ */
+export const getTotalBooksSold = async (): Promise<BookSoldStats[]> => {
+  const response = await client.get<ApiResponse<BookSoldStats[]>>("/statistics/total-books-sold");
+  return response.data.result;
+};
+
 // ============== Exports ==============
 
 export const statisticsApi = {
@@ -122,4 +138,5 @@ export const statisticsApi = {
   getSalesOverTime,
   getOrdersOverTime,
   getOrdersStatus,
+  getTotalBooksSold,
 };

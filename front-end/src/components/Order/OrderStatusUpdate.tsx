@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { OrderStatus } from "../../types";
-import { orderApi } from "../../api";
+import { orderApi, notificationApi } from "../../api";
 import {
   getNextAllowedStatuses,
   getOrderStatusLabel,
@@ -11,6 +11,7 @@ import {
 interface OrderStatusUpdateProps {
   orderId: number;
   currentStatus: OrderStatus;
+  userId: string; // userId is string in OrderResponse
   onUpdate?: (newStatus: OrderStatus) => Promise<void>;
   disabled?: boolean;
 }
@@ -23,10 +24,12 @@ interface OrderStatusUpdateProps {
 export function OrderStatusUpdate({
   orderId,
   currentStatus,
+  userId,
   onUpdate,
   disabled = false,
 }: OrderStatusUpdateProps) {
   const [selectedStatus, setSelectedStatus] = useState<OrderStatus | "">("");
+  const [cancelReason, setCancelReason] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -35,6 +38,12 @@ export function OrderStatusUpdate({
   const handleUpdate = async () => {
     if (!selectedStatus) {
       setError("Please select a new status");
+      return;
+    }
+
+    // Validate cancel reason if CANCELLED status selected
+    if (selectedStatus === "CANCELLED" && !cancelReason.trim()) {
+      setError("Please provide a reason for cancellation");
       return;
     }
 
@@ -48,8 +57,25 @@ export function OrderStatusUpdate({
     setIsLoading(true);
 
     try {
-      // Call API to update order status
-      await orderApi.updateOrder(orderId, { status: selectedStatus });
+      // Call API to update order status with cancel reason if applicable
+      await orderApi.updateOrder(orderId, {
+        status: selectedStatus,
+        ...(selectedStatus === "CANCELLED" ? { cancelReason: cancelReason.trim() } : {})
+      });
+
+      // Send notification to customer if order is cancelled
+      if (selectedStatus === "CANCELLED") {
+        try {
+          await notificationApi.createPersonal({
+            content: `Your order #${orderId} has been cancelled. Reason: ${cancelReason.trim()}`,
+            type: "FOR_CUSTOMERS_PERSONAL",
+            targetUserId: userId,
+          });
+        } catch (notifError) {
+          console.error("Failed to send cancellation notification:", notifError);
+          // Continue even if notification fails
+        }
+      }
 
       // Call optional callback
       if (onUpdate) {
@@ -57,6 +83,7 @@ export function OrderStatusUpdate({
       }
 
       setSelectedStatus("");
+      setCancelReason("");
     } catch (err) {
       const error = err as { response?: { data?: { message?: string } } };
       setError(
@@ -92,8 +119,13 @@ export function OrderStatusUpdate({
             id="statusSelect"
             value={selectedStatus}
             onChange={(e) => {
-              setSelectedStatus(e.target.value as OrderStatus);
+              const newStatus = e.target.value as OrderStatus;
+              setSelectedStatus(newStatus);
               setError("");
+              // Clear cancel reason if switching away from CANCELLED
+              if (newStatus !== "CANCELLED") {
+                setCancelReason("");
+              }
             }}
             disabled={disabled || isLoading}
             className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
@@ -139,6 +171,32 @@ export function OrderStatusUpdate({
             )}
           </button>
         </div>
+
+        {/* Cancel Reason Textarea - Shows when CANCELLED selected */}
+        {selectedStatus === "CANCELLED" && (
+          <div className="mt-4">
+            <label
+              htmlFor="cancelReason"
+              className="block text-sm font-medium text-gray-700 mb-2"
+            >
+              Reason for Cancellation <span className="text-red-500">*</span>
+            </label>
+            <textarea
+              id="cancelReason"
+              value={cancelReason}
+              onChange={(e) => {
+                setCancelReason(e.target.value);
+                setError("");
+              }}
+              disabled={disabled || isLoading}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed min-h-[100px]"
+              placeholder="e.g., Out of stock, Payment not confirmed, Customer request, etc."
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              This reason will be sent to the customer in a notification.
+            </p>
+          </div>
+        )}
 
         {error && (
           <div className="mt-3 bg-red-50 border-l-4 border-red-400 p-3">

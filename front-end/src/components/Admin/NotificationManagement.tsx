@@ -126,7 +126,38 @@ export function NotificationManagement({ noLayout = false }: NotificationManagem
         };
       });
 
-      setNotifications(transformedNotifications);
+      // Group broadcast notifications by content + type + targetRole
+      const groupedMap = new Map<string, NotificationRecord>();
+
+      transformedNotifications.forEach((notif) => {
+        if (notif.type === "Broadcast") {
+          // Create unique key for grouping
+          const key = `${notif.content}|${notif.type}|${notif.targetRole}`;
+
+          if (groupedMap.has(key)) {
+            // Add to existing group
+            const existing = groupedMap.get(key)!;
+            existing.readCount = (existing.readCount || 0) + (notif.readCount || 0);
+            existing.totalCount = (existing.totalCount || 0) + (notif.totalCount || 0);
+            // Keep the earliest createdAt
+            if (new Date(notif.createdAt) < new Date(existing.createdAt)) {
+              existing.createdAt = notif.createdAt;
+            }
+          } else {
+            // First occurrence - add to map
+            groupedMap.set(key, { ...notif });
+          }
+        } else {
+          // Personal notifications - keep as-is with unique key
+          const key = `personal|${notif.id}`;
+          groupedMap.set(key, notif);
+        }
+      });
+
+      // Convert map to array
+      const groupedNotifications = Array.from(groupedMap.values());
+
+      setNotifications(groupedNotifications);
     } catch (error) {
       console.error("Error loading data:", error);
     } finally {
@@ -356,7 +387,6 @@ export function NotificationManagement({ noLayout = false }: NotificationManagem
         <div className="flex items-start justify-between mb-6">
           <div>
             <h1 className="flex items-center gap-3 text-3xl font-bold text-beige-900">
-              <FaBell className="text-2xl" />
               Notification Management
             </h1>
             <p className="mt-1 text-sm text-beige-600">
@@ -462,10 +492,10 @@ export function NotificationManagement({ noLayout = false }: NotificationManagem
                   </td>
                 </tr>
               ) : (
-                paginatedNotifications.map((notification, index) => (
+                paginatedNotifications.map((notification) => (
                   <tr key={notification.id} className="transition-colors hover:bg-beige-50">
                     <TableCell className="text-center">
-                      {(currentPage - 1) * itemsPerPage + index + 1}
+                      {notification.id}
                     </TableCell>
                     <TableCell>
                       <div className="line-clamp-2">{notification.content}</div>

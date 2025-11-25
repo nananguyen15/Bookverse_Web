@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams, useParams } from "react-router-dom";
+import { FaClock } from "react-icons/fa";
 import { Navbar } from "../layout/Navbar/Navbar";
 import { Footer } from "../layout/Footer/Footer";
 import { paymentApi, orderApi } from "../../api";
@@ -243,11 +244,20 @@ export function OrderConfirmed() {
                   </svg>
                 </div>
                 <h1 className="mb-4 text-3xl font-bold text-beige-900">
-                  Order Confirmed!
+                  Order Placed Successfully!
                 </h1>
-                <p className="mb-6 text-lg text-beige-700">
+                <p className="mb-2 text-lg text-beige-700">
                   Thank you for your purchase. Your order has been successfully placed.
                 </p>
+                <div className="p-4 mb-6 border-l-4 rounded-lg border-beige-600 bg-beige-50">
+                  <p className="flex items-start gap-2 text-sm text-beige-800">
+                    <FaClock className="flex-shrink-0 mt-0.5 text-beige-600" />
+                    <span>
+                      <strong>Awaiting Confirmation:</strong> Your order is currently pending approval from our staff.
+                      You will be notified once your order has been confirmed.
+                    </span>
+                  </p>
+                </div>
                 <div className="flex flex-col gap-4 sm:flex-row sm:justify-center">
                   <button
                     onClick={() => navigate("/profile/orders")}
