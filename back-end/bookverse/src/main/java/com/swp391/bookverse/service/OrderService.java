@@ -347,24 +347,33 @@ public class OrderService {
     }
 
 
-//    @Transactional
-//    public void cancelOrder(Long id) {
-//        Order order = orderRepository.findByIdWithItems(id)
-//                .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
-//
-//        if (order.getStatus() != OrderStatus.PENDING) {
-//            throw new AppException(ErrorCode.ORDER_CANNOT_BE_CANCELLED);
-//        }
-//
-//        // Restore stock
-//        for (OrderItem item : order.getOrderItems()) {
-//            Book book = item.getBook();
-//            book.setStockQuantity(book.getStockQuantity() + item.getQuantity());
-//        }
-//
-//        order.setStatus(OrderStatus.CANCELLED);
-//        orderRepository.save(order);
-//    }
+    @Transactional
+    public OrderResponse adminStaffCancelOrder(OrderCancelRequest request, Long id) {
+        // Find order with items
+        Order order = orderRepository.findByIdWithItems(id)
+                .orElseThrow(() -> new AppException(ErrorCode.ORDER_NOT_FOUND));
+
+        // check if the order status is in PENDING_PAYMENT/PENDING/CONFIRMED/PROCESSING/DELIVERING
+        if (order.getStatus() != OrderStatus.PENDING && order.getStatus() != OrderStatus.CONFIRMED &&
+                order.getStatus() != OrderStatus.PROCESSING && order.getStatus() != OrderStatus.DELIVERING) {
+            throw new AppException(ErrorCode.ORDER_CANNOT_BE_CANCELLED);
+        }
+
+        order.setStatus(OrderStatus.CANCELLED);
+
+        Order updatedOrder = orderRepository.save(order);
+
+        // chek if the order has payment status = SUCCESS
+        // if so, notify staffs and admin to process refund
+        // set the status of payment to REFUNDING
+        Payment payment = paymentRepository.findByOrderId(order.getId());
+        if (payment != null && payment.getStatus() == PaymentStatus.SUCCESS) {
+            payment.setStatus(PaymentStatus.REFUNDING);
+            paymentRepository.save(payment);
+        }
+
+        return orderMapper.toOrderResponse(updatedOrder);
+    }
 
 
     /**
