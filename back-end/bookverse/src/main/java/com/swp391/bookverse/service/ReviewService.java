@@ -87,7 +87,15 @@ public class ReviewService {
         List<Review> reviews = reviewRepository.findByBookId(bookId);
 
         // Map and return responses
-        return reviewMapper.toReviewResponseList(reviews);
+        List<ReviewResponse> listReviewResponse = reviewMapper.toReviewResponseList(reviews);
+        // also map username and name for each review
+        for (ReviewResponse reviewResponse : listReviewResponse) {
+            User user = userRepository.findById(reviewResponse.getUserId())
+                    .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+            reviewResponse.setUsername(user.getUsername());
+            reviewResponse.setName(user.getName());
+        }
+        return listReviewResponse;
     }
 
     /**
@@ -99,6 +107,13 @@ public class ReviewService {
         return books.stream().map(book -> {
             List<Review> reviews = reviewRepository.findByBookId(book.getId());
             List<ReviewResponse> reviewResponses = reviewMapper.toReviewResponseList(reviews);
+            // also map username and name for each review
+            for (ReviewResponse reviewResponse : reviewResponses) {
+                User user = userRepository.findById(reviewResponse.getUserId())
+                        .orElseThrow(() -> new AppException(ErrorCode.USER_NOT_FOUND));
+                reviewResponse.setUsername(user.getUsername());
+                reviewResponse.setName(user.getName());
+            }
             return ReviewOfBookResponse.builder()
                     .bookId(book.getId())
                     .bookTitle(book.getTitle())
@@ -168,6 +183,11 @@ public class ReviewService {
 
         // Save the updated review
         Review updatedReview = reviewRepository.save(review);
+
+        // make sure to set username and name in the response
+        ReviewResponse response = reviewMapper.toReviewResponse(updatedReview);
+        response.setUsername(user.getUsername());
+        response.setName(user.getName());
 
         // Map and return response
         return reviewMapper.toReviewResponse(updatedReview);

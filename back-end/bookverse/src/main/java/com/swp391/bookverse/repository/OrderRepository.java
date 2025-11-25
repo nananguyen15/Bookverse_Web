@@ -28,4 +28,10 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     // Custom query to find top-selling book IDs
     @Query("SELECT oi.book.id FROM Order o JOIN o.orderItems oi WHERE o.status = 'DELIVERED' GROUP BY oi.book.id ORDER BY SUM(oi.quantity) DESC")
     List<Long> findTopSellingBookIds();
+
+    @Query("SELECT o.user.id FROM Order o WHERE o.status = 'DELIVERED' GROUP BY o.user.id ORDER BY SUM(o.totalAmount) DESC")
+    List<String> findTop5CustomerIdsByTotalSpending();
+
+    @Query("SELECT SUM(o.totalAmount) FROM Order o WHERE o.user.id = :id AND o.status = 'DELIVERED'")
+    Double findTotalSpentByUserId(String id);
 }

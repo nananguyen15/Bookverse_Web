@@ -3,19 +3,14 @@ package com.swp391.bookverse.dto.response;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
 
-import java.time.LocalDateTime;
-
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class ReviewResponse {
+public class StatisticBookResponse {
     Long id;
-    String userId;
-    String username;
-    String name;
-    Long bookId;
-    String comment;
-    LocalDateTime createdAt;
+    String title;
+    String image;
+    Long totalSold;
 }
