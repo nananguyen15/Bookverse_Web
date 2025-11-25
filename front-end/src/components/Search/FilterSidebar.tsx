@@ -66,7 +66,7 @@ export function FilterSidebar({
   useEffect(() => {
     if (filters.categories.length > 0) {
       const newExpandedSupCategories = new Set<number>();
-      
+
       // Find which sup categories should be expanded
       filters.categories.forEach((catId) => {
         // Check if it's a sub-category
@@ -74,14 +74,14 @@ export function FilterSidebar({
         if (subCat) {
           newExpandedSupCategories.add(subCat.supCategoryId);
         }
-        
+
         // Check if it's a sup-category
         const supCat = supCategories.find((sup) => sup.id === catId);
         if (supCat) {
           newExpandedSupCategories.add(supCat.id);
         }
       });
-      
+
       setExpandedSupCategories(newExpandedSupCategories);
     }
   }, [filters.categories, subCategories, supCategories]);
@@ -104,19 +104,19 @@ export function FilterSidebar({
 
   const handleCategoryToggle = (categoryId: number, isSupCategory = false) => {
     let newCategories: number[];
-    
+
     if (isSupCategory) {
       // Get all sub-categories for this sup category
       const subCats = getSubCategoriesForSup(categoryId);
       const subCatIds = subCats.map((sub) => sub.id);
-      
+
       // WORKAROUND: Only use sub-category IDs, not sup category ID
       // Because database has ID conflicts (sub-categories and sup-categories share same IDs)
       const allIds = subCatIds; // Don't include categoryId itself
-      
+
       // Check if any sub-category is currently selected
       const isCurrentlySelected = allIds.some(id => filters.categories.includes(id));
-      
+
       if (isCurrentlySelected) {
         // Uncheck: Remove all sub-categories
         newCategories = filters.categories.filter(
@@ -133,7 +133,7 @@ export function FilterSidebar({
         ? filters.categories.filter((id) => id !== categoryId)
         : [...filters.categories, categoryId];
     }
-    
+
     onFilterChange({ ...filters, categories: newCategories });
   };
 
@@ -184,7 +184,7 @@ export function FilterSidebar({
     : publishers.slice(0, 5);
 
   return (
-    <div className="w-64 p-6 bg-white rounded-lg shadow-sm">
+    <div className="w-80 p-6 bg-white rounded-lg shadow-sm">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-lg font-bold text-gray-900">Filter</h3>
@@ -211,11 +211,11 @@ export function FilterSidebar({
               const subCats = getSubCategoriesForSup(supCat.id);
               const hasSubCategories = subCats.length > 0;
               const isExpanded = expandedSupCategories.has(supCat.id);
-              
+
               // Sup category is checked if ALL its sub-categories are checked
               const subCatIds = subCats.map(sub => sub.id);
-              const isSupCategoryChecked = hasSubCategories && 
-                subCatIds.length > 0 && 
+              const isSupCategoryChecked = hasSubCategories &&
+                subCatIds.length > 0 &&
                 subCatIds.every(id => filters.categories.includes(id));
 
               return (

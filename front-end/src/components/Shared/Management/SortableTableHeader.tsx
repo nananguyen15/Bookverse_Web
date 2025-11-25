@@ -9,6 +9,7 @@ interface SortableTableHeaderProps {
   currentSortField?: string;
   currentSortOrder?: 'asc' | 'desc';
   onSort?: (key: string) => void;
+  className?: string;
 }
 
 export function SortableTableHeader({
@@ -18,7 +19,8 @@ export function SortableTableHeader({
   sortKey,
   currentSortField,
   currentSortOrder,
-  onSort
+  onSort,
+  className = ''
 }: SortableTableHeaderProps) {
   const alignmentClass = {
     left: 'text-left',
@@ -45,7 +47,7 @@ export function SortableTableHeader({
   };
 
   return (
-    <th className={`px-6 py-3 text-xs font-medium tracking-wider uppercase text-beige-700 ${alignmentClass}`}>
+    <th className={`px-6 py-3 text-xs font-medium tracking-wider uppercase text-beige-700 ${alignmentClass} ${className}`}>
       {sortable ? (
         <button
           onClick={handleClick}

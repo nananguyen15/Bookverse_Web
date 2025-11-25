@@ -3,13 +3,14 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { FilterSidebar } from "../../Search/FilterSidebar";
 import { BookCard } from "../BookCard";
 import { Pagination } from "../../Pagination/Pagination";
-import { booksApi, authorsApi, publishersApi } from "../../../api";
-import type { Book } from "../../../types";
+import { booksApi, authorsApi, publishersApi, categoriesApi, promotionApi } from "../../../api";
+import type { Book, PromotionResponse, SubCategory } from "../../../types";
 import { useAuth } from "../../../contexts/AuthContext";
 import { useCart } from "../../../contexts/CartContext";
 import { mapBooksWithNames } from "../../../utils/bookHelpers";
 import { Footer } from "../../layout/Footer/Footer";
 import { Navbar } from "../../layout/Navbar/Navbar";
+import { getPromotionalPrice } from "../../../utils/promotionHelpers";
 
 type SortOption =
   | "all"
@@ -43,15 +44,20 @@ export function AllProducts({ defaultType }: AllProductsProps) {
   const navigate = useNavigate();
   const [sortBy, setSortBy] = useState<SortOption>("all");
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 20;
+  const [itemsPerPage, setItemsPerPage] = useState(20);
   const [filters, setFilters] = useState<FilterState>({
     categories: [],
     priceRange: { min: 0, max: 0 },
     publishers: [],
     type: [defaultType],
     authors: [],
-    showHidden: true, // Default: Show all including hidden
+    showHidden: false, // Default: Hide inactive books and books with inactive categories
   });
+
+  // Promotion state
+  const [promotions, setPromotions] = useState<PromotionResponse[]>([]);
+  const [subCategories, setSubCategories] = useState<SubCategory[]>([]);
+  const [subCategoryPromotions, setSubCategoryPromotions] = useState<Record<string, PromotionResponse | null>>({});
 
   // Parse URL params and set initial filters
   useEffect(() => {
@@ -75,6 +81,8 @@ export function AllProducts({ defaultType }: AllProductsProps) {
         let booksData: Book[];
 
         // Fetch sorted data from backend
+        // Note: All these APIs return ALL books (including those with inactive categories)
+        // We need to filter after fetching
         switch (sortBy) {
           case "title":
             booksData = await booksApi.sortByTitle();
@@ -91,6 +99,7 @@ export function AllProducts({ defaultType }: AllProductsProps) {
           case "newest":
             booksData = await booksApi.sortByNewest();
             break;
+          case "all":
           default:
             booksData = await booksApi.getActive();
             break;
@@ -115,7 +124,22 @@ export function AllProducts({ defaultType }: AllProductsProps) {
           publishersData
         );
 
-        setBooks(booksWithNames);
+        // Filter out books with inactive categories/supCategories from active books list
+        const activeValidBooks = booksWithNames.filter(
+          (book) =>
+            book.active &&
+            !book.hasInactiveCategory &&
+            !book.hasInactiveSupCategory
+        );
+
+        console.log("📚 Fetch results:", {
+          totalFetched: booksData.length,
+          afterMapping: booksWithNames.length,
+          afterFilter: activeValidBooks.length,
+          inactive: inactiveBooksWithNames.length,
+        });
+
+        setBooks(activeValidBooks);
         setInactiveBooks(inactiveBooksWithNames);
         setCurrentPage(1); // Reset to first page when sort changes
       } catch (error) {
@@ -127,22 +151,83 @@ export function AllProducts({ defaultType }: AllProductsProps) {
     fetchBooks();
   }, [sortBy]); // Re-fetch when sortBy changes
 
-  // For /books page: Show ALL books by default (active + inactive)
-  // User can toggle "Show Hidden" to filter
+  // Fetch promotions and sub-categories
+  useEffect(() => {
+    const fetchPromotions = async () => {
+      try {
+        const [promotionsData, categoriesData] = await Promise.all([
+          promotionApi.getActive(),
+          categoriesApi.sub.getActive(),
+        ]);
+
+        setPromotions(promotionsData);
+        setSubCategories(categoriesData);
+
+        // Build promotion-to-subcategory mapping
+        const promotionSubCatsCache: Record<number, SubCategory[]> = {};
+        for (const promo of promotionsData) {
+          try {
+            const subCats = await promotionApi.getPromotionSubCategories(promo.id);
+            promotionSubCatsCache[promo.id] = subCats;
+          } catch (error) {
+            // Promotion may not have sub-categories (backend returns 400)
+            promotionSubCatsCache[promo.id] = [];
+          }
+        }
+
+        // Map each sub-category to its active promotion
+        const subCatPromos: Record<string, PromotionResponse | null> = {};
+        for (const subCat of categoriesData) {
+          let foundPromo: PromotionResponse | null = null;
+
+          for (const promo of promotionsData) {
+            const subCats = promotionSubCatsCache[promo.id] || [];
+            if (subCats.some(sc => sc.id === subCat.id)) {
+              const now = new Date();
+              const start = new Date(promo.startDate);
+              const end = new Date(promo.endDate);
+              if (now >= start && now <= end && promo.active) {
+                foundPromo = promo;
+                break;
+              }
+            }
+          }
+
+          subCatPromos[subCat.id] = foundPromo;
+        }
+
+        setSubCategoryPromotions(subCatPromos);
+      } catch (error) {
+        console.error("Error fetching promotions:", error);
+      }
+    };
+
+    fetchPromotions();
+  }, []);
+
+  // Merge active and inactive books
+  // Only include inactive books if showHidden is true
   const allProducts = useMemo(
-    () => [
-      ...books.map((book) => ({
+    () => {
+      const activeList = books.map((book) => ({
         ...book,
         type: "book" as const,
         isActive: true,
-      })),
-      ...inactiveBooks.map((book) => ({
-        ...book,
-        type: "book" as const,
-        isActive: false,
-      })),
-    ],
-    [books, inactiveBooks]
+      }));
+
+      // Only add inactive books if user wants to see them
+      if (filters.showHidden) {
+        const inactiveList = inactiveBooks.map((book) => ({
+          ...book,
+          type: "book" as const,
+          isActive: false,
+        }));
+        return [...activeList, ...inactiveList];
+      }
+
+      return activeList;
+    },
+    [books, inactiveBooks, filters.showHidden]
   );
 
   // Filter products (no sorting here since backend handles it)
@@ -181,7 +266,15 @@ export function AllProducts({ defaultType }: AllProductsProps) {
     // Apply active/hidden filter
     if (!filters.showHidden) {
       result = result.filter((product) => {
-        return product.active === true;
+        // Only show books that are:
+        // 1. Active themselves
+        // 2. Have active category
+        // 3. Have active sup category
+        return (
+          product.active === true &&
+          !product.hasInactiveCategory &&
+          !product.hasInactiveSupCategory
+        );
       });
     }
 
@@ -211,6 +304,11 @@ export function AllProducts({ defaultType }: AllProductsProps) {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  const handleItemsPerPageChange = (newItemsPerPage: number) => {
+    setItemsPerPage(newItemsPerPage);
+    setCurrentPage(1); // Reset to first page when changing items per page
+  };
+
   const handleClearFilters = () => {
     setFilters({
       categories: [],
@@ -218,22 +316,26 @@ export function AllProducts({ defaultType }: AllProductsProps) {
       publishers: [],
       type: [defaultType],
       authors: [],
-      showHidden: true, // Reset to show all
+      showHidden: false, // Reset to hide inactive
     });
   };
 
-  const handleAddToCart = (bookId: string) => {
+  const handleAddToCart = async (bookId: string) => {
     if (!isAuthenticated) {
       navigate("/signin");
       return;
     }
-    addToCart(bookId, "book", 1);
+    try {
+      await addToCart(bookId, "book", 1);
+    } catch (error) {
+      console.error("Failed to add to cart:", error);
+    }
   };
 
   return (
-    <>
+    <div className="flex flex-col min-h-screen">
       <Navbar />
-      <div className="px-16 py-8 bg-beige-50">
+      <div className="flex-1 px-16 py-8 bg-beige-50">
         {/* Sort Bar */}
         <div className="flex items-center justify-between mb-6">
           <div className="text-sm text-beige-500">
@@ -322,7 +424,7 @@ export function AllProducts({ defaultType }: AllProductsProps) {
             <div className="p-6 bg-white rounded-lg shadow-sm">
               {loading ? (
                 <div className="py-12 text-center">
-                  <p className="text-beige-600">Đang tải sách...</p>
+                  <p className="text-beige-600">Loading books...</p>
                 </div>
               ) : filteredProducts.length === 0 ? (
                 <div className="py-12 text-center">
@@ -331,23 +433,30 @@ export function AllProducts({ defaultType }: AllProductsProps) {
               ) : (
                 <>
                   <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 justify-items-center">
-                    {paginatedProducts.map((product) => (
-                      <BookCard
-                        key={`book-${product.id}`}
-                        book={product}
-                        onAddToCart={handleAddToCart}
-                        active={product.active}
-                        stockQuantity={product.stockQuantity}
-                      />
-                    ))}
+                    {paginatedProducts.map((product) => {
+                      const priceInfo = getPromotionalPrice(product, subCategoryPromotions);
+                      return (
+                        <BookCard
+                          key={`book-${product.id}`}
+                          book={product}
+                          onAddToCart={handleAddToCart}
+                          active={product.active}
+                          stockQuantity={product.stockQuantity}
+                          promoPrice={priceInfo.promoPrice}
+                          promoPercentage={priceInfo.percentage}
+                        />
+                      );
+                    })}
                   </div>
 
                   {/* Pagination */}
-                  {totalPages > 1 && (
+                  {filteredProducts.length > 0 && (
                     <Pagination
                       currentPage={currentPage}
                       totalPages={totalPages}
+                      itemsPerPage={itemsPerPage}
                       onPageChange={handlePageChange}
+                      onItemsPerPageChange={handleItemsPerPageChange}
                     />
                   )}
                 </>
@@ -357,6 +466,6 @@ export function AllProducts({ defaultType }: AllProductsProps) {
         </div>
       </div>
       <Footer />
-    </>
+    </div>
   );
 }

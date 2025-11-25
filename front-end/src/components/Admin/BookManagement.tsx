@@ -3,6 +3,7 @@ import { booksApi, authorsApi, publishersApi, categoriesApi } from "../../api";
 import type { Book, Author, Publisher, SubCategory } from "../../types";
 import { FaPlus, FaExclamationTriangle } from "react-icons/fa";
 import { transformImageUrl, FALLBACK_IMAGES } from "../../utils/imageHelpers";
+import { useAuth } from "../../contexts/AuthContext";
 import {
   TableHeader,
   SortableTableHeader,
@@ -26,6 +27,9 @@ type StatusFilter = "all" | "active" | "inactive";
 type SortField = "id" | "title" | "price" | "publishedDate" | "stock" | "author" | "publisher";
 
 export function BookManagement() {
+  const { userRole } = useAuth();
+  const isAdmin = userRole === "ADMIN";
+  
   const [books, setBooks] = useState<Book[]>([]);
   const [authors, setAuthors] = useState<Author[]>([]);
   const [publishers, setPublishers] = useState<Publisher[]>([]);
@@ -326,17 +330,49 @@ export function BookManagement() {
 
   const handleToggleStatus = async (book: Book) => {
     try {
+      console.log(`🔄 Attempting to ${book.active ? 'deactivate' : 'activate'} book:`, book.id);
       if (book.active) {
         await booksApi.deactivate(book.id);
+        console.log(`✅ Successfully deactivated book:`, book.id);
         alert("Book hidden successfully!");
       } else {
         await booksApi.activate(book.id);
+        console.log(`✅ Successfully activated book:`, book.id);
         alert("Book activated successfully!");
       }
-      loadAllData();
+      await loadAllData();
     } catch (error) {
-      console.error("Error toggling status:", error);
-      alert("Failed to change status");
+      console.error("❌ Error toggling status:", error);
+      const err = error as {
+        response?: {
+          data?: {
+            message?: string;
+            code?: number;
+          };
+          status?: number;
+        };
+        message?: string;
+      };
+
+      let errorMessage = "Failed to change status";
+      
+      if (err.response?.status === 403) {
+        errorMessage = `⛔ Access Denied: You don't have permission to ${book.active ? 'hide' : 'activate'} books. Only ADMIN users can perform this action.`;
+      } else if (err.response?.data?.message) {
+        errorMessage += `: ${err.response.data.message}`;
+      } else if (err.response?.status) {
+        errorMessage += `: HTTP ${err.response.status}`;
+      } else if (err.message) {
+        errorMessage += `: ${err.message}`;
+      }
+
+      console.error("❌ Error details:", {
+        status: err.response?.status,
+        message: err.response?.data?.message,
+        code: err.response?.data?.code,
+      });
+
+      alert(errorMessage);
     }
   };
 
@@ -631,12 +667,14 @@ export function BookManagement() {
                         onClick={() => openEditModal(book)}
                         title="Edit"
                       />
-                      <ActionButton
-                        icon={book.active ? "deactivate" : "activate"}
-                        onClick={() => handleToggleStatus(book)}
-                        variant={book.active ? "danger" : "success"}
-                        title={book.active ? "Hide book" : "Activate"}
-                      />
+                      {isAdmin && (
+                        <ActionButton
+                          icon={book.active ? "deactivate" : "activate"}
+                          onClick={() => handleToggleStatus(book)}
+                          variant={book.active ? "danger" : "success"}
+                          title={book.active ? "Hide book" : "Activate"}
+                        />
+                      )}
                     </ActionButtonGroup>
                   </TableCell>
                 </tr>

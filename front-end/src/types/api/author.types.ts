@@ -2,7 +2,7 @@
 export interface Author {
   id: number;
   name: string;
-  biography?: string;
+  bio?: string;
   image?: string;
   active: boolean;
 }

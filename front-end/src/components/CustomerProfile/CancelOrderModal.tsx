@@ -10,8 +10,7 @@ interface CancelOrderModalProps {
 
 const cancelReasons = [
   "Want to change delivery address",
-  "Want to enter/change voucher code",
-  "Want to change products in order (size, color, quantity, etc.)",
+  "Want to change products in order (quantity, etc.)",
   "Payment process is too complicated",
   "Found a better price elsewhere",
   "Changed my mind, don't want to buy anymore",

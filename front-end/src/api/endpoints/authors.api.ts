@@ -60,7 +60,8 @@ export const authorsApi = {
     // Add text fields that backend expects
     if (data.name) formData.append("name", data.name);
     if (data.bio) formData.append("bio", data.bio);
-    if (data.active !== undefined) formData.append("active", String(data.active));
+    if (data.active !== undefined)
+      formData.append("active", String(data.active));
 
     // Handle image upload - backend expects either 'image' (file) or 'imageUrl' (string)
     if (data.imageFile) {
@@ -72,7 +73,7 @@ export const authorsApi = {
     }
 
     console.log("📤 Creating author with FormData");
-    
+
     const response = await apiClient.post<ApiResponse<Author>>(
       `${AUTHORS_ENDPOINT}/create`,
       formData
@@ -121,6 +122,14 @@ export const authorsApi = {
   deactivate: async (id: number): Promise<Author> => {
     const response = await apiClient.put<ApiResponse<Author>>(
       `${AUTHORS_ENDPOINT}/inactive/${id}`
+    );
+    return response.data.result;
+  },
+
+  // GET books by author
+  getBooks: async (authorId: number): Promise<Book[]> => {
+    const response = await apiClient.get<ApiResponse<Book[]>>(
+      `${AUTHORS_ENDPOINT}/${authorId}/books`
     );
     return response.data.result;
   },

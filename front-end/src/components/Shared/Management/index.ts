@@ -1,7 +1,13 @@
+// Layout Components
+export { ManagementLayout } from "./ManagementLayout";
+export { ManagementPageLayout } from "./ManagementPageLayout";
+
 // Table Components
-export { TableHeader } from "./TableHeader";
-export { SortableTableHeader } from "./SortableTableHeader";
 export { TableCell, TableCellText } from "./TableCell";
+export {
+  SortableTableHeader as NewSortableHeader,
+  SimpleTableHeader,
+} from "./TableHeaders";
 
 // Action Components
 export { ActionButton, ActionButtonGroup } from "./ActionButton";
@@ -11,11 +17,10 @@ export type { ActionType } from "./ActionButton";
 export { StatusBadge } from "./StatusBadge";
 
 // Filter & Search Components
-export { FilterBar } from "./FilterBar";
-export type { FilterOption } from "./FilterBar";
+export { SearchBar, FilterDropdown, FilterBarLayout } from "./FilterComponents";
 
 // Pagination Components
-export { Pagination } from "./Pagination";
+export { NewPagination } from "./NewPagination";
 
 // Modal Components
 export { Modal, ModalActions } from "./Modal";

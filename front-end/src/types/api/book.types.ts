@@ -15,6 +15,11 @@ export interface Book {
   image: string;
   active: boolean;
   soldCount?: number;
+  // Status flags for inactive related entities
+  hasInactiveAuthor?: boolean;
+  hasInactivePublisher?: boolean;
+  hasInactiveCategory?: boolean;
+  hasInactiveSupCategory?: boolean;
 }
 
 export interface BookCreateRequest {

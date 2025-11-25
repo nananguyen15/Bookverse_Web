@@ -2,8 +2,11 @@ import { useEffect, useState } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { booksApi } from "../api/endpoints/books.api";
 import { authorsApi } from "../api/endpoints/authors.api";
-import type { Book, Author } from "../types";
+import { categoriesApi } from "../api/endpoints/categories.api";
+import { promotionApi } from "../api/endpoints/promotion.api";
+import type { Book, Author, PromotionResponse, SubCategory } from "../types";
 import { BookCard } from "../components/Home/BookCard";
+import { getPromotionalPrice } from "../utils/promotionHelpers";
 
 export default function SearchResultsPage() {
   const [searchParams] = useSearchParams();
@@ -13,6 +16,7 @@ export default function SearchResultsPage() {
   const [authors, setAuthors] = useState<Author[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [subCategoryPromotions, setSubCategoryPromotions] = useState<Record<string, PromotionResponse | null>>({});
 
   useEffect(() => {
     if (!query.trim()) {
@@ -38,6 +42,55 @@ export default function SearchResultsPage() {
         setLoading(false);
       });
   }, [query]);
+
+  // Fetch promotions
+  useEffect(() => {
+    const fetchPromotions = async () => {
+      try {
+        const [promotionsData, categoriesData] = await Promise.all([
+          promotionApi.getActive(),
+          categoriesApi.sub.getActive(),
+        ]);
+
+        const promotionSubCatsCache: Record<number, SubCategory[]> = {};
+        for (const promo of promotionsData) {
+          try {
+            const subCats = await promotionApi.getPromotionSubCategories(promo.id);
+            promotionSubCatsCache[promo.id] = subCats;
+          } catch (error) {
+            console.error(`Error fetching sub-categories for promotion ${promo.id}:`, error);
+            promotionSubCatsCache[promo.id] = [];
+          }
+        }
+
+        const subCatPromos: Record<string, PromotionResponse | null> = {};
+        for (const subCat of categoriesData) {
+          let foundPromo: PromotionResponse | null = null;
+
+          for (const promo of promotionsData) {
+            const subCats = promotionSubCatsCache[promo.id] || [];
+            if (subCats.some(sc => sc.id === subCat.id)) {
+              const now = new Date();
+              const start = new Date(promo.startDate);
+              const end = new Date(promo.endDate);
+              if (now >= start && now <= end && promo.active) {
+                foundPromo = promo;
+                break;
+              }
+            }
+          }
+
+          subCatPromos[subCat.id] = foundPromo;
+        }
+
+        setSubCategoryPromotions(subCatPromos);
+      } catch (error) {
+        console.error("Error fetching promotions:", error);
+      }
+    };
+
+    fetchPromotions();
+  }, []);
 
   const totalResults = books.length + authors.length;
 
@@ -114,9 +167,17 @@ export default function SearchResultsPage() {
                 </h2>
               </div>
               <div className="grid grid-cols-2 gap-6 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-                {books.map((book) => (
-                  <BookCard key={book.id} book={book} />
-                ))}
+                {books.map((book) => {
+                  const priceInfo = getPromotionalPrice(book, subCategoryPromotions);
+                  return (
+                    <BookCard
+                      key={book.id}
+                      book={book}
+                      promoPrice={priceInfo.promoPrice}
+                      promoPercentage={priceInfo.percentage}
+                    />
+                  );
+                })}
               </div>
             </section>
           )}

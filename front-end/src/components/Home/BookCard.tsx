@@ -6,6 +6,8 @@ type BookCardProps = {
   onAddToCart?: (bookId: string) => void;
   active?: boolean;
   stockQuantity?: number;
+  promoPrice?: number | null;
+  promoPercentage?: number | null;
 };
 
 // Convert title to URL-friendly slug
@@ -18,7 +20,7 @@ function slugify(text: string): string {
     .trim();
 }
 
-export function BookCard({ book, onAddToCart, active, stockQuantity }: BookCardProps) {
+export function BookCard({ book, onAddToCart, active, stockQuantity, promoPrice, promoPercentage }: BookCardProps) {
   if (!book) {
     return null;
   }
@@ -35,6 +37,8 @@ export function BookCard({ book, onAddToCart, active, stockQuantity }: BookCardP
       detailUrl={`/book/${book.id}/${slugify(book.title)}`}
       active={active ?? book.active}
       stockQuantity={stockQuantity ?? book.stockQuantity}
+      promoPrice={promoPrice}
+      promoPercentage={promoPercentage}
     />
   );
 }

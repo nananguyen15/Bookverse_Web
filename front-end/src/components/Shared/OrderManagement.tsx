@@ -1,6 +1,6 @@
-import { OrderManagement as AdminOrderManagement } from "../Admin/OrderManagement";
+import { OrderManagementNew } from "../Admin/OrderManagementNew";
 
 // Wrapper component for staff - reuses admin component
 export function OrderManagement() {
-  return <AdminOrderManagement />;
+  return <OrderManagementNew />;
 }

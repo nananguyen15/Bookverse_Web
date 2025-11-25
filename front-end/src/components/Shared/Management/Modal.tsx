@@ -22,12 +22,12 @@ export function Modal({ isOpen, onClose, title, children, maxWidth = "2xl" }: Mo
   if (!isOpen) return null;
 
   return (
-    <div 
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-[2px]"
       onClick={onClose}
     >
-      <div 
-        className={`w-full ${maxWidthMap[maxWidth]} p-6 bg-white rounded-lg shadow-xl max-h-[90vh] overflow-y-auto`}
+      <div
+        className={`w-full ${maxWidthMap[maxWidth]} p-6 bg-white rounded-lg shadow-2xl border-2 border-gray-200 max-h-[90vh] overflow-y-auto`}
         onClick={(e) => e.stopPropagation()}
       >
         <h2 className="mb-4 text-2xl font-bold text-beige-900">{title}</h2>
