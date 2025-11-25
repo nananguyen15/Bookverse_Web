@@ -54,7 +54,7 @@ export const getNextAllowedStatuses = (
     PENDING: ["CONFIRMED", "CANCELLED"], // Staff confirms or customer cancels
     CONFIRMED: ["PROCESSING", "CANCELLED"], // Start processing or cancel
     PROCESSING: ["DELIVERING", "CANCELLED"], // Ship or cancel
-    DELIVERING: ["DELIVERED"], // Only can complete delivery
+    DELIVERING: ["DELIVERED", "CANCELLED"], // Can complete delivery or cancel
     DELIVERED: [], // Final state - no transitions
     CANCELLED: [], // Final state - no transitions
     RETURNED: [], // Final state - no transitions

@@ -145,7 +145,7 @@ export function ReviewList({ bookId, refreshTrigger = 0 }: ReviewListProps) {
           if (!review.id) return null;
 
           // Compare username (backend returns userId as UUID string, but userName is the login username)
-          const isOwnReview = user?.username === review.userName;
+          const isOwnReview = !!user && user.username === review.userName;
           const canDelete =
             isOwnReview || user?.role === "ADMIN" || user?.role === "STAFF";
           const isEditing = editingReviewId === review.id;

@@ -166,9 +166,9 @@ export function OrderManagementNew() {
     }
 
     try {
-      // Update order status to CANCELLED
-      await orderApi.updateOrder(selectedOrder.id, {
-        status: "CANCELLED",
+      // Cancel order with reason using the dedicated endpoint
+      await orderApi.adminStaffCancelOrder(selectedOrder.id, {
+        cancelReason: cancelReason,
       });
 
       // Send notification to customer

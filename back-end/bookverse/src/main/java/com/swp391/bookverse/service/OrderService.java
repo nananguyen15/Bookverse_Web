@@ -355,9 +355,12 @@ public class OrderService {
 
         // check if the order status is in PENDING_PAYMENT/PENDING/CONFIRMED/PROCESSING/DELIVERING
         if (order.getStatus() != OrderStatus.PENDING && order.getStatus() != OrderStatus.CONFIRMED &&
-                order.getStatus() != OrderStatus.PROCESSING && order.getStatus() != OrderStatus.DELIVERING) {
+                order.getStatus() != OrderStatus.PROCESSING && order.getStatus() != OrderStatus.DELIVERING &&
+                order.getStatus() != OrderStatus.PENDING_PAYMENT) {
             throw new AppException(ErrorCode.ORDER_CANNOT_BE_CANCELLED);
         }
+
+
 
         order.setStatus(OrderStatus.CANCELLED);
 
