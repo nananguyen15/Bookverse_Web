@@ -71,6 +71,7 @@ export function ManageReviewNew() {
         review.id?.toString().includes(term) ||
         review.bookId?.toString().includes(term) ||
         (review.bookTitle || "").toLowerCase().includes(term) ||
+        (review.name || "").toLowerCase().includes(term) ||
         (review.userName || "").toLowerCase().includes(term) ||
         (review.comment || "").toLowerCase().includes(term)
       );
@@ -266,7 +267,7 @@ export function ManageReviewNew() {
                       <TableCellText>{review.bookTitle || "Unknown"}</TableCellText>
                     </TableCell>
                     <TableCell>
-                      <TableCellText>{review.userName || "Unknown"}</TableCellText>
+                      <TableCellText>{review.name || review.userName || "Unknown"}</TableCellText>
                     </TableCell>
                     <TableCell>
                       <TableCellText variant="secondary" className="max-w-md truncate">
@@ -334,7 +335,7 @@ export function ManageReviewNew() {
 
               <ViewDetailsGrid>
                 <ViewDetailsRow label="Book Title" value={selectedReview.bookTitle || "Unknown"} />
-                <ViewDetailsRow label="Customer" value={selectedReview.userName || "Unknown"} />
+                <ViewDetailsRow label="Customer" value={selectedReview.name || selectedReview.userName || "Unknown"} />
               </ViewDetailsGrid>
 
               <ViewDetailsGrid>
@@ -399,7 +400,7 @@ export function ManageReviewNew() {
                   <strong>Book:</strong> {selectedReview.bookTitle}
                 </p>
                 <p className="text-sm text-gray-700 mt-1">
-                  <strong>Customer:</strong> {selectedReview.userName}
+                  <strong>Customer:</strong> {selectedReview.name || selectedReview.userName}
                 </p>
                 <p className="text-sm text-gray-700 mt-2">
                   <strong>Comment:</strong> {selectedReview.comment}

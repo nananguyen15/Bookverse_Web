@@ -158,7 +158,7 @@ export function ReviewList({ bookId, refreshTrigger = 0 }: ReviewListProps) {
               <div className="flex justify-between items-start mb-2">
                 <div>
                   <p className="font-medium text-brown-800">
-                    {review.userName || "User"}
+                    {review.name || review.userName || "User"}
                     {isOwnReview && (
                       <span className="ml-2 text-xs bg-brown-100 text-brown-700 px-2 py-1 rounded">
                         Bạn

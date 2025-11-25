@@ -11,3 +11,4 @@ export * from "./promotion.api";
 export * from "./review.api";
 export * from "./order.api";
 export * from "./notification.api";
+export * from "./statistics.api";

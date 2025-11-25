@@ -33,4 +33,5 @@ public interface UserRepository extends JpaRepository<User, String> {
     @Query("SELECT DISTINCT u FROM User u JOIN u.roles r WHERE r IN :#{#roles.![name()]}")
     List<User> findAllByRolesContainingAny(@Param("roles") List<Role> roles);
 
+
 }

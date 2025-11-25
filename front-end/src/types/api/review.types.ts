@@ -6,7 +6,8 @@
 export type ReviewResponse = {
   id: number;
   userId: string;
-  userName: string; // Now always populated
+  userName: string; // Username for login
+  name?: string; // Customer's full name
   bookId: number;
   bookTitle?: string; // Optional, may be populated by client
   comment?: string;
