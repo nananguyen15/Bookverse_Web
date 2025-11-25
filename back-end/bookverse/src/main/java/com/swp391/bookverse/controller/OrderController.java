@@ -107,4 +107,13 @@ public class OrderController {
                 .build();
     }
 
+    @PutMapping("/admin-staff-cancel/{id}")
+    @PreAuthorize("hasAuthority('SCOPE_ADMIN') or hasAuthority('SCOPE_STAFF')")
+    public APIResponse<OrderResponse> adminStaffCancelOrder(@RequestBody OrderCancelRequest request , @PathVariable Long id) {
+        return APIResponse.<OrderResponse>builder()
+                .code(200)
+                .result(orderService.adminStaffCancelOrder(request, id))
+                .build();
+    }
+
 }
