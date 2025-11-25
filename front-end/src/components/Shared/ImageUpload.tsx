@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
 import { FaUpload, FaLink, FaTimes } from "react-icons/fa";
+import { validateImageFile, validateImageUrl } from "../../utils/imageValidation";
 
 interface ImageUploadProps {
   value: string;
@@ -31,6 +32,8 @@ export function ImageUpload({
   const [urlInput, setUrlInput] = useState("");
   const [previewUrl, setPreviewUrl] = useState(value || "");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [fileError, setFileError] = useState("");
+  const [urlError, setUrlError] = useState("");
 
   // Get image dimensions based on type
   const getImageClasses = () => {
@@ -50,17 +53,16 @@ export function ImageUpload({
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validate file type
-    if (!file.type.startsWith("image/")) {
-      alert("Please upload an image file");
+    // Validate file using utility
+    const validation = validateImageFile(file);
+    if (!validation.valid) {
+      setFileError(validation.error || 'Invalid file');
+      if (e.target) e.target.value = ''; // Clear input
       return;
     }
 
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      alert("Image size must be less than 5MB");
-      return;
-    }
+    // Clear any previous errors
+    setFileError("");
 
     // Create preview ONLY for display (not saved to formData)
     const reader = new FileReader();
@@ -85,9 +87,21 @@ export function ImageUpload({
   // Handle URL input
   const handleUrlSubmit = () => {
     if (!urlInput.trim()) {
-      alert("Please enter an image URL");
+      setUrlError("Please enter an image URL");
       return;
     }
+
+    // Validate URL format for external URLs
+    if (urlInput.startsWith("http://") || urlInput.startsWith("https://")) {
+      const validation = validateImageUrl(urlInput);
+      if (!validation.valid) {
+        setUrlError(validation.error || 'Invalid URL');
+        return;
+      }
+    }
+
+    // Clear errors
+    setUrlError("");
 
     // Clear file object when using URL
     if (onImageUpload) {
@@ -131,7 +145,7 @@ export function ImageUpload({
       onChange(dbPath);
       setUrlInput("");
     } catch (error) {
-      alert("Invalid URL format");
+      setUrlError("Invalid URL format");
     }
   };
 
@@ -140,6 +154,8 @@ export function ImageUpload({
     setPreviewUrl("");
     onChange("");
     setUrlInput("");
+    setFileError("");
+    setUrlError("");
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
@@ -163,8 +179,8 @@ export function ImageUpload({
           type="button"
           onClick={() => setUploadMode("file")}
           className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors ${uploadMode === "file"
-              ? "bg-blue-500 text-white border-blue-500"
-              : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+            ? "bg-blue-500 text-white border-blue-500"
+            : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
             }`}
         >
           <FaUpload className="text-sm" />
@@ -174,8 +190,8 @@ export function ImageUpload({
           type="button"
           onClick={() => setUploadMode("url")}
           className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors ${uploadMode === "url"
-              ? "bg-blue-500 text-white border-blue-500"
-              : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+            ? "bg-blue-500 text-white border-blue-500"
+            : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
             }`}
         >
           <FaLink className="text-sm" />
@@ -203,27 +219,37 @@ export function ImageUpload({
               Click to upload or drag and drop
             </span>
             <span className="text-xs text-gray-500 mt-1">
-              PNG, JPG, WEBP up to 5MB
+              JPG, PNG, GIF, WEBP, SVG up to 5MB
             </span>
           </label>
+          {/* File Error Message */}
+          {fileError && (
+            <p className="mt-2 text-sm text-red-600">{fileError}</p>
+          )}
         </div>
       ) : (
-        <div className="flex gap-2">
-          <input
-            type="text"
-            value={urlInput}
-            onChange={(e) => setUrlInput(e.target.value)}
-            onKeyPress={(e) => e.key === "Enter" && handleUrlSubmit()}
-            placeholder="Enter image URL or path (/img/book/image.jpg)"
-            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <button
-            type="button"
-            onClick={handleUrlSubmit}
-            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-          >
-            Add
-          </button>
+        <div>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={urlInput}
+              onChange={(e) => setUrlInput(e.target.value)}
+              onKeyPress={(e) => e.key === "Enter" && handleUrlSubmit()}
+              placeholder="Enter image URL or path (/img/book/image.jpg)"
+              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <button
+              type="button"
+              onClick={handleUrlSubmit}
+              className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+            >
+              Add
+            </button>
+          </div>
+          {/* URL Error Message */}
+          {urlError && (
+            <p className="mt-2 text-sm text-red-600">{urlError}</p>
+          )}
         </div>
       )}
 
