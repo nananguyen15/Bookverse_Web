@@ -205,6 +205,24 @@ export function Order() {
                     <span className="text-beige-600">Subtotal</span>
                     <span className="font-semibold text-beige-900">${order.totalAmount.toFixed(2)}</span>
                   </div>
+
+                  {/* Promotion Discount */}
+                  {order.promotionDiscount && order.promotionDiscount > 0 ? (
+                    <div className="flex justify-between text-sm text-green-600">
+                      <span className="font-medium">
+                        Promotion ({((order.promotionDiscount / order.totalAmount) * 100).toFixed(0)}%)
+                      </span>
+                      <span className="font-semibold">
+                        -${order.promotionDiscount.toFixed(2)}
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="flex justify-between text-sm text-gray-400">
+                      <span className="font-medium">Promotion (%)</span>
+                      <span className="font-semibold">-$0.00</span>
+                    </div>
+                  )}
+
                   <div className="flex justify-between text-sm">
                     <span className="text-beige-600">Shipping</span>
                     <span className="font-semibold text-beige-900">$5.00</span>
